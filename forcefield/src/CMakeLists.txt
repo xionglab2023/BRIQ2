@@ -1,0 +1,15 @@
+add_library(nspforcefield
+AtomicClashEnergy.cpp
+BasePair6DEnergyTable.cpp
+ForceFieldPara.cpp
+PO3Builder.cpp
+ProAtomicEnergyTable.cpp
+ProEnergyTable.cpp
+ProS1S2Energy.cpp
+ProteinRNAEnergyTable.cpp
+RiboseOxygenEnergyTable.cpp
+RnaAtomicEnergyTable.cpp
+RnaEnergyTable.cpp
+RnaEnergyTableSimple.cpp
+XPara.cpp
+)

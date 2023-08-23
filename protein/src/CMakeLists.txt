@@ -1,0 +1,15 @@
+add_library(nsppredprot
+ResConnection.cpp
+ResFoldingTree.cpp
+ResNode.cpp
+ResMutator.cpp
+RotSequence.cpp
+EnergyArray.cpp
+EnergyMatrix.cpp
+EnergyCalculator.cpp
+SeqDesignTemplate.cpp
+SeqDesignTemplateFast.cpp
+LoopModelingTemplate.cpp
+SidechainModelingTemplate.cpp
+SingleSidechainModelingTemplate.cpp
+)
