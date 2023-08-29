@@ -3,6 +3,7 @@
  *
  */
 
+#include <array>
 #include "model/StructureModel.h"
 
 namespace NSPmodel {
@@ -483,8 +484,8 @@ bool RNABase::sidechainComplete(AtomLib* atLib) const{
 	return true;
 }
 
-vector<XYZ> RNABase::getFourPseudoAtomCoords(){
-	vector<XYZ> list;
+array<XYZ,4> RNABase::getFourPseudoAtomCoords(){
+	array<XYZ,4> list;
 	if(!hasLocalFrame)
 		updateCoordSystem();
 	if(!hasLocalFrame) {
@@ -497,10 +498,10 @@ vector<XYZ> RNABase::getFourPseudoAtomCoords(){
 	XYZ b(-0.789 , -0.329 , -1.273);
 	XYZ c(4.520 , -3.006 ,  1.586);
 	XYZ d(6.018 ,  1.903 , -1.638);
-	list.push_back(local2global(coordSys, a));
-	list.push_back(local2global(coordSys, b));
-	list.push_back(local2global(coordSys, c));
-	list.push_back(local2global(coordSys, d));
+	get<0>(list) = local2global(coordSys, a);
+	get<1>(list) = local2global(coordSys, b);
+	get<2>(list) = local2global(coordSys, c);
+	get<3>(list) = local2global(coordSys, d);
 	return list;
 }
 

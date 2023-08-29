@@ -75,7 +75,7 @@ public:
 		return *this;
 	}
 
-	XYZ transform(XYZ& p) {
+	XYZ transform(XYZ& p) const {
 		double x =  p.x_*r00 + p.y_*r01 + p.z_*r02 + tx;
 		double y =  p.x_*r10 + p.y_*r11 + p.z_*r12 + ty;
 		double z = 	p.x_*r20 + p.y_*r21 + p.z_*r22 + tz;

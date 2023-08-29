@@ -150,7 +150,7 @@ public:
 		return a.distance(b);
 	}
 
-	vector<XYZ> getFourPseudoAtomCoords();
+	array<XYZ,4> getFourPseudoAtomCoords();
 
 	XYZ getBaseNormVector() {
 		XYZ n;
