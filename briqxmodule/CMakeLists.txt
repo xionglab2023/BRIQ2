@@ -1,1 +1,2 @@
-add_subdirectory(src)
+add_executable(bmalign Main.cpp)
+target_link_libraries(bmalign briqx)
