@@ -394,7 +394,6 @@ RNABase::RNABase() {
 	this->chainID = 'A';
 	this->baseType = 'N';
 	this->baseTypeInt = 4;
-	this->atomNum = 0;
 	this->baseSeqID = -1;
 	this->hasLocalFrame = false;
 	this->hasAltConf = false;
@@ -424,7 +423,6 @@ RNABase::RNABase(const string& baseID, const string& chainID, char baseType){
 	else
 		this->baseTypeInt = -1;
 
-	this->atomNum = 0;
 	this->baseSeqID = -1;
 	this->hasLocalFrame = false;
 	this->hasAltConf = false;

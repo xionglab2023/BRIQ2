@@ -9,7 +9,7 @@ namespace NSPforcefield {
 
 RiboseOxygenEnergyTable::RiboseOxygenEnergyTable() {
 	// TODO Auto-generated constructor stub
-	string path = NSPdataio::datapath() + "rna/riboseOxygen/";
+	string path = NSPdataio::datapath() + "riboseOxygen/";
 	vector<string> oxygenNames;
 
 	oxygenNames.push_back("O3");

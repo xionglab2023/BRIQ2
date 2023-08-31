@@ -21,18 +21,10 @@ using namespace std;
 
 int main(int argc, char** argv){
 	clock_t start = clock();
-
 	RnaEnergyTable* et = new RnaEnergyTable();
-
-
 	string inputFile = string(argv[1]);
 	BRFoldingTree* ft = new BRFoldingTree(inputFile, et);
 	ft->printConnections();
 	MCRun mc(ft);
 	mc.debug();
-
-
-
 }
-
-

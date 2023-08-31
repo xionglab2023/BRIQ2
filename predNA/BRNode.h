@@ -130,6 +130,8 @@ public:
 		this->bulge14Child = NULL;
 	}
 
+
+
 	BRNode(RNABase* base, RiboseRotamer* riboRot, PhosphateRotamer* phoRot, RotamerLib* rotLib){
 		this->baseType = base->baseTypeInt;
 		this->seqID = base->baseSeqID;
@@ -139,20 +141,16 @@ public:
 		this->groupID = -1;
 		LocalFrame cs1 = base->getCoordSystem();
 
-		cout << "base conformer" << endl;
 		this->baseConf = new BaseConformer(rotLib->baseRotLib->baseLib[baseType], cs1);
 		this->baseConfTmp = new BaseConformer(rotLib->baseRotLib->baseLib[baseType], cs1);
 
-		cout << "ribose conformer" << endl;
 		this->riboseConf = new RiboseConformer(riboRot, cs1);
 		this->riboseConfTmp = new RiboseConformer(riboRot, cs1);
 
 		LocalFrame cs2 = riboseConf->cs2;
 
-		cout << "pho conformer" << endl;
 		this->phoConf = new PhosphateConformer(phoRot, cs2);
 		this->phoConfTmp = new PhosphateConformer(phoRot, cs2);
-
 
 		this->father = NULL;
 		this->leftChild = NULL;
@@ -165,6 +163,7 @@ public:
 		this->bulge13Child = NULL;
 		this->bulge14Child = NULL;
 	}
+
 
 	bool baseConsistent();
 	bool riboConsistent();

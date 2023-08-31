@@ -102,15 +102,16 @@ int main(int argc, char** argv){
 	cout << "print connection" << endl;
 	ft->printConnections();
 
+
 	cout << "get tree info" << endl;
 	BRTreeInfo* info = ft->getTreeInfo();
 	cout << "run mc: " << endl;
 
 	MCRun mc(ft);
 	mc.simpleMC(outputPDB, false);
-
 	delete et;
 	delete ft;
+
 
 }
 

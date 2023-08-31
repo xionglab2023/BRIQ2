@@ -18,7 +18,7 @@ PO3Builder::PO3Builder(XPara* para) {
 
 	this->para = para;
 
-	string path = NSPdataio::datapath()+"/rna/";
+	string path = NSPdataio::datapath()+"/";
 	ifstream file;
 	string s;
 	string fileName = path+"dihedEnergy/"+para->dihedEneType + "/impD1D2.ene";

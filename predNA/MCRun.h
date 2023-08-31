@@ -37,7 +37,6 @@ public:
 
 	void optimizeBackbone(const string& output);
 
-
 	void debug();
 
 	void test();

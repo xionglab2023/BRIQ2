@@ -545,7 +545,7 @@ BasePair6DEnergyTable::BasePair6DEnergyTable(XPara* para) {
 	this->wt2 = para->wtBp2;
 	this->wt3 = para->wtBp3;
 
-	string path = NSPdataio::datapath() + "/rna/";
+	string path = NSPdataio::datapath();
 
 	int indexA, indexB;
 	double ene;

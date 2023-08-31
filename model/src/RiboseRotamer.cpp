@@ -172,6 +172,11 @@ RiboseConformer::RiboseConformer(RiboseRotamer* rot, LocalFrame& cs1){
 	this->cs1 = cs1;
 	this->cs2 = cs1 + rot->mv12;
 	this->cs3 = cs1 + rot->mv13;
+
+	for(int i=0;i<rot->atomNum;i++){
+		this->coords[i] = local2global(cs1, rot->localCoords[i]);
+	}
+
 	if(rot->resType < 4)
 		hasO2 = true;
 	else
@@ -192,7 +197,6 @@ void RiboseConformer::copyValueFrom(RiboseConformer* other){
 	cs3 = other->cs3;
 	hasO2 = other->hasO2;
 	o2Polar = other->o2Polar;
-
 }
 
 void RiboseConformer::updateLocalFrame(LocalFrame& cs1){
@@ -289,6 +293,16 @@ void RiboseConformer::updateLocalFrameAndRotamer(LocalFrame& cs1, RiboseRotamer*
 	}
 }
 
+
+double RiboseConformer::distanceTo(RiboseConformer* other){
+	double dd = 0.0;
+	if(this->rot->atomNum != other->rot->atomNum)
+		return 99.99;
+	for(int i=0;i<rot->atomNum;i++){
+		dd += squareDistance(coords[i], other->coords[i]);
+	}
+	return sqrt(dd/rot->atomNum);
+}
 
 
 RiboseRotamer::~RiboseRotamer() {

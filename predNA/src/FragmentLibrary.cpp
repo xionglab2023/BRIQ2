@@ -9,7 +9,7 @@ namespace NSPpredna {
 
 RiboConnectLib::RiboConnectLib(){
 	string path = NSPdataio::datapath();
-	string file = path + "rna/fragLib/riboMove.txt";
+	string file = path + "fragLib/riboMove.txt";
 	ifstream f;
 	f.open(file.c_str(), ios::in);
 	string line;
@@ -124,7 +124,7 @@ F3Fragment::~F3Fragment(){
 }
 
 F2FragmentLib::F2FragmentLib(const string& tag, RotamerLib* rotLib){
-	string path = NSPdataio::datapath()+"rna/";
+	string path = NSPdataio::datapath();
 	this->hasRibose = false;
 	this->isReverse = false;
 
@@ -207,7 +207,7 @@ F2FragmentLib::F2FragmentLib(const string& tag, RotamerLib* rotLib){
 }
 
 F2FragmentLib::F2FragmentLib(const string& tag, int typeA, int typeB, RotamerLib* rotLib){
-	string path = NSPdataio::datapath()+"rna/";
+	string path = NSPdataio::datapath();
 	this->hasRibose = false;
 	this->isReverse = false;
 
@@ -400,7 +400,7 @@ F2FragmentLib::~F2FragmentLib(){
 }
 
 F3FragmentLib::F3FragmentLib(const string& tag, int typeA, int typeB, int typeC, RotamerLib* rotLib){
-	string path = NSPdataio::datapath()+"rna/";
+	string path = NSPdataio::datapath();
 	string libPath = path + "fragLib/"+tag +"/";
 	if(tag == "acF3")
 		rotNum = 50;

@@ -1041,6 +1041,8 @@ BRFoldingTree::BRFoldingTree(const string& inputFile, RnaEnergyTable* et){
 		this->nodes[i] = new BRNode(baseList[i], rotLib);
 		nodes[i]->riboseConf->updateRotamer(rot);
 		nodes[i]->riboseConfTmp->updateRotamer(rot);
+		nodes[i]->phoConf->updateLocalFrame(nodes[i]->riboseConf->cs2);
+		nodes[i]->phoConfTmp->updateLocalFrame(nodes[i]->riboseConfTmp->cs2);
 	}
 
 	for(int i=0;i<seqLen-1;i++){
@@ -1390,7 +1392,7 @@ BRFoldingTree::BRFoldingTree(const string& inputFile, RnaEnergyTable* et){
 	cout << "check ribose" << endl;
 	checkRibose();
 
-	updateEnergies(0.0);
+	updateEnergies();
 
 }
 
@@ -1447,7 +1449,7 @@ void BRFoldingTree::randInit(){
 
 	updateCoordinate(rootNode);
 	updatePhoGroups();
-	updateEnergies(0.0);
+	updateEnergies();
 }
 
 void BRFoldingTree::buildFromInput(vector<string>& ctLines){
@@ -2398,7 +2400,7 @@ void BRFoldingTree::initFromKey(const string& keyInfo){
 
 	updateCoordinate(rootNode);
 	updatePhoGroups();
-	updateEnergies(0.0);
+	updateEnergies();
 }
 
 void BRFoldingTree::keyInfoToRMS(const string& keyFile, const string& outFile){
@@ -2458,11 +2460,12 @@ void BRFoldingTree::updatePhoGroups(){
 		BRNode* nodeB = nodes[i+1];
 		if(!connectToDownstream[i]) continue;
 		et->pb->buildPhosphate(nodeA->riboseConf, nodeB->riboseConf, nodeA->phoConf);
+		nodeA->phoConfTmp->copyValueFrom(nodeA->phoConf);
 	}
 }
 
-void BRFoldingTree::updateEnergies(double shift){
-	//cout << "update energy: shift=" << shift << endl;
+void BRFoldingTree::updateEnergies(){
+
 	bool verbose = false;
 	int i,j, pi, pj, sep;
 	for(i=0;i<seqLen;i++){
@@ -2472,7 +2475,7 @@ void BRFoldingTree::updateEnergies(double shift){
 			pi = nodeA->seqID*seqLen+nodeB->seqID;
 			pj = nodeB->seqID*seqLen+nodeA->seqID;
 
-			allBaseClashE[pi] = baseBaseClash(nodeA, nodeB, sepTable[pi], et, shift, verbose);
+			allBaseClashE[pi] = baseBaseClash(nodeA, nodeB, sepTable[pi], et, verbose);
 			allBaseClashE[pj] = allBaseClashE[pi];
 
 			allBaseBaseE[pi] = getBaseBaseEnergy(nodeA, nodeB, sepTable[pi], et, verbose);
@@ -3439,6 +3442,7 @@ void BRFoldingTree::updateReverseRiboseRotamerTmp(BRNode* node, RiboseRotamer* r
 void BRFoldingTree::clearReverseRiboseRotamerTmp(BRNode* nodeSelect, bool verbose){
 	int i,j;
 
+	nodeSelect->baseConfTmp->copyValueFrom(nodeSelect->baseConf);
 	nodeSelect->riboseConfTmp->copyValueFrom(nodeSelect->riboseConf);
 
 	BRNode* node;
@@ -3736,7 +3740,7 @@ void BRFoldingTree::acceptSingleBaseCoordTmp(BRNode* nodeSelect, bool verbose){
 	}
 }
 
-pair<double,double> BRFoldingTree::ctMutEnergy(BRConnection* selectConnect, double breakCTWT, double connectWT,double clashWT, double shift, bool verbose){
+pair<double,double> BRFoldingTree::ctMutEnergy(BRConnection* selectConnect, double breakCTWT, double connectWT,double clashWT, bool verbose){
 	double tot = 0;
 	int i,j, pi, pj;
 
@@ -3813,7 +3817,7 @@ pair<double,double> BRFoldingTree::ctMutEnergy(BRConnection* selectConnect, doub
 			pi = indexX*seqLen+indexY;
 			pj = indexY*seqLen+indexX;
 			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
-			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, shift, verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et,  verbose);
 			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
 			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
 		}
@@ -4076,7 +4080,454 @@ pair<double,double> BRFoldingTree::ctMutEnergy(BRConnection* selectConnect, doub
 	return p;
 }
 
-vector<double> BRFoldingTree::getF2MutEnergyDetail(BRConnection* selectConnect, double breakCTWT, double connectWT, double clashWT, double shift, bool verbose){
+void BRFoldingTree::debugCtMutEnergy(BRConnection* selectConnect, double breakCTWT, double connectWT,double clashWT, bool verbose){
+	double tot = 0;
+	int i,j, pi, pj;
+
+	int indexX, indexY;
+	BRNode *nodeX, *nodeY;
+
+	int baseGroupANum = selectConnect->ctBaseGroupA.size();
+
+
+	int baseGroupBNum = selectConnect->ctBaseGroupB.size();
+
+	int riboseGroupANum = selectConnect->ctRiboseGroupA.size();
+
+
+	int riboseGroupBNum = selectConnect->ctRiboseGroupB.size();
+
+	int phoGroupANum = selectConnect->ctPhoGroupA.size();
+	int phoGroupBNum = selectConnect->ctPhoGroupB.size();
+	int phoGroupCNum = selectConnect->ctPhoGroupC.size();
+
+	for(i=0;i<phoGroupCNum;i++){
+		indexX = selectConnect->ctPhoGroupC[i];
+		this->tmpRcE[indexX] = nodes[indexX]->phoConfTmp->ene;
+	}
+
+
+	int id;
+	for(i=0;i<baseGroupANum;i++){
+		id = selectConnect->ctBaseGroupA[i];
+		if(!nodes[id]->baseConsistent())
+			printf("base: %2d coordinate error\n", id);
+	}
+
+	for(i=0;i<riboseGroupANum;i++){
+		id = selectConnect->ctRiboseGroupA[i];
+		if(!nodes[id]->riboConsistent())
+			printf("ribose: %2d coordinate error\n", id);
+	}
+
+	for(i=0;i<phoGroupANum;i++){
+		id = selectConnect->ctPhoGroupA[i];
+		if(!nodes[id]->phoConsistent())
+			printf("pho: %2d coordinate error\n", id);
+	}
+
+	/*
+	 * single base Constraint energy
+	 */
+	for(i=0;i<baseGroupBNum;i++){
+		indexX = selectConnect->ctBaseGroupB[i];
+		nodeX = nodes[indexX];
+		if(baseConstraintFactor != 0) {
+			float d =  nodeX->baseConfTmp->cs1.origin_.distance(this->constraintCoordList[indexX]);
+			if(d < 1)
+				this->tmpConstraint[indexX] = baseConstraintFactor[indexX]*d*d;
+			else
+				this->tmpConstraint[indexX] = baseConstraintFactor[indexX]*2*d - baseConstraintFactor[indexX];
+		}
+
+	}
+
+	/*
+	 * base pair constraint energy
+	 */
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->ctBaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<baseGroupBNum;j++){
+			indexY = selectConnect->ctBaseGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			if(basePairConstraintFactor[pi] != 0) {
+				BaseDistanceMatrix dm(nodeX->baseConf->cs1, nodeY->baseConf->cs1);
+				float d = dm.distanceTo(this->constraintDMList[pi]);
+				if(d < 1)
+					this->tmpPairConstraint[pi] = basePairConstraintFactor[pi]*d*d;
+				else
+					this->tmpPairConstraint[pi] = basePairConstraintFactor[pi]*(2*d-1);
+
+				this->tmpPairConstraint[pj] = this->tmpPairConstraint[pi];
+			}
+		}
+	}
+
+	/*
+	 * base-base energy
+	 */
+
+	//A-B
+
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->ctBaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<baseGroupBNum;j++){
+			indexY = selectConnect->ctBaseGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et,  verbose);
+			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
+			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
+		}
+	}
+
+	/*
+	 * base-ribose energy
+	 */
+
+	//A-B
+
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->ctBaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupBNum;j++){
+			indexY = selectConnect->ctRiboseGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-A
+
+	for(i=0;i<baseGroupBNum;i++){
+		indexX = selectConnect->ctBaseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupANum;j++){
+			indexY = selectConnect->ctRiboseGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * base-pho energy
+	 */
+
+	//A-B
+
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->ctBaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupBNum;j++){
+			indexY = selectConnect->ctPhoGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//A-C
+
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->ctBaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->ctPhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-A
+
+	for(i=0;i<baseGroupBNum;i++){
+		indexX = selectConnect->ctBaseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupANum;j++){
+			indexY = selectConnect->ctPhoGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-C
+
+	for(i=0;i<baseGroupBNum;i++){
+		indexX = selectConnect->ctBaseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->ctPhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * ribose-ribose energy
+	 */
+
+	//A-B
+
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = selectConnect->ctRiboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupBNum;j++){
+			indexY = selectConnect->ctRiboseGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpRiboseRiboseE[pi] = getRiboseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpRiboseRiboseE[pj] = this->tmpRiboseRiboseE[pi];
+		}
+	}
+
+	/*
+	 * ribose-pho energy
+	 */
+
+	//A-B
+
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = selectConnect->ctRiboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupBNum;j++){
+			indexY = selectConnect->ctPhoGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//A-C
+
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = selectConnect->ctRiboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->ctPhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-A
+
+	for(i=0;i<riboseGroupBNum;i++){
+		indexX = selectConnect->ctRiboseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupANum;j++){
+			indexY = selectConnect->ctPhoGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-C
+
+	for(i=0;i<riboseGroupBNum;i++){
+		indexX = selectConnect->ctRiboseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->ctPhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * pho-pho energy
+	 */
+
+	//A-B
+
+	for(i=0;i<phoGroupANum;i++){
+		indexX = selectConnect->ctPhoGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupBNum;j++){
+			indexY = selectConnect->ctPhoGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen + indexY;
+			pj = indexY*seqLen + indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	//A-C
+
+	for(i=0;i<phoGroupANum;i++){
+		indexX = selectConnect->ctPhoGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->ctPhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen + indexY;
+			pj = indexY*seqLen + indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	//B-C
+
+	for(i=0;i<phoGroupBNum;i++){
+		indexX = selectConnect->ctPhoGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->ctPhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen + indexY;
+			pj = indexY*seqLen + indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	//C-C
+
+	for(i=0;i<phoGroupCNum;i++){
+		indexX = selectConnect->ctPhoGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=i+1;j<phoGroupCNum;j++){
+			indexY = selectConnect->ctPhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen + indexY;
+			pj = indexY*seqLen + indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	double e1 = 0;
+	double e2 = 0;
+	double eb2 = 0;
+	double e3 = 0;
+
+	for(i=0;i<seqLen;i++){
+		e1 += this->tmpRotE[i] - this->allRotE[i];
+		e1 += this->tmpConstraint[i] - this->allConstraint[i];
+		if(chainBreakPoints[i])
+			eb2 += this->tmpRcE[i] - this->allRcE[i];
+		else
+			e2 += this->tmpRcE[i] - this->allRcE[i];
+		for(j=0;j<seqLen;j++){
+			pi = i*seqLen+j;
+			e3 += this->tmpBaseRiboseE[pi] - this->allBaseRiboseE[pi];
+			e3 += this->tmpBasePhoE[pi] - this->allBasePhoE[pi];
+			e3 += this->tmpRibosePhoE[pi] - this->allRibosePhoE[pi];
+		}
+		for(j=i+1;j<seqLen;j++){
+			pi = i*seqLen+j;
+			e3 += this->tmpBaseClashE[pi] - this->allBaseClashE[pi];
+			e1 += this->tmpBaseBaseE[pi] - this->allBaseBaseE[pi];
+			e3 += this->tmpRiboseRiboseE[pi] - this->allRiboseRiboseE[pi];
+			e3 += this->tmpPhoPhoE[pi] - this->allPhoPhoE[pi];
+			e1 += this->tmpPairConstraint[pi] - this->allPairConstraint[pi];
+		}
+	}
+
+	double rotE1=0, rotE2=0;
+	double rcE1=0, rcE2=0;
+	double baseBaseE1=0, baseBaseE2=0;
+	double baseRiboE1=01, baseRiboE2=0;
+	double basePhoE1=0, basePhoE2=0;
+	double riboRiboE1=0, riboRiboE2=0;
+	double riboPhoE1=0, riboPhoE2=0;
+	double phoPhoE1=0, phoPhoE2=0;
+
+	BRNode* nodeA;
+	BRNode* nodeB;
+
+	for(i=0;i<seqLen;i++){
+		nodeA = nodes[i];
+
+		rotE1 = this->tmpRotE[i] - this->allRotE[i];
+		rcE1 = this->tmpRcE[i] - this->allRcE[i];
+
+		rotE2 = nodes[i]->riboseConfTmp->rot->energy - nodes[i]->riboseConf->rot->energy;
+		rcE2 = nodes[i]->phoConfTmp->ene - nodes[i]->phoConf->ene;
+
+		if(abs(rotE1 - rotE2) > 0.01) {
+			selectConnect->printPartition();
+			printf("rot ene error: pos %3d e1: %8.3f e2: %8.3f\n", i, rotE1, rotE2);
+		}
+
+		if(abs(rcE1 - rcE2) > 0.01) {
+			selectConnect->printPartition();
+			printf("pho ene error: pos %3d e1: %8.3f e2: %8.3f\n", i, rcE1, rcE2);
+		}
+
+		for(j=0;j<seqLen;j++){
+			nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			pi = i*seqLen+j;
+			baseRiboE1 = this->tmpBaseRiboseE[pi] - this->allBaseRiboseE[pi];
+			basePhoE1 = this->tmpBasePhoE[pi] - this->allBasePhoE[pi];
+			riboPhoE1 = this->tmpRibosePhoE[pi] - this->allRibosePhoE[pi];
+			baseRiboE2 = getBaseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getBaseRiboseEnergy(nodeA, nodeB, sep, et, verbose);
+			basePhoE2 = getBasePhoEnergyTmp(nodeA, nodeB, sep,  et, verbose) - getBasePhoEnergy(nodeA, nodeB, sep,  et, verbose);
+			riboPhoE2 = getRibosePhoEnergyTmp(nodeA, nodeB, sep, et, verbose) - getRibosePhoEnergy(nodeA, nodeB, sep, et, verbose);
+
+			if(abs(baseRiboE1 - baseRiboE2) > 0.01){
+				selectConnect->printPartition();
+				printf("baseRibo ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, baseRiboE1, baseRiboE2);
+			}
+			if(abs(basePhoE1 - basePhoE2) > 0.01){
+				selectConnect->printPartition();
+				printf("basePho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, basePhoE1, basePhoE2);
+			}
+			if(abs(riboPhoE1 - riboPhoE2) > 0.01){
+				selectConnect->printPartition();
+				printf("riboPho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, riboPhoE1, riboPhoE2);
+			}
+		}
+		for(j=i+1;j<seqLen;j++){
+			nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			pi = i*seqLen+j;
+			baseBaseE1 = this->tmpBaseClashE[pi] - this->allBaseClashE[pi] + this->tmpBaseBaseE[pi] - this->allBaseBaseE[pi];
+			riboRiboE1 = this->tmpRiboseRiboseE[pi] - this->allRiboseRiboseE[pi];
+			phoPhoE1 = this->tmpPhoPhoE[pi] - this->allPhoPhoE[pi];
+			baseBaseE2 = getBaseBaseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getBaseBaseEnergy(nodeA, nodeB, sep, et, verbose) +  baseBaseClashTmp(nodeA, nodeB, sep, et, verbose) - baseBaseClash(nodeA, nodeB, sep, et, verbose);
+			riboRiboE2 = getRiboseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getRiboseRiboseEnergy(nodeA, nodeB, sep, et, verbose);
+			phoPhoE2 = getPhoPhoEnergyTmp(nodeA, nodeB, sep, et, verbose) - getPhoPhoEnergy(nodeA, nodeB, sep, et, verbose);
+			if(abs(baseBaseE1 - baseBaseE2) > 0.01){
+				selectConnect->printPartition();
+				trackCoordinateChangeCt(selectConnect);
+				printf("baseBase ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, baseBaseE1, baseBaseE2);
+			}
+			if(abs(riboRiboE1 - riboRiboE2) > 0.01){
+				selectConnect->printPartition();
+				trackCoordinateChangeCt(selectConnect);
+				printf("riboRibo ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, riboRiboE1, riboRiboE2);
+			}
+			if(abs(phoPhoE1 - phoPhoE2) > 0.01){
+				selectConnect->printPartition();
+				trackCoordinateChangeCt(selectConnect);
+				printf("phoPho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, phoPhoE1, phoPhoE2);
+			}
+		}
+	}
+
+
+
+}
+
+vector<double> BRFoldingTree::getF2MutEnergyDetail(BRConnection* selectConnect, double breakCTWT, double connectWT, double clashWT, bool verbose){
 
 	vector<double> outList;
 	int i,j, pi, pj;
@@ -4166,7 +4617,7 @@ vector<double> BRFoldingTree::getF2MutEnergyDetail(BRConnection* selectConnect, 
 			pi = indexX*seqLen+indexY;
 			pj = indexY*seqLen+indexX;
 			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
-			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, shift, verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, verbose);
 			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
 			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
 		}
@@ -4554,7 +5005,7 @@ vector<double> BRFoldingTree::getF2MutEnergyDetail(BRConnection* selectConnect, 
 	return outList;
 }
 
-pair<double,double> BRFoldingTree::f2MutEnergy(BRConnection* selectConnect, double breakCTWT, double connectWT, double clashWT, double shift, bool verbose){
+pair<double,double> BRFoldingTree::f2MutEnergy(BRConnection* selectConnect, double breakCTWT, double connectWT, double clashWT, bool verbose){
 	double tot = 0;
 	int i,j, pi, pj;
 
@@ -4641,7 +5092,7 @@ pair<double,double> BRFoldingTree::f2MutEnergy(BRConnection* selectConnect, doub
 			pi = indexX*seqLen+indexY;
 			pj = indexY*seqLen+indexX;
 			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
-			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, shift, verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, verbose);
 			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
 			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
 		}
@@ -5066,7 +5517,533 @@ pair<double,double> BRFoldingTree::f2MutEnergy(BRConnection* selectConnect, doub
 	return p;
 }
 
-pair<double,double> BRFoldingTree::f3MutEnergy(BRConnection* ct1,double breakCTWT, double connectWT,double clashWT, double shift, bool verbose){
+void BRFoldingTree::debugF2MutEnergy(BRConnection* selectConnect, double breakCTWT, double connectWT, double clashWT, bool verbose){
+	double tot = 0;
+	int i,j, pi, pj;
+
+	int indexX, indexY;
+	BRNode *nodeX, *nodeY;
+
+	int baseGroupANum = selectConnect->f2BaseGroupA.size();
+	int baseGroupBNum = selectConnect->f2BaseGroupB.size();
+
+	int riboseGroupANum = selectConnect->f2RiboseGroupA.size();
+	int riboseGroupBNum = selectConnect->f2RiboseGroupB.size();
+	int riboseGroupCNum = selectConnect->f2RiboseGroupC.size();
+
+
+
+	int phoGroupANum = selectConnect->f2PhoGroupA.size();
+	int phoGroupBNum = selectConnect->f2PhoGroupB.size();
+	int phoGroupCNum = selectConnect->f2PhoGroupC.size();
+
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = selectConnect->f2RiboseGroupC[i];
+		this->tmpRotE[indexX] = nodes[indexX]->riboseConfTmp->rot->energy;
+	}
+
+	for(i=0;i<phoGroupCNum;i++){
+		indexX = selectConnect->f2PhoGroupC[i];
+		this->tmpRcE[indexX] = nodes[indexX]->phoConfTmp->ene;
+	}
+
+	int id;
+	for(i=0;i<baseGroupANum;i++){
+		id = selectConnect->ctBaseGroupA[i];
+		if(!nodes[id]->baseConsistent())
+			printf("base: %2d coordinate error\n", id);
+	}
+
+	for(i=0;i<riboseGroupANum;i++){
+		id = selectConnect->ctRiboseGroupA[i];
+		if(!nodes[id]->riboConsistent())
+			printf("ribose: %2d coordinate error\n", id);
+	}
+
+	for(i=0;i<phoGroupANum;i++){
+		id = selectConnect->ctPhoGroupA[i];
+		if(!nodes[id]->phoConsistent())
+			printf("pho: %2d coordinate error\n", id);
+	}
+
+
+
+	/*
+	 * Constraint energy
+	 */
+	for(i=0;i<baseGroupBNum;i++){
+		indexX = selectConnect->f2BaseGroupB[i];
+		nodeX = nodes[indexX];
+		if(baseConstraintFactor[indexX] != 0) {
+			float d =  nodeX->baseConfTmp->cs1.origin_.distance(this->constraintCoordList[indexX]);
+			if(d < 1)
+				this->tmpConstraint[indexX] = baseConstraintFactor[indexX]*d*d;
+			else
+				this->tmpConstraint[indexX] = baseConstraintFactor[indexX]*2*d - baseConstraintFactor[indexX];
+		}
+		//this->tmpConstraint[indexX] = baseConstraintFactor[indexX]*nodeX->tmpCs1.origin_.squaredDistance(this->constraintCoordList[indexX]);
+	}
+
+
+	/*
+	 *  base pair constraint energy
+	 */
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->f2BaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<baseGroupBNum;j++){
+			indexY = selectConnect->f2BaseGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			if(basePairConstraintFactor[pi] != 0) {
+				BaseDistanceMatrix dm(nodeX->baseConf->cs1, nodeY->baseConf->cs1);
+				float d = dm.distanceTo(this->constraintDMList[pi]);
+				if(d < 1)
+					this->tmpPairConstraint[pi] = basePairConstraintFactor[pi]*d*d;
+				else
+					this->tmpPairConstraint[pi] = basePairConstraintFactor[pi]*(2*d-1);
+
+				this->tmpPairConstraint[pj] = this->tmpPairConstraint[pi];
+			}
+		}
+	}
+
+
+	/*
+	 * base-base energy
+	 */
+
+	//A-B
+
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->f2BaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<baseGroupBNum;j++){
+			indexY = selectConnect->f2BaseGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
+			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
+		}
+	}
+
+	/*
+	 * base-ribose energy
+	 */
+
+	//A-B
+
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->f2BaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupBNum;j++){
+			indexY = selectConnect->f2RiboseGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//A-C
+
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->f2BaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupCNum;j++){
+			indexY = selectConnect->f2RiboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-A
+
+	for(i=0;i<baseGroupBNum;i++){
+		indexX = selectConnect->f2BaseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupANum;j++){
+			indexY = selectConnect->f2RiboseGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-C
+
+	for(i=0;i<baseGroupBNum;i++){
+		indexX = selectConnect->f2BaseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupCNum;j++){
+			indexY = selectConnect->f2RiboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * base-pho energy
+	 */
+
+	//A-B
+
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->f2BaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupBNum;j++){
+			indexY = selectConnect->f2PhoGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//A-C
+
+	for(i=0;i<baseGroupANum;i++){
+		indexX = selectConnect->f2BaseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->f2PhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-A
+
+	for(i=0;i<baseGroupBNum;i++){
+		indexX = selectConnect->f2BaseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupANum;j++){
+			indexY = selectConnect->f2PhoGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-C
+
+	for(i=0;i<baseGroupBNum;i++){
+		indexX = selectConnect->f2BaseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->f2PhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * ribose-ribose energy
+	 */
+
+	//A-B
+
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = selectConnect->f2RiboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupBNum;j++){
+			indexY = selectConnect->f2RiboseGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpRiboseRiboseE[pi] = getRiboseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpRiboseRiboseE[pj] = this->tmpRiboseRiboseE[pi];
+		}
+	}
+
+	//A-C
+
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = selectConnect->f2RiboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupCNum;j++){
+			indexY = selectConnect->f2RiboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpRiboseRiboseE[pi] = getRiboseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpRiboseRiboseE[pj] = this->tmpRiboseRiboseE[pi];
+		}
+	}
+
+	//B-C
+
+
+	for(i=0;i<riboseGroupBNum;i++){
+		indexX = selectConnect->f2RiboseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupCNum;j++){
+			indexY = selectConnect->f2RiboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpRiboseRiboseE[pi] = getRiboseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpRiboseRiboseE[pj] = this->tmpRiboseRiboseE[pi];
+		}
+	}
+
+	//C-C
+
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = selectConnect->f2RiboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=i+1;j<riboseGroupCNum;j++){
+			indexY = selectConnect->f2RiboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpRiboseRiboseE[pi] = getRiboseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpRiboseRiboseE[pj] = this->tmpRiboseRiboseE[pi];
+		}
+	}
+
+	/*
+	 * ribose-pho energy
+	 */
+
+	//A-B
+
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = selectConnect->f2RiboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupBNum;j++){
+			indexY = selectConnect->f2PhoGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//A-C
+
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = selectConnect->f2RiboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->f2PhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-A
+
+	for(i=0;i<riboseGroupBNum;i++){
+		indexX = selectConnect->f2RiboseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupANum;j++){
+			indexY = selectConnect->f2PhoGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//B-C
+
+	for(i=0;i<riboseGroupBNum;i++){
+		indexX = selectConnect->f2RiboseGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->f2PhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-A
+
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = selectConnect->f2RiboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupANum;j++){
+			indexY = selectConnect->f2PhoGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-B
+
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = selectConnect->f2RiboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupBNum;j++){
+			indexY = selectConnect->f2PhoGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-C
+
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = selectConnect->f2RiboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->f2PhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen + indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+
+		}
+	}
+
+	/*
+	 * pho-pho energy
+	 */
+
+	//A-B
+
+	for(i=0;i<phoGroupANum;i++){
+		indexX = selectConnect->f2PhoGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupBNum;j++){
+			indexY = selectConnect->f2PhoGroupB[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen + indexY;
+			pj = indexY*seqLen + indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	//A-C
+
+	for(i=0;i<phoGroupANum;i++){
+		indexX = selectConnect->f2PhoGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->f2PhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen + indexY;
+			pj = indexY*seqLen + indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	//B-C
+
+	for(i=0;i<phoGroupBNum;i++){
+		indexX = selectConnect->f2PhoGroupB[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = selectConnect->f2PhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen + indexY;
+			pj = indexY*seqLen + indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	//C-C
+
+	for(i=0;i<phoGroupCNum;i++){
+		indexX = selectConnect->f2PhoGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=i+1;j<phoGroupCNum;j++){
+			indexY = selectConnect->f2PhoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen + indexY;
+			pj = indexY*seqLen + indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	double rotE1=0, rotE2=0;
+	double rcE1=0, rcE2=0;
+	double baseBaseE1=0, baseBaseE2=0;
+	double baseRiboE1=01, baseRiboE2=0;
+	double basePhoE1=0, basePhoE2=0;
+	double riboRiboE1=0, riboRiboE2=0;
+	double riboPhoE1=0, riboPhoE2=0;
+	double phoPhoE1=0, phoPhoE2=0;
+
+	BRNode* nodeA;
+	BRNode* nodeB;
+
+	for(i=0;i<seqLen;i++){
+		nodeA = nodes[i];
+
+		rotE1 = this->tmpRotE[i] - this->allRotE[i];
+		rcE1 = this->tmpRcE[i] - this->allRcE[i];
+
+		rotE2 = nodes[i]->riboseConfTmp->rot->energy - nodes[i]->riboseConf->rot->energy;
+		rcE2 = nodes[i]->phoConfTmp->ene - nodes[i]->phoConf->ene;
+
+		if(abs(rotE1 - rotE2) > 0.01) {
+			printf("rot ene error: pos %3d e1: %8.3f e2: %8.3f\n", i, rotE1, rotE2);
+		}
+
+		if(abs(rcE1 - rcE2) > 0.01) {
+			printf("pho ene error: pos %3d e1: %8.3f e2: %8.3f\n", i, rcE1, rcE2);
+		}
+
+		for(j=0;j<seqLen;j++){
+			nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			pi = i*seqLen+j;
+			baseRiboE1 = this->tmpBaseRiboseE[pi] - this->allBaseRiboseE[pi];
+			basePhoE1 = this->tmpBasePhoE[pi] - this->allBasePhoE[pi];
+			riboPhoE1 = this->tmpRibosePhoE[pi] - this->allRibosePhoE[pi];
+			baseRiboE2 = getBaseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getBaseRiboseEnergy(nodeA, nodeB, sep, et, verbose);
+			basePhoE2 = getBasePhoEnergyTmp(nodeA, nodeB, sep,  et, verbose) - getBasePhoEnergy(nodeA, nodeB, sep,  et, verbose);
+			riboPhoE2 = getRibosePhoEnergyTmp(nodeA, nodeB, sep, et, verbose) - getRibosePhoEnergy(nodeA, nodeB, sep, et, verbose);
+
+			if(abs(baseRiboE1 - baseRiboE2) > 0.01){
+				printf("baseRibo ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, baseRiboE1, baseRiboE2);
+			}
+			if(abs(basePhoE1 - basePhoE2) > 0.01){
+				printf("basePho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, basePhoE1, basePhoE2);
+			}
+			if(abs(riboPhoE1 - riboPhoE2) > 0.01){
+				printf("riboPho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, riboPhoE1, riboPhoE2);
+			}
+		}
+		for(j=i+1;j<seqLen;j++){
+			nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			pi = i*seqLen+j;
+			baseBaseE1 = this->tmpBaseClashE[pi] - this->allBaseClashE[pi] + this->tmpBaseBaseE[pi] - this->allBaseBaseE[pi];
+			riboRiboE1 = this->tmpRiboseRiboseE[pi] - this->allRiboseRiboseE[pi];
+			phoPhoE1 = this->tmpPhoPhoE[pi] - this->allPhoPhoE[pi];
+			baseBaseE2 = getBaseBaseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getBaseBaseEnergy(nodeA, nodeB, sep, et, verbose) +  baseBaseClashTmp(nodeA, nodeB, sep, et, verbose) - baseBaseClash(nodeA, nodeB, sep, et, verbose);
+			riboRiboE2 = getRiboseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getRiboseRiboseEnergy(nodeA, nodeB, sep, et, verbose);
+			phoPhoE2 = getPhoPhoEnergyTmp(nodeA, nodeB, sep, et, verbose) - getPhoPhoEnergy(nodeA, nodeB, sep, et, verbose);
+			if(abs(baseBaseE1 - baseBaseE2) > 0.01){
+				printf("baseBase ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, baseBaseE1, baseBaseE2);
+			}
+			if(abs(riboRiboE1 - riboRiboE2) > 0.01){
+				printf("riboRibo ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, riboRiboE1, riboRiboE2);
+			}
+			if(abs(phoPhoE1 - phoPhoE2) > 0.01){
+				printf("phoPho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, phoPhoE1, phoPhoE2);
+			}
+		}
+	}
+
+
+}
+
+pair<double,double> BRFoldingTree::f3MutEnergy(BRConnection* ct1,double breakCTWT, double connectWT,double clashWT, bool verbose){
 	double tot = 0;
 	int i,j, pi, pj;
 
@@ -5260,7 +6237,7 @@ pair<double,double> BRFoldingTree::f3MutEnergy(BRConnection* ct1,double breakCTW
 			pi = indexX*seqLen+indexY;
 			pj = indexY*seqLen+indexX;
 			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
-			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, shift, verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, verbose);
 			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
 			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
 		}
@@ -5277,7 +6254,7 @@ pair<double,double> BRFoldingTree::f3MutEnergy(BRConnection* ct1,double breakCTW
 			pj = indexY*seqLen+indexX;
 
 			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
-			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, shift,  verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, verbose);
 			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
 			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
 		}
@@ -5295,7 +6272,7 @@ pair<double,double> BRFoldingTree::f3MutEnergy(BRConnection* ct1,double breakCTW
 			pj = indexY*seqLen+indexX;
 
 			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
-			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, shift, verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, verbose);
 			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
 			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
 		}
@@ -5754,7 +6731,7 @@ pair<double,double> BRFoldingTree::f3MutEnergy(BRConnection* ct1,double breakCTW
 	return p;
 }
 
-pair<double,double> BRFoldingTree::singleBaseMutEnergy(BRNode* node,double breakCTWT, double connectWT,double clashWT, double shift, bool verbose){
+pair<double,double> BRFoldingTree::singleBaseMutEnergy(BRNode* node,double breakCTWT, double connectWT,double clashWT, bool verbose){
 	double tot = 0;
 	int i,j, pi, pj;
 
@@ -5836,7 +6813,7 @@ pair<double,double> BRFoldingTree::singleBaseMutEnergy(BRNode* node,double break
 			pi = indexX*seqLen+indexY;
 			pj = indexY*seqLen+indexX;
 			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
-			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, shift, verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, verbose);
 			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
 			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
 		}
@@ -6057,7 +7034,372 @@ pair<double,double> BRFoldingTree::singleBaseMutEnergy(BRNode* node,double break
 	return p;
 }
 
-pair<double,double> BRFoldingTree::riboseRotamerMutEnergy(BRNode* node, double breakCTWT, double connectWT,double clashWT, double shift, bool verbose){
+void BRFoldingTree::debugSingleBaseMutEnergy(BRNode* node,double breakCTWT, double connectWT,double clashWT, bool verbose){
+	double tot = 0;
+	int i,j, pi, pj;
+
+	int indexX, indexY;
+	BRNode *nodeX, *nodeY;
+
+	int baseGroupANum = node->baseGroupA.size();
+	int baseGroupCNum = node->baseGroupC.size();
+
+	int riboseGroupANum = node->riboseGroupA.size();
+	int riboseGroupCNum = node->riboseGroupC.size();
+
+	int phoGroupANum = node->phoGroupA.size();
+	int phoGroupCNum = node->phoGroupC.size();
+
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = node->riboseGroupC[i];
+		this->tmpRotE[indexX] = nodes[indexX]->riboseConfTmp->rot->energy;
+	}
+
+	for(i=0;i<phoGroupCNum;i++){
+		indexX = node->phoGroupC[i];
+		this->tmpRcE[indexX] = nodes[indexX]->phoConfTmp->ene;
+	}
+
+	int id;
+	for(i=0;i<baseGroupANum;i++){
+		id = node->baseGroupA[i];
+		if(!nodes[id]->baseConsistent())
+			printf("base: %2d coordinate error\n", id);
+	}
+
+	for(i=0;i<riboseGroupANum;i++){
+		id = node->riboseGroupA[i];
+		if(!nodes[id]->riboConsistent())
+			printf("ribose: %2d coordinate error\n", id);
+	}
+
+	for(i=0;i<phoGroupANum;i++){
+		id = node->phoGroupA[i];
+		if(!nodes[id]->phoConsistent())
+			printf("pho: %2d coordinate error\n", id);
+	}
+
+	/*
+	 * Constraint energy
+	 */
+	for(i=0;i<baseGroupCNum;i++){
+		indexX = node->baseGroupC[i];
+		nodeX = nodes[indexX];
+		if(baseConstraintFactor[indexX] != 0) {
+			float d =  nodeX->baseConfTmp->cs1.origin_.distance(this->constraintCoordList[indexX]);
+			if(d < 1)
+				this->tmpConstraint[indexX] = baseConstraintFactor[indexX]*d*d;
+			else
+				this->tmpConstraint[indexX] = baseConstraintFactor[indexX]*2*d - baseConstraintFactor[indexX];
+		}
+		//this->tmpConstraint[indexX] = baseConstraintFactor[indexX]*nodeX->tmpCs1.origin_.squaredDistance(this->constraintCoordList[indexX]);
+	}
+
+	/*
+	 * pair constraint energy
+	 */
+	for(i=0;i<baseGroupANum;i++){
+		indexX = node->baseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<baseGroupCNum;j++){
+			indexY = node->baseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			if(basePairConstraintFactor[pi] != 0) {
+				BaseDistanceMatrix dm(nodeX->baseConf->cs1, nodeY->baseConf->cs1);
+				float d = dm.distanceTo(this->constraintDMList[pi]);
+				if(d < 1)
+					this->tmpPairConstraint[pi] = basePairConstraintFactor[pi]*d*d;
+				else
+					this->tmpPairConstraint[pi] = basePairConstraintFactor[pi]*(2*d-1);
+
+				this->tmpPairConstraint[pj] = this->tmpPairConstraint[pi];
+			}
+
+		}
+	}
+
+
+	/*
+	 * base-base energy
+	 */
+
+	//A-C
+	for(i=0;i<baseGroupANum;i++){
+		indexX = node->baseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<baseGroupCNum;j++){
+			indexY = node->baseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpBaseBaseE[pi] = getBaseBaseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpBaseClashE[pi] = baseBaseClashTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpBaseBaseE[pj] = this->tmpBaseBaseE[pi];
+			this->tmpBaseClashE[pj] = this->tmpBaseClashE[pi];
+		}
+	}
+
+	/*
+	 * base-ribose energy
+	 */
+
+	//A-C
+	for(i=0;i<baseGroupANum;i++){
+		indexX = node->baseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupCNum;j++){
+			indexY = node->riboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-A
+	for(i=0;i<baseGroupCNum;i++){
+		indexX = node->baseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupANum;j++){
+			indexY = node->riboseGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-C
+	for(i=0;i<baseGroupCNum;i++){
+		indexX = node->baseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupCNum;j++){
+			indexY = node->riboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * base-pho energy
+	 */
+
+	//A-C
+	for(i=0;i<baseGroupANum;i++){
+		indexX = node->baseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-A
+	for(i=0;i<baseGroupCNum;i++){
+		indexX = node->baseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupANum;j++){
+			indexY = node->phoGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-C
+	for(i=0;i<baseGroupCNum;i++){
+		indexX = node->baseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * ribose-ribose energy
+	 */
+
+	//A-C
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = node->riboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupCNum;j++){
+			indexY = node->riboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpRiboseRiboseE[pi] = getRiboseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpRiboseRiboseE[pj] = this->tmpRiboseRiboseE[pi];
+		}
+	}
+
+	//C-C
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = node->riboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=i+1;j<riboseGroupCNum;j++){
+			indexY = node->riboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpRiboseRiboseE[pi] = getRiboseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpRiboseRiboseE[pj] = this->tmpRiboseRiboseE[pi];
+		}
+	}
+	/*
+	 * ribose-pho energy
+	 */
+
+	//A-C
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = node->riboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-A
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = node->riboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupANum;j++){
+			indexY = node->phoGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-C
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = node->riboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * pho-pho energy
+	 */
+
+	//A-C
+	for(i=0;i<phoGroupANum;i++){
+		indexX = node->phoGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	//C-C
+	for(i=0;i<phoGroupCNum;i++){
+		indexX = node->phoGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=i+1;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	double rotE1=0, rotE2=0;
+	double rcE1=0, rcE2=0;
+	double baseBaseE1=0, baseBaseE2=0;
+	double baseRiboE1=01, baseRiboE2=0;
+	double basePhoE1=0, basePhoE2=0;
+	double riboRiboE1=0, riboRiboE2=0;
+	double riboPhoE1=0, riboPhoE2=0;
+	double phoPhoE1=0, phoPhoE2=0;
+
+	BRNode* nodeA;
+	BRNode* nodeB;
+
+	for(i=0;i<seqLen;i++){
+		nodeA = nodes[i];
+
+		rotE1 = this->tmpRotE[i] - this->allRotE[i];
+		rcE1 = this->tmpRcE[i] - this->allRcE[i];
+
+		rotE2 = nodes[i]->riboseConfTmp->rot->energy - nodes[i]->riboseConf->rot->energy;
+		rcE2 = nodes[i]->phoConfTmp->ene - nodes[i]->phoConf->ene;
+
+		if(abs(rotE1 - rotE2) > 0.01) {
+			printf("rot ene error: pos %3d e1: %8.3f e2: %8.3f\n", i, rotE1, rotE2);
+		}
+
+		if(abs(rcE1 - rcE2) > 0.01) {
+			printf("pho ene error: pos %3d e1: %8.3f e2: %8.3f\n", i, rcE1, rcE2);
+		}
+
+		for(j=0;j<seqLen;j++){
+			nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			pi = i*seqLen+j;
+			baseRiboE1 = this->tmpBaseRiboseE[pi] - this->allBaseRiboseE[pi];
+			basePhoE1 = this->tmpBasePhoE[pi] - this->allBasePhoE[pi];
+			riboPhoE1 = this->tmpRibosePhoE[pi] - this->allRibosePhoE[pi];
+			baseRiboE2 = getBaseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getBaseRiboseEnergy(nodeA, nodeB, sep, et, verbose);
+			basePhoE2 = getBasePhoEnergyTmp(nodeA, nodeB, sep,  et, verbose) - getBasePhoEnergy(nodeA, nodeB, sep,  et, verbose);
+			riboPhoE2 = getRibosePhoEnergyTmp(nodeA, nodeB, sep, et, verbose) - getRibosePhoEnergy(nodeA, nodeB, sep, et, verbose);
+
+			if(abs(baseRiboE1 - baseRiboE2) > 0.01){
+				printf("baseRibo ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, baseRiboE1, baseRiboE2);
+			}
+			if(abs(basePhoE1 - basePhoE2) > 0.01){
+				printf("basePho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, basePhoE1, basePhoE2);
+			}
+			if(abs(riboPhoE1 - riboPhoE2) > 0.01){
+				printf("riboPho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, riboPhoE1, riboPhoE2);
+			}
+		}
+		for(j=i+1;j<seqLen;j++){
+			nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			pi = i*seqLen+j;
+			baseBaseE1 = this->tmpBaseClashE[pi] - this->allBaseClashE[pi] + this->tmpBaseBaseE[pi] - this->allBaseBaseE[pi];
+			riboRiboE1 = this->tmpRiboseRiboseE[pi] - this->allRiboseRiboseE[pi];
+			phoPhoE1 = this->tmpPhoPhoE[pi] - this->allPhoPhoE[pi];
+			baseBaseE2 = getBaseBaseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getBaseBaseEnergy(nodeA, nodeB, sep, et, verbose) +  baseBaseClashTmp(nodeA, nodeB, sep, et, verbose) - baseBaseClash(nodeA, nodeB, sep, et, verbose);
+			riboRiboE2 = getRiboseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getRiboseRiboseEnergy(nodeA, nodeB, sep, et, verbose);
+			phoPhoE2 = getPhoPhoEnergyTmp(nodeA, nodeB, sep, et, verbose) - getPhoPhoEnergy(nodeA, nodeB, sep, et, verbose);
+			if(abs(baseBaseE1 - baseBaseE2) > 0.01){
+				printf("baseBase ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, baseBaseE1, baseBaseE2);
+			}
+			if(abs(riboRiboE1 - riboRiboE2) > 0.01){
+				printf("riboRibo ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, riboRiboE1, riboRiboE2);
+			}
+			if(abs(phoPhoE1 - phoPhoE2) > 0.01){
+				printf("phoPho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, phoPhoE1, phoPhoE2);
+			}
+		}
+	}
+
+
+}
+
+pair<double,double> BRFoldingTree::riboseRotamerMutEnergy(BRNode* node, double breakCTWT, double connectWT,double clashWT, bool verbose){
 	double tot = 0;
 	int i,j, pi, pj;
 
@@ -6250,7 +7592,258 @@ pair<double,double> BRFoldingTree::riboseRotamerMutEnergy(BRNode* node, double b
 	return p;
 }
 
-double BRFoldingTree::totalEnergy(double breakCTWT, double connectWT, double clashWT, double shift, bool verbose){
+void BRFoldingTree::debugRiboseRotamerMutEnergy(BRNode* node, double breakCTWT, double connectWT,double clashWT, bool verbose){
+	double tot = 0;
+	int i,j, pi, pj;
+
+	int indexX, indexY;
+	BRNode *nodeX, *nodeY;
+
+	//int baseGroupANum = node->baseGroupA.size();
+
+
+	int riboseGroupANum = node->riboseGroupA.size();
+	int riboseGroupCNum = node->riboseGroupC.size();
+
+	int phoGroupANum = node->phoGroupA.size();
+	int phoGroupCNum = node->phoGroupC.size();
+
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = node->riboseGroupC[i];
+		this->tmpRotE[indexX] = nodes[indexX]->riboseConfTmp->rot->energy;
+	}
+
+	for(i=0;i<phoGroupCNum;i++){
+		indexX = node->phoGroupC[i];
+		this->tmpRcE[indexX] = nodes[indexX]->phoConfTmp->ene;
+	}
+
+	int id;
+
+	for(i=0;i<riboseGroupANum;i++){
+		id = node->riboseGroupA[i];
+		if(!nodes[id]->riboConsistent())
+			printf("ribose: %2d coordinate error\n", id);
+	}
+
+	for(i=0;i<phoGroupANum;i++){
+		id = node->phoGroupA[i];
+		if(!nodes[id]->phoConsistent())
+			printf("pho: %2d coordinate error\n", id);
+	}
+
+
+	/*
+	 * base-ribose energy
+	 */
+
+	//A-C
+	for(i=0;i<seqLen;i++){
+		indexX = i;
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupCNum;j++){
+			indexY = node->riboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBaseRiboseE[pi] = getBaseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * base-pho energy
+	 */
+
+	//A-C
+	for(i=0;i<seqLen;i++){
+		indexX = i;
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpBasePhoE[pi] = getBasePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * ribose-ribose energy
+	 */
+
+	//A-C
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = node->riboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<riboseGroupCNum;j++){
+			indexY = node->riboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpRiboseRiboseE[pi] = getRiboseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpRiboseRiboseE[pj] = this->tmpRiboseRiboseE[pi];
+		}
+	}
+
+	//C-C
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = node->riboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=i+1;j<riboseGroupCNum;j++){
+			indexY = node->riboseGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpRiboseRiboseE[pi] = getRiboseRiboseEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpRiboseRiboseE[pj] = this->tmpRiboseRiboseE[pi];
+		}
+	}
+	/*
+	 * ribose-pho energy
+	 */
+
+	//A-C
+	for(i=0;i<riboseGroupANum;i++){
+		indexX = node->riboseGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-A
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = node->riboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupANum;j++){
+			indexY = node->phoGroupA[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	//C-C
+	for(i=0;i<riboseGroupCNum;i++){
+		indexX = node->riboseGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			this->tmpRibosePhoE[pi] = getRibosePhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+		}
+	}
+
+	/*
+	 * pho-pho energy
+	 */
+
+	//A-C
+	for(i=0;i<phoGroupANum;i++){
+		indexX = node->phoGroupA[i];
+		nodeX = nodes[indexX];
+		for(j=0;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	//C-C
+	for(i=0;i<phoGroupCNum;i++){
+		indexX = node->phoGroupC[i];
+		nodeX = nodes[indexX];
+		for(j=i+1;j<phoGroupCNum;j++){
+			indexY = node->phoGroupC[j];
+			nodeY = nodes[indexY];
+			pi = indexX*seqLen+indexY;
+			pj = indexY*seqLen+indexX;
+			this->tmpPhoPhoE[pi] = getPhoPhoEnergyTmp(nodeX, nodeY, sepTable[pi], et, verbose);
+			this->tmpPhoPhoE[pj] = this->tmpPhoPhoE[pi];
+		}
+	}
+
+	double rotE1=0, rotE2=0;
+	double rcE1=0, rcE2=0;
+	double baseBaseE1=0, baseBaseE2=0;
+	double baseRiboE1=01, baseRiboE2=0;
+	double basePhoE1=0, basePhoE2=0;
+	double riboRiboE1=0, riboRiboE2=0;
+	double riboPhoE1=0, riboPhoE2=0;
+	double phoPhoE1=0, phoPhoE2=0;
+
+	BRNode* nodeA;
+	BRNode* nodeB;
+
+	for(i=0;i<seqLen;i++){
+		nodeA = nodes[i];
+
+		rotE1 = this->tmpRotE[i] - this->allRotE[i];
+		rcE1 = this->tmpRcE[i] - this->allRcE[i];
+
+		rotE2 = nodes[i]->riboseConfTmp->rot->energy - nodes[i]->riboseConf->rot->energy;
+		rcE2 = nodes[i]->phoConfTmp->ene - nodes[i]->phoConf->ene;
+
+		if(abs(rotE1 - rotE2) > 0.01) {
+			printf("rot ene error: pos %3d e1: %8.3f e2: %8.3f\n", i, rotE1, rotE2);
+		}
+
+		if(abs(rcE1 - rcE2) > 0.01) {
+			printf("pho ene error: pos %3d e1: %8.3f e2: %8.3f\n", i, rcE1, rcE2);
+		}
+
+		for(j=0;j<seqLen;j++){
+			nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			pi = i*seqLen+j;
+			baseRiboE1 = this->tmpBaseRiboseE[pi] - this->allBaseRiboseE[pi];
+			basePhoE1 = this->tmpBasePhoE[pi] - this->allBasePhoE[pi];
+			riboPhoE1 = this->tmpRibosePhoE[pi] - this->allRibosePhoE[pi];
+			baseRiboE2 = getBaseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getBaseRiboseEnergy(nodeA, nodeB, sep, et, verbose);
+			basePhoE2 = getBasePhoEnergyTmp(nodeA, nodeB, sep,  et, verbose) - getBasePhoEnergy(nodeA, nodeB, sep,  et, verbose);
+			riboPhoE2 = getRibosePhoEnergyTmp(nodeA, nodeB, sep, et, verbose) - getRibosePhoEnergy(nodeA, nodeB, sep, et, verbose);
+
+			if(abs(baseRiboE1 - baseRiboE2) > 0.01){
+				printf("baseRibo ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, baseRiboE1, baseRiboE2);
+			}
+			if(abs(basePhoE1 - basePhoE2) > 0.01){
+				printf("basePho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, basePhoE1, basePhoE2);
+			}
+			if(abs(riboPhoE1 - riboPhoE2) > 0.01){
+				printf("riboPho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, riboPhoE1, riboPhoE2);
+			}
+		}
+		for(j=i+1;j<seqLen;j++){
+			nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			pi = i*seqLen+j;
+			baseBaseE1 = this->tmpBaseClashE[pi] - this->allBaseClashE[pi] + this->tmpBaseBaseE[pi] - this->allBaseBaseE[pi];
+			riboRiboE1 = this->tmpRiboseRiboseE[pi] - this->allRiboseRiboseE[pi];
+			phoPhoE1 = this->tmpPhoPhoE[pi] - this->allPhoPhoE[pi];
+			baseBaseE2 = getBaseBaseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getBaseBaseEnergy(nodeA, nodeB, sep, et, verbose) +  baseBaseClashTmp(nodeA, nodeB, sep, et, verbose) - baseBaseClash(nodeA, nodeB, sep, et, verbose);
+			riboRiboE2 = getRiboseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose) - getRiboseRiboseEnergy(nodeA, nodeB, sep, et, verbose);
+			phoPhoE2 = getPhoPhoEnergyTmp(nodeA, nodeB, sep, et, verbose) - getPhoPhoEnergy(nodeA, nodeB, sep, et, verbose);
+			if(abs(baseBaseE1 - baseBaseE2) > 0.01){
+				printf("baseBase ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, baseBaseE1, baseBaseE2);
+			}
+			if(abs(riboRiboE1 - riboRiboE2) > 0.01){
+				printf("riboRibo ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, riboRiboE1, riboRiboE2);
+			}
+			if(abs(phoPhoE1 - phoPhoE2) > 0.01){
+				printf("phoPho ene error: posA %3d posB %3d e1: %8.3f e2: %8.3f\n", i, j, phoPhoE1, phoPhoE2);
+			}
+		}
+	}
+
+
+}
+
+double BRFoldingTree::totalEnergy(double breakCTWT, double connectWT, double clashWT, bool verbose){
 	double tot = 0;
 	int i,j;
 
@@ -6261,7 +7854,7 @@ double BRFoldingTree::totalEnergy(double breakCTWT, double connectWT, double cla
 			BRNode* nodeB = nodes[j];
 			int sep = sepTable[i*seqLen+j];
 			tot += getBaseBaseEnergy(nodeA, nodeB, sep, et, verbose);
-			tot += baseBaseClash(nodeA, nodeB, sep, et, shift, verbose)*clashWT;
+			tot += baseBaseClash(nodeA, nodeB, sep, et, verbose)*clashWT;
 			tot += getRiboseRiboseEnergy(nodeA, nodeB, sep, et, verbose)*clashWT;
 			tot += getPhoPhoEnergy(nodeA, nodeB, sep, et, verbose)*clashWT;
 		}
@@ -6329,6 +7922,79 @@ double BRFoldingTree::totalEnergy(double breakCTWT, double connectWT, double cla
 	return tot;
 }
 
+double BRFoldingTree::totalTmpEnergy(double breakCTWT, double connectWT, double clashWT, bool verbose){
+	double tot = 0;
+	int i,j;
+
+	//base-base, ribose-ribose, pho-pho
+	for(i=0;i<seqLen;i++){
+		BRNode* nodeA = nodes[i];
+		for(j=i+1;j<seqLen;j++){
+			BRNode* nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			tot += getBaseBaseEnergyTmp(nodeA, nodeB, sep, et, verbose);
+			tot += baseBaseClashTmp(nodeA, nodeB, sep, et, verbose)*clashWT;
+			tot += getRiboseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose)*clashWT;
+			tot += getPhoPhoEnergyTmp(nodeA, nodeB, sep, et, verbose)*clashWT;
+		}
+	}
+
+	//base-ribose, base-pho, ribose-pho
+
+	for(i=0;i<seqLen;i++){
+		BRNode* nodeA = nodes[i];
+		for(j=0;j<seqLen;j++){
+			BRNode* nodeB = nodes[j];
+			int sep = sepTable[i*seqLen+j];
+			tot += getBaseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose)*clashWT;
+			tot += getBasePhoEnergyTmp(nodeA, nodeB, sep,  et, verbose)*clashWT;
+			tot += getRibosePhoEnergyTmp(nodeA, nodeB, sep, et, verbose)*clashWT;
+		}
+	}
+
+	//constrant energy
+
+	for(int i=0;i<seqLen;i++){
+		double d = nodes[i]->baseConfTmp->cs1.origin_.distance(this->constraintCoordList[i]);
+		if(d < 1)
+			tot += baseConstraintFactor[i]*d*d;
+		else
+			tot += baseConstraintFactor[i]*2*d - baseConstraintFactor[i];
+		//tot +=  baseConstraintFactor[i]*nodes[i]->cs1.origin_.squaredDistance(this->constraintCoordList[i]);
+	}
+
+	for(int i=0;i<seqLen;i++) {
+		for(int j=i+1;j<seqLen;j++){
+			if(basePairConstraintFactor[i*seqLen+j] != 0) {
+				BaseDistanceMatrix dm(nodes[i]->baseConfTmp->cs1, nodes[j]->baseConfTmp->cs1);
+				float d = dm.distanceTo(this->constraintDMList[i*seqLen+j]);
+				if(d < 1)
+					tot += basePairConstraintFactor[i*seqLen+j]*d*d;
+				else
+					tot += basePairConstraintFactor[i*seqLen+j]*(2*d-1);
+			}
+		}
+	}
+
+	for(int i=0;i<seqLen;i++){
+		if(verbose){
+			cout << "rotEnergy: " << i << " " << nodes[i]->riboseConfTmp->rot->energy << endl;
+		}
+		tot += nodes[i]->riboseConfTmp->rot->energy;
+	}
+
+	for(int i=0;i<seqLen;i++){
+		if(verbose){
+			cout << "phoEnergy: " << i << " " <<  nodes[i]->phoConfTmp->ene << endl;
+		}
+		if(chainBreakPoints[i])
+			tot += nodes[i]->phoConfTmp->ene * breakCTWT;
+		else
+			tot += nodes[i]->phoConfTmp->ene * connectWT;
+	}
+	return tot;
+}
+
 void BRFoldingTree::printDetailEnergy(){
 	double e = 0;
 
@@ -6354,10 +8020,10 @@ void BRFoldingTree::printDetailEnergy(){
 			int sepi = sepTable[pi];
 			int sepj = sepTable[pj];
 			double tot = 0;
-			double bb = getBaseBaseEnergy(nodeA, nodeB, sepi, et, verbose) + baseBaseClash(nodeA, nodeB, sepi, et, shift, verbose);
+			double bb = getBaseBaseEnergy(nodeA, nodeB, sepi, et, verbose) + baseBaseClash(nodeA, nodeB, sepi, et, verbose);
 
-			double bbClash = baseBaseClash(nodeA, nodeB, sepi, et, shift, verbose);
-			double bbTmpClash = baseBaseClashTmp(nodeA, nodeB, sepi, et, shift, verbose);
+			double bbClash = baseBaseClash(nodeA, nodeB, sepi, et, verbose);
+			double bbTmpClash = baseBaseClashTmp(nodeA, nodeB, sepi, et, verbose);
 			double br = getBaseRiboseEnergy(nodeA, nodeB, sepi, et, verbose);
 			double rb = getBaseRiboseEnergy(nodeB, nodeA, sepj, et, verbose);
 			double bp = getBasePhoEnergy(nodeA, nodeB, sepi, et, verbose);
@@ -6401,7 +8067,7 @@ void BRFoldingTree::printDetailEnergy(ofstream& of){
 			int sepj = sepTable[pj];
 			double tot = 0;
 
-			double bb = getBaseBaseEnergy(nodeA, nodeB, sepi, et, verbose) + baseBaseClash(nodeA, nodeB, sepi, et, shift, verbose);
+			double bb = getBaseBaseEnergy(nodeA, nodeB, sepi, et, verbose) + baseBaseClash(nodeA, nodeB, sepi, et, verbose);
 			double br = getBaseRiboseEnergy(nodeA, nodeB, sepi, et, verbose);
 			double rb = getBaseRiboseEnergy(nodeB, nodeA, sepj, et, verbose);
 			double bp = getBasePhoEnergy(nodeA, nodeB, sepi, et, verbose);
@@ -6696,103 +8362,8 @@ void BRFoldingTree::trackCoordinateChangeF2(BRConnection* ct){
 			cout << endl;
 		}
 	}
-
-
 }
 
-void BRFoldingTree::trackCoordinateChangeF3(BRConnection* ct){
-
-	vector<int> baseListA;
-	vector<int> baseListB;
-	vector<int> baseListC;
-	vector<int> riboseListA;
-	vector<int> riboseListB;
-	vector<int> riboseListC;
-	vector<int> phoListA;
-	vector<int> phoListB;
-	vector<int> phoListC;
-
-	vector<vector<int>> listList;
-
-
-	vector<string> nameList;
-	nameList.push_back("baseListA");
-
-	nameList.push_back("riboseListA");
-	nameList.push_back("riboseListB");
-	nameList.push_back("riboseListC");
-	nameList.push_back("phoListA");
-	nameList.push_back("phoListB");
-	nameList.push_back("phoListC");
-
-	vector<vector<int>> ctListList;
-	ctListList.push_back(ct->f3BaseGroupA);
-
-	ctListList.push_back(ct->f3RiboseGroupA);
-	ctListList.push_back(ct->f3RiboseGroupB);
-	ctListList.push_back(ct->f3RiboseGroupC);
-	ctListList.push_back(ct->f3PhoGroupA);
-	ctListList.push_back(ct->f3PhoGroupB);
-	ctListList.push_back(ct->f3PhoGroupC);
-
-	for(int i=0;i<seqLen;i++){
-		if(nodes[i]->baseConsistent())
-			baseListA.push_back(i);
-		else
-			baseListB.push_back(i);
-	}
-	for(int i=0;i<seqLen;i++){
-		if(nodes[i]->riboConsistent())
-			riboseListA.push_back(i);
-		else if(nodes[i]->rotamerConsistent())
-			riboseListB.push_back(i);
-		else
-			riboseListC.push_back(i);
-	}
-	for(int i=0;i<seqLen;i++){
-		if(connectToDownstream[i] && nodes[i]->phoConsistent())
-			phoListA.push_back(i);
-		else if(connectToDownstream[i] && nodes[i]->phoLocalConsistent())
-			phoListB.push_back(i);
-		else if(connectToDownstream[i])
-			phoListC.push_back(i);
-	}
-
-	listList.push_back(baseListA);
-	listList.push_back(riboseListA);
-	listList.push_back(riboseListB);
-	listList.push_back(riboseListC);
-	listList.push_back(phoListA);
-	listList.push_back(phoListB);
-	listList.push_back(phoListC);
-
-	for(int k=0;k<nameList.size();k++){
-		bool changeConsistent = true;
-		if(listList[k].size() != ctListList[k].size())
-			changeConsistent = false;
-		else {
-			for(int i=0;i<listList[k].size();i++){
-				if(listList[k][i] != ctListList[k][i])
-					changeConsistent = false;
-			}
-		}
-
-		if(!changeConsistent){
-			cout << "connect: " << ct->fatherNode->seqID << "->" << ct->childNode->seqID << "->" << ct->childNode->midChild->seqID << endl;
-			cout << nameList[k] << " not consistent" << endl;
-			cout << "changed: ";
-			for(int i=0;i<listList[k].size();i++) {
-				cout << listList[k][i] << " ";
-			}
-			cout << endl;
-			cout << "should be change: ";
-			for(int i=0;i<ctListList[k].size();i++) {
-				cout << ctListList[k][i] << " ";
-			}
-			cout << endl;
-		}
-	}
-}
 
 void BRFoldingTree::trackCoordinateChangeSingleBase(BRNode* node){
 	vector<int> baseListA;
@@ -6994,7 +8565,7 @@ void BRFoldingTree::checkNode(){
 	for(int i=0;i<seqLen;i++){
 		BRNode* node = nodes[i];
 		LocalFrame cs = node->baseConfTmp->cs1;
-		XYZ t = local2global(cs, node->baseConf->coords[1]);
+		XYZ t = local2global(cs, node->baseConfTmp->rot->coordsLocal[1]);
 		if(t.distance(node->baseConfTmp->coords[1]) > 0.001){
 			cout << "node tmp cs error: " << i << endl;
 		}
@@ -7065,6 +8636,19 @@ void BRFoldingTree::checkPho(){
 	}
 }
 
+void BRFoldingTree::checkTmpNode(){
+	for(int i=0;i<seqLen;i++){
+		BRNode* node = nodes[i];
+		double dBase = node->baseConf->distanceTo(node->baseConfTmp);
+		double dRibose = node->riboseConf->distanceTo(node->riboseConfTmp);
+		double dPho = node->phoConf->distanceTo(node->phoConfTmp);
+
+		if(dBase + dRibose + dPho > 0.001) {
+			printf("node tmpNode not consistent: %3d %6.3f %6.3f %6.3f\n", i, dBase, dRibose, dPho);
+		}
+	}
+}
+
 void BRFoldingTree::energyChange(){
 
 	int i,j;
@@ -7115,7 +8699,7 @@ void BRFoldingTree::checkTotalEnergy(double shift){
 			BRNode* nodeB = nodes[j];
 			int sep = sepTable[i*seqLen+j];
 			e1 = getBaseBaseEnergy(nodeA, nodeB, sep, et, verbose);
-			e2 = baseBaseClash(nodeA, nodeB, sep, et,  shift, verbose);
+			e2 = baseBaseClash(nodeA, nodeB, sep, et, verbose);
 			//e = getBaseBaseEnergy(nodeA, nodeB, sep, et, verbose) + baseBaseClash(nodeA, nodeB, sep, et, verbose);
 			if(abs(e1 - this->allBaseBaseE[i*seqLen+j]) > 0.001){
 				printf("DIFF: base: %2d base: %2d energyInTable: %7.3f energy: %7.3f\n", i,j,allBaseBaseE[i*seqLen+j], e1);
@@ -7213,6 +8797,9 @@ void BRFoldingTree::checkTmpTotalEnergy(double shift){
 	int i,j;
 	double e, e1, e2;
 
+
+
+
 	//base-base
 	for(i=0;i<seqLen;i++){
 		BRNode* nodeA = nodes[i];
@@ -7220,11 +8807,13 @@ void BRFoldingTree::checkTmpTotalEnergy(double shift){
 			BRNode* nodeB = nodes[j];
 			int sep = sepTable[i*seqLen+j];
 			e1 = getBaseBaseEnergyTmp(nodeA, nodeB, sep, et, verbose);
-			e2 = baseBaseClashTmp(nodeA, nodeB, sep, et, shift, verbose);
+			e2 = baseBaseClashTmp(nodeA, nodeB, sep, et, verbose);
 			//e = getBaseBaseEnergy(nodeA, nodeB, sep, et, verbose) + baseBaseClash(nodeA, nodeB, sep, et, verbose);
 			if(abs(e1 - this->tmpBaseBaseE[i*seqLen+j]) > 0.001){
 				printf("DIFF: base: %2d base: %2d energyInTable: %7.3f energy: %7.3f\n", i,j,tmpBaseBaseE[i*seqLen+j], e1);
 			}
+
+
 
 			if(abs(e2 - this->tmpBaseClashE[i*seqLen+j]) > 0.001) {
 				printf("DIFF-clash: base: %2d base: %2d energyInTable: %7.3f energy: %7.3f\n", i,j,tmpBaseClashE[i*seqLen+j], e2);
@@ -7239,6 +8828,9 @@ void BRFoldingTree::checkTmpTotalEnergy(double shift){
 			BRNode* nodeB = nodes[j];
 			int sep = sepTable[i*seqLen+j];
 			e = getBaseRiboseEnergyTmp(nodeA, nodeB, sep, et, verbose);
+
+
+
 			if(abs(e - this->tmpBaseRiboseE[i*seqLen+j]) > 0.001){
 				printf("DIFF: base: %2d ribose: %2d energyInTable: %7.3f energy: %7.3f\n", i,j,tmpBaseRiboseE[i*seqLen+j], e);
 			}
@@ -7311,7 +8903,7 @@ void BRFoldingTree::checkTmpTotalEnergy(double shift){
 }
 
 BRTreeInfo* BRFoldingTree::getTreeInfo() {
-	BRTreeInfo* info = new BRTreeInfo(seqLen, seq, connectToDownstream, nodes, this->flexibleNodes, totalEnergy(1.0, 1.0, 1.0, 0.0, false), this->rotLib);
+	BRTreeInfo* info = new BRTreeInfo(seqLen, seq, connectToDownstream, nodes, this->flexibleNodes, totalEnergy(1.0, 1.0, 1.0,false), this->rotLib);
 	return info;
 }
 

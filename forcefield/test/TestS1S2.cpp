@@ -118,7 +118,6 @@ void testS1S2(const string& pdbFile){
 	}
 }
 
-
 int main(int argc, char** argv){
 	testS1S2(string(argv[1]));
 }

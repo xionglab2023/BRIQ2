@@ -174,6 +174,8 @@ public:
 	void updateRotamerCs2Fixed(RiboseRotamer* rot);
 	void updateRotamerCs3Fixed(RiboseRotamer* rot);
 	void updateLocalFrameAndRotamer(LocalFrame& cs1, RiboseRotamer* rot);
+
+	double distanceTo(RiboseConformer* other);
 	virtual ~RiboseConformer();
 };
 

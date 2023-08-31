@@ -37,6 +37,7 @@ forcefield/src/XPara.cpp
 forcefield/test/CalRNAEnergy.cpp
 forcefield/test/TestAtomicEnergy.cpp
 forcefield/test/TestBaseAtomNameAndSep.cpp
+forcefield/test/TestBasePairEnergy.cpp
 forcefield/test/TestProPolarEnergy.cpp
 forcefield/test/TestS1S2.cpp
 geometry/src/Angles.cpp
@@ -87,8 +88,21 @@ model/src/StructureModel.cpp
 model/test/TestAtomLib.cpp
 model/test/TestBackboneRotamer.cpp
 model/test/TestBaseLib.cpp
+model/test/TestBasePairLib.cpp
 model/test/TestDM.cpp
 model/test/TestSSAndSasa.cpp
+motif/src/MotifAlign.cpp
+motif/src/RGEdge.cpp
+motif/src/RGNode.cpp
+motif/src/RNAGraph.cpp
+motif/src/SimpleAlign.cpp
+motif/test/CalculateAllToAllScore.cpp
+motif/test/rnaGraph.cpp
+motif/test/TestAlignment.cpp
+motif/test/TestAlignScore.cpp
+motif/test/TestSimpleAlign.cpp
+motif/test/writeMotifPDB.cpp
+motif/test/writeSingleMotifPDB.cpp
 para/src/DesignPara.cpp
 para/src/ProParameter.cpp
 predNA/src/BackboneModelingTemplate.cpp
@@ -171,6 +185,7 @@ tools/src/CmdArgs.cpp
 tools/src/InputParser.cpp
 tools/src/StringTool.cpp
 )
+
 
 add_subdirectory (model/test)
 add_subdirectory (forcefield/test)

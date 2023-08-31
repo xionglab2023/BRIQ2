@@ -122,8 +122,8 @@ int main(int argc, char** argv){
 				/*
 				 * base base energy
 				 */
-				baseClash += baseBaseClash(nodeA, nodeB, sep, &et, shift, false);
-				clash = baseBaseClash(nodeA, nodeB, sep, &et, shift, false);
+				baseClash += baseBaseClash(nodeA, nodeB, sep, &et,false);
+				clash = baseBaseClash(nodeA, nodeB, sep, &et, false);
 
 				double e1,e2,e3,e4,e5,e6,e7,e8;
 				e1 = getBaseRiboseEnergy(nodeA, nodeB, sep, &et, false);

@@ -30,7 +30,6 @@ int main(int argc, char** argv){
 	string inputFile = string(argv[1]);
 	string output = string(argv[2]);
 
-	RiboseRotamerLib* riboRotLib = new RiboseRotamerLib();
 	RotamerLib* rotLib = new RotamerLib();
 
 	NSPtools::InputParser input(inputFile);

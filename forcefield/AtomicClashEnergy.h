@@ -43,10 +43,6 @@ public:
 	 */
 
 	/*
-	 * We need to define how to calculate the bond distance between two atoms
-	 */
-
-	/*
 	 * base atom uniqueID
 	 * atomName atomUniqueID
 	 */
@@ -134,8 +130,8 @@ public:
 		 * if |sep| > 1, sep = 2
 		 * We don't calculate the clash energy between O3' of ribose i and C5' of ribose i+1
 		 */
-		if(sep == 1 && riboseTypeA == 6 && riboseTypeB == 7) return 0.0;
-		if(sep == -1 && riboseTypeA == 7 && riboseTypeB == 6) return 0.0;
+		if(sep == 1 && riboseTypeA == 5 && riboseTypeB == 6) return 0.0;
+		if(sep == -1 && riboseTypeA == 6 && riboseTypeB == 5) return 0.0;
 		if(dd >= 16.00) return 0;
 		int uniqueIDA = riboseUniqueID[riboseTypeA];
 		int uniqueIDB = riboseUniqueID[riboseTypeB];
@@ -144,7 +140,6 @@ public:
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
 		return this->clashEnergyTable[(int)(d0*100-200)][(int)(dd*100)];
 	}
-
 
 	double getRibosePhoEnergy(int riboseTypeA, int phoTypeB, double dd, int sep){
 		if(sep == -1) return 0.0;

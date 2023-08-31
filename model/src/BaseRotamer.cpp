@@ -220,6 +220,16 @@ namespace NSPmodel {
 		}
 	}
 
+	double BaseConformer::distanceTo(BaseConformer* other){
+		double dd = 0.0;
+		if(this->rot->atomNum != other->rot->atomNum)
+			return 99.99;
+		for(int i=0;i<rot->atomNum;i++){
+			dd += squareDistance(coords[i], other->coords[i]);
+		}
+		return sqrt(dd/rot->atomNum);
+	}
+
 	BaseConformer::~BaseConformer(){
 
 	}

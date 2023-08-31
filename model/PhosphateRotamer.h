@@ -148,6 +148,7 @@ public:
 		if(squareDistance(coords[3], other->coords[3]) > 0.000001) return false;
 		return true;
 	}
+	double distanceTo(PhosphateConformer* other);
 	virtual ~PhosphateConformer();
 
 };

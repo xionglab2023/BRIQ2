@@ -70,6 +70,15 @@ void PhosphateConformer::updateRotamer(PhosphateRotamer* rot){
 	op2Polar = cs2 + rot->cmOP2;
 }
 
+double PhosphateConformer::distanceTo(PhosphateConformer* other){
+	double dd = 0.0;
+
+	for(int i=0;i<4;i++){
+		dd += squareDistance(coords[i], other->coords[i]);
+	}
+	return sqrt(dd/4);
+}
+
 PhosphateConformer::~PhosphateConformer(){
 
 }

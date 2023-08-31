@@ -12,11 +12,11 @@ namespace NSPmodel {
 BasePairLib::BasePairLib() {
 
 	string path = NSPdataio::datapath();
-	string nbCenter = path+"basePairs/nb.center.dm";
-	string nbCenterInfo = path+"basePairs/nb.center.info";
+	string nbCenter = path+"basePair/nb.center.dm";
+	string nbCenterInfo = path+"basePair/nb.center.info";
 
-	string nnbCenter = path+"basePairs/nnb.center.dm";
-	string nnbCenterInfo = path+"basePairs/nnb.center.info";
+	string nnbCenter = path+"basePair/nnb.center.dm";
+	string nnbCenterInfo = path+"basePair/nnb.center.info";
 
 	ifstream file;
 	string s;
@@ -34,7 +34,7 @@ BasePairLib::BasePairLib() {
 	for(int i=0;i<16;i++){
 		this->nbBasePairNum[i] = 0;
 		this->nnbBasePairNum[i] = 0;
-		for(int j=0;j<100;j++){
+		for(int j=0;j<200;j++){
 			this->nbEnegy[i][j] = 0.0;
 			this->nbProportion[i][j] = 0.0;
 			this->nnbEnegy[i][j] = 0.0;
@@ -115,6 +115,7 @@ BasePairLib::BasePairLib() {
 		lastType = currentType;
 	}
 	file.close();
+
 
 
 	file.open(nnbCenterInfo.c_str(), ios::in);
@@ -237,7 +238,7 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	for(int i=0;i<paListB.size();i++){
 		if(o2A->hbondedTo(paListB[i])) hbondNum++;
 	}
-	return ene + hbondNum*7.0;
+	return (ene + hbondNum*7.0)/4.32;
 }
 
 BasePairLib::~BasePairLib() {

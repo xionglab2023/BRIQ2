@@ -48,6 +48,7 @@ public:
 	BaseConformer(BaseRotamer* rot, LocalFrame& cs);
 	void copyValueFrom(BaseConformer* other);
 	void updateCoords(LocalFrame& cs);
+	double distanceTo(BaseConformer* other);
 	virtual ~BaseConformer();
 };
 

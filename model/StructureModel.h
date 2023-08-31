@@ -107,7 +107,6 @@ public:
 	char baseType;
 	int baseTypeInt;
 	string chainID;
-	int atomNum;
 	bool hasAltConf;
 	LocalFrame coordSys;
 	bool hasLocalFrame;

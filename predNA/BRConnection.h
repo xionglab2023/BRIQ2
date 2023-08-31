@@ -64,8 +64,8 @@ public:
 	vector<int> f2RiboseGroupC; //rotamer changed
 
 	vector<int> f2PhoGroupA; //coordinate not changed
-	vector<int> f2PhoGroupB; //coordinate changed, pho local not changed
-	vector<int> f2PhoGroupC; //pho local changed
+	vector<int> f2PhoGroupB; //coordinate changed, rotamer not changed
+	vector<int> f2PhoGroupC; //rotamer changed
 
 	vector<BRConnection*> childConnectionList;
 
