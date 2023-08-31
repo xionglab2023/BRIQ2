@@ -14,5 +14,10 @@ elif [ "$HOSTNAME"X == adminX ]; then
     export BRIQX_DATAPATH=/public/share/pengx_share/briqx/data
 fi
 echo "compiling on $HOSTNAME"
-cmake -B cmake-build-shared -DCMAKE_BUILD_TYPE=Debug
-cmake --build cmake-build-shared
+# cmake -B cmake-build-shared -DCMAKE_BUILD_TYPE=Debug
+# cmake --build cmake-build-shared
+cmake -B cmake-build-install --install-prefix $HOME/apps/BRIQX
+cd cmake-build-install
+make -j64 || exit 1
+cd ~-
+cmake --install cmake-build-install || exit 1

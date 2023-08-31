@@ -4,9 +4,9 @@
  * @brief  Implementation of BMSelection and BriqxModule classes
  * @version udef
  * @date: 2023/08/08
- * 
+ *
  * @copyright Copyright (c) 2023 XLAB
- * 
+ *
  * modification history :
  * Date:      Version:    Author:
  * Changes:
@@ -131,7 +131,7 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
                     this->chains.emplace_back(curChain);
                 }
             } else { // chain ID given
-                const auto& bmsChID = bms.getChainIDs(); 
+                const auto& bmsChID = bms.getChainIDs();
                 for(int i=0;i<l1;i++) {
                     int l2 = bmsResInd[i].size();
                     string curChID;
@@ -182,7 +182,7 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
                     this->chains.emplace_back(curChain);
                 }
             } else { // chain ID given
-                const auto& bmsChID = bms.getChainIDs(); 
+                const auto& bmsChID = bms.getChainIDs();
                 for(int i=0;i<l1;i++) {
                     int l2 = bmsResID[i].size();
                     string curChID;
@@ -219,7 +219,8 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
         BasePair* curBp = this->basePairList[i];
         int typeA = curBp->baseA->baseType;
         int typeB = curBp->baseB->baseType;
-        int sep = abs(curBp->baseA->baseSeqID - curBp->baseB->baseSeqID);
+        // int sep = abs(curBp->baseA->baseSeqID - curBp->baseB->baseSeqID);
+        int sep = curBp->baseA->connectToNeighbor(curBp->baseB)||curBp->baseB->connectToNeighbor(curBp->baseA) ? 1 : 2;
         BasePair* revBp = new BasePair(curBp->baseB, curBp->baseA, &atl);
         this->revBasePairList.emplace_back(revBp);
         this->bb2bpMap.emplace(array<RNABase*,2>{curBp->baseA, curBp->baseB}, curBp);
@@ -231,7 +232,7 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
     }
 }
 
-BriqxModule::BriqxModule(const vector<RNAChain*>& chains, const vector<RNABase*>& baseList, BasePairLib& bpl, 
+BriqxModule::BriqxModule(const vector<RNAChain*>& chains, const vector<RNABase*>& baseList, BasePairLib& bpl,
     AtomLib& atl, const string& name, bool beLazy) {
     int lc = chains.size();
     for(int i=0;i<lc;i++) {
@@ -345,7 +346,7 @@ vector<BasePair*>& BriqxModule::getBasePairList(const BMSelection& bms, const bo
             int IndB = curBp->baseB->baseSeqID;
             Ind2BpMap[IndA].emplace(curBp);
             Ind2BpMap[IndB].emplace(curBp);
-        }            
+        }
         if(withReversed) {
             for(int i=0;i<lbp;i++) {
                 BasePair* curBp = this->revBasePairList[i];
@@ -353,7 +354,7 @@ vector<BasePair*>& BriqxModule::getBasePairList(const BMSelection& bms, const bo
                 int IndB = curBp->baseB->baseSeqID;
                 Ind2BpMap[IndA].emplace(curBp);
                 Ind2BpMap[IndB].emplace(curBp);
-            }            
+            }
         }
         const vector<vector<int> >& bmsResInd = bms.getResIndexes();
         set<BasePair*> set0;
@@ -374,7 +375,7 @@ vector<BasePair*>& BriqxModule::getBasePairList(const BMSelection& bms, const bo
             string IDB = curBp->baseB->baseID;
             ID2BpMap[IDA].emplace(curBp);
             ID2BpMap[IDB].emplace(curBp);
-        }            
+        }
         if(withReversed) {
             for(int i=0;i<lbp;i++) {
                 BasePair* curBp = this->revBasePairList[i];
@@ -382,7 +383,7 @@ vector<BasePair*>& BriqxModule::getBasePairList(const BMSelection& bms, const bo
                 string IDB = curBp->baseB->baseID;
                 ID2BpMap[IDA].emplace(curBp);
                 ID2BpMap[IDB].emplace(curBp);
-            }            
+            }
         }
         const vector<vector<string> >& bmsResID = bms.getChainResIDs();
         set<BasePair*> set0;
@@ -433,7 +434,7 @@ int BriqxModule::sortMapByValue(const map<array<BasePair*, 2>, double>& unsortMa
     } else {
         // raise error
         throw invalid_argument("Unknown order " + order);
-    } 
+    }
 
     return EXIT_SUCCESS;
 }

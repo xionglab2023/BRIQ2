@@ -30,14 +30,14 @@ public:
 	int nbBasePairNum[16];
 	int nnbBasePairNum[16];
 
-	BaseDistanceMatrix nbDMClusterCenters[16][100]; //max cluster num = 100
-	BaseDistanceMatrix nnbDMClusterCenters[16][100];
+	BaseDistanceMatrix nbDMClusterCenters[16][200]; //max cluster num = 200
+	BaseDistanceMatrix nnbDMClusterCenters[16][200];
 
-	double nbEnegy[16][100];
-	double nbProportion[16][100];
+	double nbEnegy[16][200];
+	double nbProportion[16][200];
 
-	double nnbEnegy[16][100];
-	double nnbProportion[16][100];
+	double nnbEnegy[16][200];
+	double nnbProportion[16][200];
 
 	BasePairLib();
 
