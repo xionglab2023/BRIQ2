@@ -28,48 +28,42 @@ public:
 	bool isWatsonCrickPair;
 
 
-	double eBB;
-	double eBO;
-	double eBP;
+	double ene;
 
 	RGEdge(int i){
 		this->indexA = i;
 		this->indexB = i+1;
 		this->isSequentialNeighbor = true;
 		this->isWatsonCrickPair = false;
-		this->eBB = 0.0;
-		this->eBO = 0.0;
-		this->eBP = 0.0;
+		this->ene = 0.0;
 		this->sep = 1;
 	}
 
-	RGEdge(int i, int j, double bb, double bo, double bp, int sep){
+	RGEdge(int i, int j, double ene, int sep){
 		if(i < j){
 			this->indexA = i;
 			this->indexB = j;
-			this->eBB = bb;
-			this->eBO = bo;
-			this->eBP = bp;
+			this->ene = ene;
 			this->sep = sep;
 		}
 		else {
 			this->indexA = j;
 			this->indexB = i;
-			this->eBB = bb;
-			this->eBO = bo;
-			this->eBP = bp;
+			this->ene = ene;
 			this->sep = sep;
 		}
 		this->isSequentialNeighbor = false;
 		this->isWatsonCrickPair = false;
+		if(sep == 1)
+			this->isSequentialNeighbor = true;
 	}
 
 
 	double getEnergy(){
 		if(isSequentialNeighbor)
-			return this->eBB + this->eBO + this->eBP - 0.3;
+			return this->ene - 0.3;
 		else
-			return this->eBB + this->eBO + this->eBP;
+			return this->ene;
 	}
 
 	virtual ~RGEdge();

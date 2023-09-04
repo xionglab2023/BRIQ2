@@ -5,8 +5,6 @@
  *      Author: nuc
  */
 
-
-
 #include "geometry/localframe.h"
 #include "geometry/TransMatrix.h"
 #include "model/BaseDistanceMatrix.h"
@@ -20,7 +18,6 @@
 #include "model/StructureModel.h"
 #include "forcefield/AtomicClashEnergy.h"
 #include "forcefield/HbondEnergy.h"
-
 #include "model/BasePairLib.h"
 
 using namespace NSPmodel;
@@ -97,9 +94,7 @@ int main(int argc, char** argv){
 			if(sep > 3) sep = 3;
 			nodeB = nodeList[j];
 
-
 			double ePair = bpLib->getPairEnergy(baseList[i], baseList[j]);
-
 			double eBB = getBaseBaseEnergy(nodeA, nodeB, sep, et, false);
 			double eBBClash = baseBaseClash(nodeA, nodeB, sep, et, false);
 			double eBR = getBaseRiboseEnergy(nodeA, nodeB, sep, et, false);

@@ -16,18 +16,20 @@ using namespace std;
 
 int main(int argc, char** argv){
 
-	string ssFile = string(argv[1]);
-	string eneFile = string(argv[2]);
+	string pdbFile = string(argv[1]);
 
 	srand(time(0));
 
-	RNAGraph* rg = new RNAGraph(ssFile, eneFile);
-	rg->addEdge();
+	RNAGraph* rg = new RNAGraph(pdbFile);
+	rg->updateInitialEdge();
 	rg->findHelix();
-	rg->processHelix();
-	rg->processLoop();
+	rg->meltHelix();
+	rg->meltLoop();
 	rg->generateInitialClusters();
+
+
 	vector<SubRNAGraph*> sgList = rg->findAllGraphs();
+
 	for(int i=0;i<sgList.size();i++){
 		sgList[i]->updateInfo();
 		printf("B=%-2d F=%d Score=%7.3f\n", sgList[i]->B, sgList[i]->F, rg->getGraphScore(sgList[i]));

@@ -13,11 +13,59 @@
 #include "forcefield/RnaEnergyTable.h"
 #include "model/StructureModel.h"
 #include "predNA/BRFoldingTree.h"
+#include "model/BasePairLib.h"
 
 using namespace NSPmodel;
 using namespace NSPforcefield;
 using namespace NSPpredna;
 using namespace std;
+
+void basePairScoring(const string& pdbFile, const string& output, BasePairLib* bpLib){
+
+	RNAPDB pdb = RNAPDB(pdbFile, "xxxx");
+	RNAChain* rc = pdb.getFirstChain();
+	vector<RNABase*> baseList = rc->getBaseList();
+
+	ofstream of;
+	of.open(output.c_str(), ios::out);
+
+	double tot = 0.0;
+	double e;
+
+	int seqSep[baseList.size()];
+	for(int i=0;i<baseList.size();i++){
+		seqSep[i] = 0;
+	}
+
+	int sep = 0;
+	for(int i=0;i<baseList.size();i++){
+		RNABase* baseA = baseList[i];
+		seqSep[i] = sep;
+	}
+
+	BRNode* nodeA;
+	BRNode* nodeB;
+	int nA, nB;
+	double dd;
+	double clashEnergy;
+	char xx[200];
+
+	for(int i=0;i<baseList.size();i++){
+
+		for(int j=i+1;j<baseList.size();j++){
+			sep = seqSep[j] - seqSep[i];
+			if(sep > 3) sep = 3;
+
+			double ePair = bpLib->getPairEnergy(baseList[i], baseList[j]);
+			if(abs(ePair) > 0.001)
+			{
+				sprintf(xx, "pair: %3d %3d %8.3f",  i, j, ePair);
+				of << string(xx) << endl;
+			}
+		}
+	}
+	of.close();
+}
 
 void scorePDBFile(const string& pdbFile, const string& output, RnaEnergyTable& et, RiboseRotamerLib& rotLib){
 /*
@@ -182,9 +230,6 @@ int main(int argc, char** argv){
 
 	string tag = string(argv[1]);
 	if(tag == "-list" || tag == "-l"){
-		RnaEnergyTable et;
-		RiboseRotamerLib rotLib;
-
 
 		string fileList = string(argv[2]);
 		string outputList = string(argv[3]);
@@ -208,21 +253,18 @@ int main(int argc, char** argv){
 		}
 		file.close();
 
-		if(inputFiles.size() != outFiles.size()){
-			cout << "input output file number not equal: " << inputFiles.size() << " " << outFiles.size() << endl;
-		}
-
+		BasePairLib* bpLib = new BasePairLib();
 		for(int k=0;k<inputFiles.size();k++)	{
-			scorePDBFile(inputFiles[k], outFiles[k], et, rotLib);
+			basePairScoring(inputFiles[k], outFiles[k], bpLib);
 		}
+		delete bpLib;
 	}
 	else if(tag == "-single" || tag == "-s"){
 
 		string pdbFile = string(argv[2]);
 		string outFile = string(argv[3]);
-		RnaEnergyTable et;
-		RiboseRotamerLib rotLib;
-		scorePDBFile(pdbFile, outFile, et, rotLib);
+		BasePairLib* bpLib = new BasePairLib();
+		basePairScoring(pdbFile, outFile, bpLib);
 	}
 	else {
 		cout << "Usage: " << endl;

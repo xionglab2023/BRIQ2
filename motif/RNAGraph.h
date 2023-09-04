@@ -11,6 +11,8 @@
 #include "motif/RGNode.h"
 #include "motif/RGEdge.h"
 #include "model/StructureModel.h"
+#include "model/AssignRNASS.h"
+#include "model/BasePairLib.h"
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
@@ -367,7 +369,6 @@ public:
 	}
 
 
-
 	void printInfo(){
 		isIndependantHelix();
 		cout << "helix begin at: " <<  beginIndex << " length: " << length << endl;
@@ -394,17 +395,29 @@ public:
 	string seq;
 	string ss;
 	RGNode** allNodes;
+
+	//RNA chain connection
 	bool* connectToDownstream;
+
+	//Watson-Crick pair
 	int* pairingIndex;
+
 	bool* inHelix;
 
-	bool* choosen;
+	//
+	bool* abandoned;
 
-	double* contactEnergyOfNonNeighbor;
-	double* allEnergy;
 
-	vector<RGEdge*> egList;
+	double* contactEnergyOfNonNeighbor; // length n, summation of base pair energy on each node
+	double* allEnergy; //length n*n
+
+	//initial edge list
+	vector<RGEdge*> initialEgList;
+
+
+	//base pair index to edge index
 	map<int, int> baseIndexToEgIndex;
+
 
 	vector<HelixGraph*> helixList;
 
@@ -415,13 +428,28 @@ public:
 
 	vector<SubRNAGraph*> subGraphs;
 
-	RNAGraph(const string& ssFile, const string& eneFile);
+	RNAGraph(const string& pdbFile);
 
-	void splitHelix(int i);
+	void updateInitialEdge();
+
+	/*
+	 * parameter i: nodeID
+	 */
+	void splitHelixEdges(int i);
+
+
+	/*
+	 * parameter i: nodeID
+	 */
 	void removeEdgeOnNode(int i);
-	void addEdge();
 
+	/*
+	 * parameter i: nodeIDA
+	 * parameter j: nodeIDB
+	 */
 	void removeEdge(int i, int j);
+
+
 	void findHelix();
 
 	void initialAssign(int nodeID, int graphID);
@@ -477,12 +505,8 @@ public:
 		}
 	}
 
-
-
-	void processLoop();
-
-	void processHelix();
-
+	void meltLoop();
+	void meltHelix();
 	void generateInitialClusters();
 	void printInitialCluster(int id);
 
