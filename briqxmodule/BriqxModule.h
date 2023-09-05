@@ -130,11 +130,6 @@ namespace NSPbm {
             map<array<RNABase*,2>, BasePair*> bb2bpMap;
             /**
              * 
-             * @brief  Map from BasePair to BasePair types in BasePairLib, both BasePair and reversed BasePairs are included.
-             */
-            map<BasePair*, int> PairTypeMap;
-            /**
-             * 
              * @brief Map from BasePair to BasePair energies in BasePairLib, both BasePair and reversed BasePairs are included.
              */
             map<BasePair*, double>  PairEneMap;
@@ -173,7 +168,7 @@ namespace NSPbm {
              * @param atl: AtomLib; required. 
              * @param name: name of module; optional, default "NewModule". 
              * @param beLazy: if true, build module in lazy mode, only build @c this->chains and @c this->baseList , else 
-             * additionally build basePairList, revBasePairList, PairTypeMap and PaireneMap. Optional, default false
+             * additionally build basePairList, revBasePairList and PaireneMap. Optional, default false
              * @note This constructor may allocate new BasePair objects. It does not check correspondence between chains and
              * baseLists (correctly correlated chains and baseList are expected)
              */
@@ -198,7 +193,7 @@ namespace NSPbm {
              * @param atl: AtomLib; required. 
              * @param name: name of module; optional, default use the name of @p bm0. 
              * @param beLazy: if true, build module in lazy mode, only build @c this->chains and @c this->baseList , else 
-             * additionally build basePairList, revBasePairList, PairTypeMap and PaireneMap. Optional, default false
+             * additionally build basePairList, revBasePairList and PaireneMap. Optional, default false
              * 
              * @note This constructor allocates new Atom, RNABase, RNAChain and BasePair objects, which should be destructed
              * before destructing objects constructed with this constructor. BriqxModule::deepClear() can be employed for the
@@ -270,10 +265,6 @@ namespace NSPbm {
 
             const map<BasePair*, double>& getBasePairEneMap() const {
                 return PairEneMap;
-            }
-
-            const map<BasePair*, int>& getBasePairTypeMap() const {
-                return PairTypeMap;
             }
 
             /**
