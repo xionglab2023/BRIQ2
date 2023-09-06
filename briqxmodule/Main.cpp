@@ -168,6 +168,10 @@
      * @return int 
      */
     int main(int argc, char** argv) {
+        if(argc == 1) {
+            printHelp();
+            return EXIT_SUCCESS;
+        }
         CmdArgs cmdArgs{argc, argv};
         string listfile, pdbA, pdbB, sel;
         string outPath{};

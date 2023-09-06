@@ -217,8 +217,6 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
     int lbp = this->basePairList.size();
     for(int i=0;i<lbp;i++){
         BasePair* curBp = this->basePairList[i];
-        int typeA = curBp->baseA->baseType;
-        int typeB = curBp->baseB->baseType;
         BasePair* revBp = new BasePair(curBp->baseB, curBp->baseA, &atl);
         this->revBasePairList.emplace_back(revBp);
         this->bb2bpMap.emplace(array<RNABase*,2>{curBp->baseA, curBp->baseB}, curBp);
@@ -251,8 +249,6 @@ BriqxModule::BriqxModule(const vector<RNAChain*>& chains, const vector<RNABase*>
     int lbp = this->basePairList.size();
     for(int i=0;i<lbp;i++){
         BasePair* curBp = this->basePairList[i];
-        int typeA = curBp->baseA->baseType;
-        int typeB = curBp->baseB->baseType;
         BasePair* revBp = new BasePair(curBp->baseB, curBp->baseA, &atl);
         this->revBasePairList.emplace_back(revBp);
         this->bb2bpMap.emplace(array<RNABase*,2>{curBp->baseA, curBp->baseB}, curBp);
@@ -314,8 +310,6 @@ BriqxModule::BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ&
     int lbp = this->basePairList.size();
     for(int i=0;i<lbp;i++){
         BasePair* curBp = this->basePairList[i];
-        int typeA = curBp->baseA->baseType;
-        int typeB = curBp->baseB->baseType;
         BasePair* revBp = new BasePair(curBp->baseB, curBp->baseA, &atl);
         this->revBasePairList.emplace_back(revBp);
         this->bb2bpMap.emplace(array<RNABase*,2>{curBp->baseA, curBp->baseB}, curBp);
