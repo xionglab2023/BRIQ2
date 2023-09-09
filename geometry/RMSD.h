@@ -82,6 +82,13 @@ public:
 		return XYZ(x,y,z);
 	}
 
+	XYZ transform(XYZ&& p) const {
+		double x =  p.x_*r00 + p.y_*r01 + p.z_*r02 + tx;
+		double y =  p.x_*r10 + p.y_*r11 + p.z_*r12 + ty;
+		double z = 	p.x_*r20 + p.y_*r21 + p.z_*r22 + tz;
+		return XYZ(x,y,z);
+	}
+
 	void print() {
 		printf("%6.3f %6.3f %6.3f\n", r00, r01, r02);
 		printf("%6.3f %6.3f %6.3f\n", r10, r11, r12);

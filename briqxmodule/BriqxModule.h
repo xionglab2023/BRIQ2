@@ -18,6 +18,7 @@
 
 #ifndef BRIQXMODULE_BRIQXMODULE_H_
 #define BRIQXMODULE_BRIQXMODULE_H_
+#define DEBUG
 
 /**
  * @addtogroup BriqxModule
@@ -188,7 +189,8 @@ namespace NSPbm {
              * 
              * @param bm0: The original BriqxModule object. 
              * @param tf: The rotational matrix. 
-             * @param tv: The translational vector.
+             * @param Acog: An XYZ object that holds the center-of-geometry of aligned Bases of module A (the stational one).
+             * @param Bcog: An XYZ object that holds the center-of-geometry of aligned Bases of module B (the transfomed one).
              * @param bpl: BasePairLib; required. 
              * @param atl: AtomLib; required. 
              * @param name: name of module; optional, default use the name of @p bm0. 
@@ -199,7 +201,7 @@ namespace NSPbm {
              * before destructing objects constructed with this constructor. BriqxModule::deepClear() can be employed for the
              * job.  
              */
-            BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ& tv, BasePairLib& bpl,
+            BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ& Acog, const XYZ& Bcog, BasePairLib& bpl,
                 AtomLib& atl, const string& name = NULL, bool beLazy = false);
 
             /**
@@ -320,11 +322,13 @@ namespace NSPbm {
              * module and the second BasePair is from the second one. 
              * @param [out] tf: A TransForm object that holds rotational matrix, which when applied will rotate the second module
              * to the first one.
-             * @param [out] tv: An XYZ object that holds the translation vector, which when applied will translate the second
-             * module to the first one.
+             * @param [out] Acog: An XYZ object that holds the center-of-geometry of aligned Bases of module A (the stational one,
+             * i.e. Bases in the first column Basepairs in @p alignVec ).
+             * @param [out] Bcog: An XYZ object that holds the center-of-geometry of aligned Bases of module B (the transfomed one,
+             * i.e. Bases in the second column Basepairs in @p alignVec ).
              * @return int : success code.
              */
-            static int resolveTransformByAlign(const vector<array<BasePair*,2> >& alignVec, TransForm& tf, XYZ& tv);
+            static int resolveTransformByAlign(const vector<array<BasePair*,2> >& alignVec, TransForm& tf, XYZ& Acog, XYZ& Bcog);
 
             /**
              * @brief  Resolve the transform to a BriqxModule according to aligned Bases ( @p alignVec ).
@@ -335,25 +339,28 @@ namespace NSPbm {
              * module and the second RNABase is from the second one. 
              * @param [out] tf: A TransForm object that holds rotational matrix, which when applied will rotate the second module
              * to the first one.
-             * @param [out] tv: An XYZ object that holds the translation vector, which when applied will translate the second
-             * module to the first one.
+             * @param [out] Acog: An XYZ object that holds the center-of-geometry of aligned Bases of module A (the stational one,
+             * i.e. the first column Bases in @p alignVec ).
+             * @param [out] Bcog: An XYZ object that holds the center-of-geometry of aligned Bases of module B (the transfomed one,
+             * i.e. the second column Bases in @p alignVec ).
              * @return int : success code.
              * @note Function called by BMAlign, for usual taskes invoked through BMAlign is recommended.
              */
-            static int resolveTransformByAlign(const vector<array<RNABase*,2> >& alignVec, TransForm& tf, XYZ& tv);
+            static int resolveTransformByAlign(const vector<array<RNABase*,2> >& alignVec, TransForm& tf, XYZ& Acog, XYZ& Bcog);
 
             /**
              * @brief  Apply transform (TransForm @p tm  and translational vector @p tv ) to @c this BriqxModule, return
              * transformed FourPseudoAtoms coordinates of bases in @c this BriqxModule. 
              * 
              * @param [in] tf: A TransForm object that rotate @c this module to the orientation of another module.
-             * @param [in] tv: A vector that translates @c this module to another module (by center of geometry).
+             * @param [in] Acog: An XYZ object that holds the center-of-geometry of aligned Bases of module A (the stational one).
+             * @param [in] Bcog: An XYZ object that holds the center-of-geometry of aligned Bases of module B (the transfomed one).
              * @param [out] tfBasePos: vector of 4-element arrays corresponding to the four pseudoAtoms in each base.
              * Each element of the arrays stores the transformed coordinates of the pesudoAtoms.
              * @return int: success code.
              * @note Function called by BMAlign, for usual taskes invoked through BMAlign is recommended.
              */
-            int coordTransform(const TransForm& tf, const XYZ& tv, vector<array<XYZ,4> >& tfBasePos) const;
+            int coordTransform(const TransForm& tf, const XYZ& Acog, const XYZ& Bcog, vector<array<XYZ,4> >& tfBasePos) const;
 
             /**
              * @brief  Resolve base-base alignment to another BriqxModule according to base distance. The base distance

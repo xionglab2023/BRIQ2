@@ -36,6 +36,7 @@ public:
 	Atom(const string& line);
 	Atom(const string& line, int fileType);
 	Atom(string name, const XYZ& coord);
+	Atom(const Atom& other);  // 拷贝构造函数
 	Atom& operator=(const Atom& other);
 	bool isBackboneAtom() const;
 	void guessAtomType();
@@ -47,6 +48,7 @@ public:
 	XYZ& getCoord();
 	string& getResType();
 	void setCoord(const XYZ& coord);
+	void setCoord(const XYZ&& coord);
 	float distance(const Atom& other) const;
 	string nameString()	 const;
 	virtual ~Atom();
@@ -114,6 +116,20 @@ public:
 	char altLoc;
 	RNABase();
 	RNABase(const string& baseID, const string& chainID, char baseType);
+
+	/**
+	 * @brief 拷贝构造函数.
+	 * @note 此函数构造了新的Atom副本，但本类的析构函数为空，
+	 * 因此本函数构造的对象在生命期结束前要显式释放其Atom内存。
+	*/
+	RNABase(const RNABase& other); 
+
+	/**
+	 * @brief 移动构造函数.
+	 * @note 此函数通过移动获取了Atom内存，但本类的析构函数为空，
+	 * 因此本函数构造的对象在生命期结束前要显式释放其Atom内存。
+	*/
+	RNABase(RNABase&& other) noexcept; 
 
 	void addAtom(Atom* a);
 	void setResSeqID(int id) {this->baseSeqID = id;}
@@ -338,6 +354,20 @@ public:
 	RNAChain(const string& pdbID, const string& chainID);
 	RNAChain(const string& chainID);
 
+	/**
+	 * @brief 拷贝构造函数.
+	 * @note 此函数构造了新的 RNABase 和 Atom 副本，但本类的析构函数为空，
+	 * 因此本函数构造的对象在生命期结束前要显式释放其 RNABase 和 Atom 内存。
+	*/
+	RNAChain(const RNAChain& other);
+
+	/**
+	 * @brief 移动构造函数.
+	 * @note 此函数移动获取了 RNABase 和 Atom 内存，但本类的析构函数为空，
+	 * 因此本函数构造的对象在生命期结束前要显式释放其 RNABase 和 Atom 内存。
+	*/
+	RNAChain(RNAChain&& other) noexcept;
+
 	void setPDBID(const string& pdbID) {
 		this->pdbID = pdbID;
 	}
@@ -429,7 +459,7 @@ public:
 		}
 		return NULL;
 	}
-	vector<RNABase*> getBaseList() {return this->baseList;}
+	vector<RNABase*>& getBaseList() {return this->baseList;}
 	vector<RNABase*> getValidBaseList(AtomLib* atLib) {
 		vector<RNABase*> list;
 		for(int i=0;i<baseList.size();i++){

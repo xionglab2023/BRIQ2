@@ -63,7 +63,8 @@ namespace NSPbm
             vector<array<RNABase*, 2> > alignVec; /** global alignment based on RNAbase */
             vector<array<XYZ,4> > newBList;  /** coordinates of transformed @p BMb bases, represented by FourPseudoAtoms*/
             TransForm tf;  /** Rotational matrix transforms @p BMb to @p newBList */
-            XYZ tv;  /** translational vector that transforms @p BMb to @p newBList */
+            XYZ Acog;  /** center-of-geometry of aligned bases of the stational module (module A) */
+            XYZ Bcog;  /** center-of-geometry of aligned bases of the transformal module (module B) */
 
         public:
             BMAlign();
@@ -77,8 +78,12 @@ namespace NSPbm
                 return tf;
             }
 
-            const XYZ getTranslateVec() {
-                return tv;
+            const XYZ getAcog() {
+                return Acog;
+            }
+
+            const XYZ getBcog() {
+                return Bcog;
             }
 
             int writeAlignment(ofstream& out, double& score, double& normedSc, bool onA = true) const;
@@ -98,8 +103,8 @@ namespace NSPbm
         this->seed = &inSeed;
         // this->seedByBasePair = false;
 
-        BriqxModule::resolveTransformByAlign(inSeed, tf, tv);
-        BM2.coordTransform(tf, tv, newBList);
+        BriqxModule::resolveTransformByAlign(inSeed, tf, Acog, Bcog);
+        BM2.coordTransform(tf, Acog, Bcog, newBList);
         BM1.alignBasesByCoord(BM2, alignVec, newBList);
     }
 

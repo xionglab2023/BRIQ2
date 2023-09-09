@@ -83,28 +83,56 @@ BriqxModule::BriqxModule() {
 BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
     const string& name, const BMSelection& bms) {
     this->BMname = name;
-    RNAPDB rnapdb(pdbFile);
-    const auto& chains_tmp = rnapdb.getChains();
-    const auto& bases_tmp = rnapdb.getBaseList();
+    RNAPDB rnapdb(pdbFile, name);
+    auto& chains_tmp = rnapdb.getChains();
+    auto& bases_tmp = rnapdb.getBaseList();
     if(bms.getChainIndexes().size() == 0 && bms.getChainIDs().size() == 0) {
-        // bms == NULL or empty, use whole RNAPDB directly, note the pdbID in RNAChains are not modified
-        int lc = chains_tmp.size();
-        for(int i=0; i < lc; i++) {
-            this->chains.emplace_back(chains_tmp[i]);
-        }
-        int lb = bases_tmp.size();
-        for(int i=0; i < lb; i++) {
-            this->baseList.emplace_back(bases_tmp[i]);
-        }
+        // bms == NULL or empty, deep-copy whole RNAPDB, note the pdbID in RNAChains are not modified
+        this->chains = move(chains_tmp);  // 使用vector移动构造，直接挪用 rnapdb 的资源
+        this->baseList = move(bases_tmp);
+        // string lastChainID = "@";
+        // RNAChain* curChain;
+        // int lb = bases_tmp.size();
+        // map<string, RNAChain*> ID2chMap;
+        // for(int i=0; i<lb;i++) {
+        //     RNABase* iniBase = bases_tmp[i];
+        //     RNABase* newBase = new RNABase(iniBase->baseID, iniBase->chainID, iniBase->baseType);
+        //     newBase->setResSeqID(iniBase->baseSeqID);
+
+        //     if(newBase->chainID != lastChainID) {
+        //         try {
+        //             curChain = ID2chMap.at(newBase->chainID);
+        //         } catch(out_of_range) {
+        //             curChain = new RNAChain(newBase->chainID);
+        //             this->chains.emplace_back(curChain);
+        //             ID2chMap.emplace(newBase->chainID, curChain);
+        //         }
+        //         lastChainID = newBase->chainID;
+        //     }
+
+        //     vector<Atom*>* iniAtomList = iniBase->getAtomList();
+        //     int la = iniAtomList->size();
+        //     for(int j=0;j<la;j++) {
+        //         Atom* iniAtom = (*iniAtomList)[j];
+        //         Atom* newAtom = new Atom();
+        //         *newAtom = *iniAtom;
+        //         newBase->addAtom(newAtom);
+        //     }
+        //     this->baseList.emplace_back(newBase);
+        //     curChain->addBase(newBase);
+        // }
     } else { // bms not empty, rebuild chains from bases
         bool isRsInd = bms.isUseResIndex();
         bool isChInd = bms.isUseChainIndex();  // 要对每一个找到的 RNABase 检查它的 chain 归属
         int lb = bases_tmp.size();
         map<int, RNABase*> ind2bsMap;
+        map<int, int> ind2tmpMap;  // baseSeqID 到 base_tmp index 的 map
         map<string, RNABase*> ID2bsMap;
+        map<string, int> ID2tmpMap;  // baseID 到 base_tmp index 的 map
         if(isRsInd) {
             for(int i=0; i<lb; i++) {
                 ind2bsMap.emplace(bases_tmp[i]->baseSeqID, bases_tmp[i]);
+                ind2tmpMap.emplace(bases_tmp[i]->baseSeqID, i);
             }
             const auto& bmsResInd = bms.getResIndexes();
             int l1 = bmsResInd.size();
@@ -116,12 +144,13 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
                     try {
                         curChID = chains_tmp.at(bmsChInd.at(i))->getChainID();
                     } catch(out_of_range) {
-                        throw out_of_range("chains out of range");
+                        throw out_of_range("chain index" + to_string(bmsChInd.at(i)) + " out of range");
                     }
                     RNAChain* curChain = new RNAChain(curChID);
                     for(int j=0;j<l2;j++) {
                         if(ind2bsMap.at(bmsResInd[i][j])->chainID == curChID) {
                             this->baseList.emplace_back(ind2bsMap.at(bmsResInd[i][j]));
+                            bases_tmp[ind2tmpMap.at(bmsResInd[i][j])] = nullptr;
                             curChain->addBase(ind2bsMap.at(bmsResInd[i][j]));
                         } else {
                             throw invalid_argument("Base ("+ to_string(i) + "," + to_string(j) +
@@ -138,12 +167,13 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
                     try {
                         curChID = bmsChID.at(i);
                     } catch(out_of_range) {
-                        throw out_of_range("chains out of range");
+                        throw out_of_range("Speified chainID has less than "+to_string(i)+" chains");
                     }
                     RNAChain* curChain = new RNAChain(curChID);
                     for(int j=0;j<l2;j++) {
                         if(ind2bsMap.at(bmsResInd[i][j])->chainID == curChID) {
                             this->baseList.emplace_back(ind2bsMap.at(bmsResInd[i][j]));
+                            bases_tmp[ind2tmpMap.at(bmsResInd[i][j])] = nullptr;
                             curChain->addBase(ind2bsMap.at(bmsResInd[i][j]));
                         } else {
                             throw invalid_argument("Base ("+ to_string(i) + "," + to_string(j) +
@@ -156,6 +186,7 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
         } else { // isRsInd = false; residue ID given
             for(int i=0; i<lb; i++) {
                 ID2bsMap.emplace(bases_tmp[i]->baseID, bases_tmp[i]);
+                ID2tmpMap.emplace(bases_tmp[i]->baseID, i);
             }
             const auto& bmsResID = bms.getChainResIDs();
             int l1 = bmsResID.size();
@@ -167,12 +198,13 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
                     try {
                         curChID = chains_tmp.at(bmsChInd.at(i))->getChainID();
                     } catch(out_of_range) {
-                        throw out_of_range("chains out of range");
+                        throw out_of_range("PDB has less than " + to_string(i) + " chains");
                     }
                     RNAChain* curChain = new RNAChain(curChID);
                     for(int j=0;j<l2;j++) {
                         if(ID2bsMap.at(bmsResID[i][j])->chainID == curChID) {
                             this->baseList.emplace_back(ID2bsMap.at(bmsResID[i][j]));
+                            bases_tmp[ID2tmpMap.at(bmsResID[i][j])] = nullptr;
                             curChain->addBase(ID2bsMap.at(bmsResID[i][j]));
                         } else {
                             throw invalid_argument("Base ("+ to_string(i) + "," + to_string(j) +
@@ -195,6 +227,7 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
                     for(int j=0;j<l2;j++) {
                         if(ID2bsMap.at(bmsResID[i][j])->chainID == curChID) {
                             this->baseList.emplace_back(ID2bsMap.at(bmsResID[i][j]));
+                            bases_tmp[ID2tmpMap.at(bmsResID[i][j])] = nullptr;
                             curChain->addBase(ID2bsMap.at(bmsResID[i][j]));
                         } else {
                             throw invalid_argument("Base ("+ to_string(i) + "," + to_string(j) +
@@ -258,8 +291,9 @@ BriqxModule::BriqxModule(const vector<RNAChain*>& chains, const vector<RNABase*>
     }
 }
 
-BriqxModule::BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ& tv, BasePairLib& bpl,
-    AtomLib& atl, const string& name, bool beLazy){
+BriqxModule::BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ& Acog, const XYZ& Bcog,
+    BasePairLib& bpl, AtomLib& atl, const string& name, bool beLazy)
+{
     if(name == "") {
         BMname = bm0.BMname;
     } else {
@@ -291,7 +325,7 @@ BriqxModule::BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ&
             Atom* iniAtom = (*iniAtomList)[j];
             Atom* newAtom = new Atom();
             *newAtom = *iniAtom;
-            newAtom->setCoord(tf.transform(newAtom->coord) + tv);
+            newAtom->setCoord(tf.transform(newAtom->coord - Bcog) + Acog);
             newBase->addAtom(newAtom);
         }
         baseList.emplace_back(newBase);
@@ -423,29 +457,29 @@ int BriqxModule::sortMapByValue(const map<array<BasePair*, 2>, double>& unsortMa
     return EXIT_SUCCESS;
 }
 
-int BriqxModule::resolveTransformByAlign(const vector<array<BasePair*,2> >& alignVec, TransForm& tf, XYZ& tv) {
+int BriqxModule::resolveTransformByAlign(const vector<array<BasePair*,2> >& alignVec, TransForm& tf, XYZ& Acog, XYZ& Bcog) {
         // first transfer BasePair to XYZ( 4-point representation for each base)
         vector<XYZ> points1;
         vector<XYZ> points2;
         int lv = alignVec.size();
 	    if(lv == 0) return 0;
         for(int i=0;i<lv;i++) {
-            const auto& rep1A = alignVec[i][0]->baseA->getFourPseudoAtomCoords();
+            const array<XYZ,4>& rep1A = alignVec[i][0]->baseA->getFourPseudoAtomCoords();  //常量左值引用可以用右值赋值
             points1.insert(points1.end(), rep1A.begin(), rep1A.end());
-            const auto& rep1B = alignVec[i][0]->baseB->getFourPseudoAtomCoords();
+            const auto rep1B = alignVec[i][0]->baseB->getFourPseudoAtomCoords();
             points1.insert(points1.end(), rep1B.begin(), rep1B.end());
-            const auto& rep2A = alignVec[i][1]->baseA->getFourPseudoAtomCoords();
+            const auto rep2A = alignVec[i][1]->baseA->getFourPseudoAtomCoords();
             points2.insert(points2.end(), rep2A.begin(), rep2A.end());
             const auto& rep2B = alignVec[i][1]->baseB->getFourPseudoAtomCoords();
             points2.insert(points2.end(), rep2B.begin(), rep2B.end());
         }
-	    XYZ Acog = getCOG(points1);
-	    XYZ Bcog = getCOG(points2);
-        tv = Acog - Bcog;
+	    Acog = getCOG(points1);
+	    Bcog = getCOG(points2);
 
 	    vector<XYZ> listA;
 	    vector<XYZ> listB;
-	    for(int i=0;i<lv;i++){
+        int lv8 = lv*8;
+	    for(int i=0;i<lv8;i++){
 	    	XYZ a = points1[i] - Acog;
 	    	XYZ b = points2[i] - Bcog;
 	    	listA.emplace_back(a);
@@ -456,7 +490,7 @@ int BriqxModule::resolveTransformByAlign(const vector<array<BasePair*,2> >& alig
         return EXIT_SUCCESS;
 }
 
-int BriqxModule::resolveTransformByAlign(const vector<array<RNABase*,2> >& alignVec, TransForm& tf, XYZ& tv) {
+int BriqxModule::resolveTransformByAlign(const vector<array<RNABase*,2> >& alignVec, TransForm& tf, XYZ& Acog, XYZ& Bcog) {
         // first transfer BasePair to XYZ( 4-point representation for each base)
         vector<XYZ> points1;
         vector<XYZ> points2;
@@ -468,13 +502,13 @@ int BriqxModule::resolveTransformByAlign(const vector<array<RNABase*,2> >& align
             const auto& rep2A = alignVec[i][1]->getFourPseudoAtomCoords();
             points2.insert(points2.end(), rep2A.begin(), rep2A.end());
         }
-	    XYZ Acog = getCOG(points1);
-	    XYZ Bcog = getCOG(points2);
-        tv = Acog - Bcog;
+	    Acog = getCOG(points1);
+	    Bcog = getCOG(points2);
 
 	    vector<XYZ> listA;
 	    vector<XYZ> listB;
-	    for(int i=0;i<lv;i++){
+        int lv4 = lv*4;
+	    for(int i=0;i<lv4;i++){
 	    	XYZ a = points1[i] - Acog;
 	    	XYZ b = points2[i] - Bcog;
 	    	listA.emplace_back(a);
@@ -485,7 +519,9 @@ int BriqxModule::resolveTransformByAlign(const vector<array<RNABase*,2> >& align
         return EXIT_SUCCESS;
 }
 
-int BriqxModule::coordTransform(const TransForm& tf, const XYZ& tv, vector<array<XYZ,4> >& tfBasePos) const {
+int BriqxModule::coordTransform(const TransForm& tf, const XYZ& Acog,  const XYZ& Bcog, 
+    vector<array<XYZ,4> >& tfBasePos) const
+{
     tfBasePos.clear();
     int lb = this->baseList.size();
     if(lb==0) return 0;
@@ -493,7 +529,7 @@ int BriqxModule::coordTransform(const TransForm& tf, const XYZ& tv, vector<array
         array<XYZ,4> iniCoord = this->baseList[i]->getFourPseudoAtomCoords();
         array<XYZ,4> ar0{};
         for(int j=0; j<4; j++) {
-            ar0[j] = tf.transform(iniCoord[j]) + tv;
+            ar0[j] = tf.transform(iniCoord[j]-Bcog) + Acog;
         }
         tfBasePos.emplace_back(ar0);
     }

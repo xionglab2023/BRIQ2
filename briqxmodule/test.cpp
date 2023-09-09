@@ -29,16 +29,36 @@ vector<vector<int> > v4;
 
 v2=v1;
 v4=v3;
+cout << "v2 values after =" << endl;
+for(auto& iter: v2) {
+    cout << iter <<endl;
+}
+v2[0] = 10;
+cout << "v2[0] = " << v2[0] << ", v1[0] = " << v1[0] <<endl;
+
+auto v5 = move(v1); 
+cout << "v5 values after move =" << endl;
+for(auto& iter: v5) {
+    cout << iter <<endl;
+}
+cout << "v1 values after move =" << endl;
+for(auto& iter: v1) {
+    cout << iter <<endl;
+}
 cout << "test complete" << endl;
 return EXIT_SUCCESS;
 }
 
-int main() {
+int test2() {
     map<int, set<int> > testMap;
     testMap[1].emplace(10);
     testMap[1].emplace(20);
     for (auto iter = testMap[1].begin(); iter != testMap[1].end(); ++iter) {
         cout << *iter << endl;
     }
+    return EXIT_SUCCESS;
+}
+int main() {
+    test1();
     return EXIT_SUCCESS;
 }
