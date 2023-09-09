@@ -57,8 +57,8 @@ namespace NSPbm
              * @return vector<array<BasePair*,2> >& 
              * @note Called by score(). The returned vector need to be relased manually.
              */
-            const vector<array<BasePair*,2> >& unifyAlignVec(const vector<array<BasePair*,2> >& inAlignVec);
-            const vector<array<BasePair*,2> >& unifyAlignVec(const vector<array<RNABase*,2> >& inAlignVec);
+            const vector<array<BasePair*,2> >* unifyAlignVec(const vector<array<BasePair*,2> >& inAlignVec);
+            const vector<array<BasePair*,2> >* unifyAlignVec(const vector<array<RNABase*,2> >& inAlignVec);
         public:
             BMScore();
             BMScore(const BriqxModule& BM1, const BriqxModule& BM2, const map<array<BasePair*, 2>, double>& DDMMatrix);
@@ -121,13 +121,18 @@ namespace NSPbm
 
     template<typename T> requires IsValid<T>
     double BMScore::score(const T& inAlignVec) {
-        const vector<array<BasePair*,2> >& alignVec = unifyAlignVec(inAlignVec);
-        int lav = alignVec.size();
+        const vector<array<BasePair*,2> >* alignVec = unifyAlignVec(inAlignVec);
+        int lav = alignVec->size();
         double tot = 0;
         for(int i=0;i<lav;i++) {
-            tot += bppScore(bp2wMapa.at(alignVec[i][0]), bp2wMapb.at(alignVec[i][1]), DDMMap->at(alignVec[i]));
+            #ifdef DEBUG
+            cout << "weight a: " << to_string(bp2wMapa.at((*alignVec)[i][0])) <<endl;
+            cout << "weight b: " << to_string(bp2wMapb.at((*alignVec)[i][1])) <<endl;
+            cout << "weight DDM: " << to_string(DDMMap->at((*alignVec)[i])) <<endl;
+            #endif
+            tot += bppScore(bp2wMapa.at((*alignVec)[i][0]), bp2wMapb.at((*alignVec)[i][1]), DDMMap->at((*alignVec)[i]));
         }
-        delete &alignVec;
+        delete alignVec;
         return tot;
     }
 

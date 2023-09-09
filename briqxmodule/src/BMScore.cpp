@@ -51,15 +51,16 @@ namespace NSPbm
         }
     }
 
-    const vector<array<BasePair*,2> >& BMScore::unifyAlignVec(const vector<array<BasePair*, 2> >& inAlignVec) {
+    const vector<array<BasePair*,2> >* BMScore::unifyAlignVec(const vector<array<BasePair*, 2> >& inAlignVec) {
         auto* out = new vector<array<BasePair*,2> >{inAlignVec};
-        return *out;
+        return out;
     }
 
-    const vector<array<BasePair*,2> >& BMScore::unifyAlignVec(const vector<array<RNABase*,2> >& inAlignVec) {
+    const vector<array<BasePair*,2> >* BMScore::unifyAlignVec(const vector<array<RNABase*,2> >& inAlignVec) {
         auto* out = new vector<array<BasePair*,2> >{};
         auto& bb2bpMapA = BMa->getBb2bpMap();
         auto& bb2bpMapB = BMb->getBb2bpMap();
+        auto& blB = BMb->getBaseList();
         int lav = inAlignVec.size();
         for(int i=0;i<lav;i++) {
             RNABase* bA1 = inAlignVec[i][0];
@@ -67,8 +68,24 @@ namespace NSPbm
             for(int j=i+1;j<lav;j++) {
                 RNABase* bA2 = inAlignVec[j][0];
                 RNABase* bB2 = inAlignVec[j][1];
-                array<RNABase*, 2> arrBbA{bA1, bA2};  // array of base-base, the alignment is ordered, no reverse to handle
-                array<RNABase*, 2> arrBbB{bB1, bB2};
+                /* Ensure base order in basepair:
+                 *   For module A, both forward and reverse basepairs are accepted;
+                 *   For module B, only accrpt forward basepairs
+                */
+                array<RNABase*, 2> arrBbA, arrBbB;
+                if(find(blB.begin(), blB.end(), bB1) - find(blB.begin(), blB.end(), bB2) < 0) {
+                    // bB1-bB2 is forward basepair 
+                    arrBbA[0] = bA1;
+                    arrBbA[1] = bA2;
+                    arrBbB[0] = bB1;
+                    arrBbB[1] = bB2;
+                } else {
+                    // bB2-bB1 is forward basepair
+                    arrBbA[0] = bA2;
+                    arrBbA[1] = bA1;
+                    arrBbB[0] = bB2;
+                    arrBbB[1] = bB1;
+                }
                 if(bb2bpMapB.contains(arrBbB) && bb2bpMapA.contains(arrBbA)){
                     out->emplace_back(array<BasePair*,2>{bb2bpMapA.at(arrBbA), bb2bpMapB.at(arrBbB)});
                 } else {
@@ -79,7 +96,7 @@ namespace NSPbm
                 }
             }
         }
-        return *out;
+        return out;
     }
 
     int BMScore::sortBppByScore(const vector<array<BasePair*,2> >& bppList, vector<pair<array<BasePair*,2>, double> >& sortedScore,
@@ -104,12 +121,23 @@ namespace NSPbm
 
     double BMScore::idealScore() {
         double score = 0;
-        for (auto& iter : bp2wMapa) {
-            score += iter.second;
+        // Ideally all matches are between forward basepairs
+        auto& bplA = BMa->getBasePairList();
+        int lbA = bplA.size();
+        for(int i=0;i<lbA;i++) {
+            score += bp2wMapa.at(bplA[i]);
         }
-        for (auto& iter : bp2wMapb) {
-            score += iter.second;
+        auto& bplB = BMb->getBasePairList();
+        int lbB = bplB.size();
+        for(int i=0;i<lbB;i++) {
+            score += bp2wMapb.at(bplB[i]);
         }
+        // for (auto& iter : bp2wMapa) {
+        //     score += iter.second;
+        // }
+        // for (auto& iter : bp2wMapb) {
+        //     score += iter.second;
+        // }
         return score/2;
     }
 

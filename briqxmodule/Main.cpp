@@ -76,28 +76,29 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
     int i = 0;
     auto* p1 = &sortedDDM[i];
     double bestScore = 0;
-    BMAlign<vector<array<RNABase*,2> > >* bestAlign;
+    BMAlign<vector<array<RNABase*,2> > >* bestAlign = nullptr;
+    BMAlign<vector<array<BasePair*,2> > >* bestAlignBP = nullptr;
     while(DDMMatrix.at(p1->first) <= DDMCutoff) {
-        BMAlign<vector<array<BasePair*,2> > > iniAlign(BMa, BMb, vector<array<BasePair*,2> >{p1->first});
+        auto* iniAlign = new BMAlign<vector<array<BasePair*,2> > >(BMa, BMb, vector<array<BasePair*,2> >{p1->first});
         #ifdef DEBUG
         ofstream debugOut;
         debugOut.open("iniTransformed.pdb", ios::out);
-        auto BMnew = BriqxModule(BMb, iniAlign.getRotTrans(), iniAlign.getAcog(), iniAlign.getBcog(),
+        auto BMnew = BriqxModule(BMb, iniAlign->getRotTrans(), iniAlign->getAcog(), iniAlign->getBcog(),
              bpl, atl, "", true);
         BMnew.printPDBFormat(debugOut);
         debugOut.close();
         BMnew.deepClear();
         #endif //DEBUG
-        if(iniAlign.getAlignVec().size() == 0) {
+        if(iniAlign->getAlignVec().size() == 0) {
             break;
         }
-        BMAlign<vector<array<RNABase*,2> > >* curAlign = NULL, *lastAlign, *nextAlign;
+        BMAlign<vector<array<RNABase*,2> > >* curAlign = nullptr, *lastAlign = nullptr, *nextAlign;
         double curSc = 0, lastSc;
-        double nextSc = scer.score(iniAlign.getAlignVec());
+        double nextSc = scer.score(iniAlign->getAlignVec());
         if(curSc-nextSc < iterStopAt) {
             lastSc = curSc;
             curSc = nextSc;
-            nextAlign = new BMAlign<vector<array<RNABase*,2> > >(BMa, BMb, iniAlign.getAlignVec());
+            nextAlign = new BMAlign<vector<array<RNABase*,2> > >(BMa, BMb, iniAlign->getAlignVec());
             nextSc = scer.score(nextAlign->getAlignVec());
         }
         while(curSc-nextSc < iterStopAt) {
@@ -112,10 +113,17 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         delete nextAlign;
         if(curSc > bestScore) {
             bestScore = curSc;
-            bestAlign = curAlign;
+            if(bestAlign) delete bestAlign;
+            if(curAlign) {
+                bestAlign = curAlign;
+            } else {
+                bestAlignBP = iniAlign;
+            }
         } else {
+            delete iniAlign;
             delete curAlign;
-        } 
+        }
+
         try {   
             p1 = &sortedDDM.at(++i);
         } catch(out_of_range) {
@@ -124,11 +132,11 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
     }
     
     if(bestScore == 0) {
-        cout << "Unable to align two modules" << endl;
+        cout << "Two modules are too different to align" << endl;
         return EXIT_SUCCESS;
     }
     score = bestScore;
-    alignVec = bestAlign->getAlignVec();
+    alignVec = bestAlign? bestAlign->getAlignVec(): bestAlignBP->getAlignVec();
     double idealSc = scer.idealScore();
     normedSc = score/idealSc;
 
@@ -141,26 +149,45 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         ofstream output;
         string filePath = outPath+"/"+outfileAln+"_onA";
         output.open(filePath, ios::out);
-        bestAlign->writeAlignment(output, score, normedSc, true);
+        if(bestAlign) {
+            bestAlign->writeAlignment(output, score, normedSc, true);
+        } else {
+            bestAlignBP->writeAlignment(output, score, normedSc, true);
+        }
         output.close();
         cout<<"Write alignment on "<<BMb.getBMname()<<" to " <<outPath<<"/"<<outfileAln<<"_onB"<<endl;
         filePath = outPath+"/"+outfileAln+"_onB";
         output.open(filePath, ios::out);
-        bestAlign->writeAlignment(output, score, normedSc, false);
+        if(bestAlign) {
+            bestAlign->writeAlignment(output, score, normedSc, false);
+        } else {
+            bestAlignBP->writeAlignment(output, score, normedSc, false);
+        }
         output.close();
         cout<<"Write transformed "<<BMb.getBMname()<<" to " <<outPath<<"/"<<outfilePDB<<endl;
         filePath = outPath + "/" + outfilePDB;
         output.open(filePath, ios::out);
-        auto BMnew = BriqxModule(BMb, bestAlign->getRotTrans(), bestAlign->getAcog(), bestAlign->getBcog(),
+        BriqxModule* BMnew;
+        if(bestAlign) {
+            BMnew =  new BriqxModule(BMb, bestAlign->getRotTrans(), bestAlign->getAcog(), bestAlign->getBcog(),
             bpl, atl, "", true);
-        BMnew.printPDBFormat(output);
+        } else {
+            BMnew = new BriqxModule(BMb, bestAlignBP->getRotTrans(), bestAlignBP->getAcog(), bestAlignBP->getBcog(),
+            bpl, atl, "", true);
+        }
+        BMnew->printPDBFormat(output);
         output.close();
-        BMnew.deepClear();
+        BMnew->deepClear();
+        delete BMnew;
     }
 
     BMa.deepClear();
     BMb.deepClear();
-    delete bestAlign;
+    if(bestAlign) {
+        delete bestAlign;
+    } else {
+        delete bestAlignBP;
+    }
     return EXIT_SUCCESS;
 }
 

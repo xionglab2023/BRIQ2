@@ -16,6 +16,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <array>
 
 using namespace std;
 
@@ -58,7 +59,19 @@ int test2() {
     }
     return EXIT_SUCCESS;
 }
+
+int test3() {
+    int a = 1;
+    int b = 2;
+    array<int*,2> ar1{&a, &b}, ar2{&a, &b};
+    map<array<int*,2>, double> map1;
+    map1.emplace(ar1,0.314);
+    cout << map1.at(ar2) << endl;
+    return EXIT_SUCCESS;
+
+}
+
 int main() {
-    test1();
+    test3();
     return EXIT_SUCCESS;
 }
