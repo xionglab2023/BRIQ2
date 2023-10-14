@@ -149,7 +149,12 @@ namespace NSPbm
             }
             out << "# " << BMa->getBMname() <<"-"<<BMb->getBMname()<<" Base-Base alignment on " << BMb->getBMname() <<endl;
             out << "# Score: " << score <<", Normalized: " << normedSc <<endl;
-            out << "# " << setw(6) <<"Base1"<<setw(8)<<"BaseID"<<"ChainID"<<"Base2"<<"BaseID"<<"ChainID"<<endl;
+            out << "# " << setw(6) <<"Base1"<<
+                           setw(8) <<"BaseID"<<
+                           setw(8) <<"ChainID"<<
+                           setw(8) <<"Base2"<<
+                           setw(8) <<"BaseID"<<
+                           setw(8) <<"ChainID"<<endl;
             auto& blb = BMb->getBaseList();
             int lbb = blb.size();
             for(int i=0;i<lbb;i++) {

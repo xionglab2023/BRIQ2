@@ -8,7 +8,17 @@ SET( EXECUTABLE_OUTPUT_PATH  "${PROJECT_BINARY_DIR}/bin" )
 SET( LIBRARY_OUTPUT_PATH  "${PROJECT_BINARY_DIR}/lib" )
 
 include_directories("${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/include/")
-SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++20 -pthread -L ${LIBRARY_OUTPUT_PATH} -Wl,-rpath,$ENV{LIBRARY_PATH}")
+SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++20 -pthread -L ${LIBRARY_OUTPUT_PATH} -Wl,-rpath,$ENV{LIBRARY_PATH}") # bypassing CMake rpath mechanism
+# SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++20 -pthread -L ${LIBRARY_OUTPUT_PATH}")
+
+# set(CMAKE_BUILD_RPATH "$ENV{LIBRARY_PATH}")
+# set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# the RPATH to be used when installing, but only if it's not a system directory
+list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+if("${isSystemDir}" STREQUAL "-1")
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")  # add internal lib to install rpath
+endif("${isSystemDir}" STREQUAL "-1")
 
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -30,6 +40,8 @@ file(GLOB_RECURSE BR_SRC
     tools/src/*.cpp
     )
 add_library(briqx SHARED ${BR_SRC})
+install(TARGETS briqx
+        LIBRARY DESTINATION lib)
 
 add_subdirectory (briqxmodule)
 add_subdirectory (model/test)

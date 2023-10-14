@@ -16,6 +16,5 @@ using namespace std;
 string trimString(const string& s);
 
 void splitString(const string& s, const string& delim, vector<string >* ret);
-
 }
 #endif /* DESIGNSEQ_STRINGTOOL_H_ */

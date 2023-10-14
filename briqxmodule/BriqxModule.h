@@ -153,12 +153,14 @@ namespace NSPbm {
              * @param atl AtomLib object for BasePair determination, required.
              * @param name string. Name of the Briqx module, optional. By default the name of @p pdbFile is used.
              * @param bms BMSelection object. Specifing the range of the module, optional. By default use the whole structure.
+             * @param beLazy: if true, build module in lazy mode, only build @c this->chains and @c this->baseList , else 
+             * additionally build basePairList, revBasePairList and PaireneMap. Optional, default false
              * 
              * @note This constructor allocates new Atom, RNABase, RNAChain and BasePair objects.
              * 
              */
             BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl, const string& name = "NewModule", 
-                const BMSelection& bms = 0); // BasePair constructor requires non-const Atomlib.
+                const BMSelection& bms = 0, bool beLazy= false); // BasePair constructor requires non-const Atomlib.
 
             /**
              * @brief  Construct a new BriqxModule object from given list of chains and list of bases.
@@ -238,6 +240,10 @@ namespace NSPbm {
                 }
                 return *chainIDs;
             }   
+
+            const vector<RNAChain*>& getChains() const {
+                return chains;
+            }
 
             const vector<RNABase*>& getBaseList() const {
                 return this->baseList;

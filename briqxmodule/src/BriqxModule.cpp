@@ -30,13 +30,16 @@ BMSelection::BMSelection(int i) {
 
 BMSelection::BMSelection(const vector<int>& ci, const vector<vector<int> >& cr) {
     if(ci.size() != cr.size()) {
-        throw invalid_argument("Inconssitent number of chains in chain selection (" + to_string(ci.size()) +
-            ") and base selection (" + to_string(cr.size()) + ")");
+        cerr<< "[Error] InvalidArgument: Inconssitent number of chains in chain selection (" + to_string(ci.size()) +
+            ") and base selection (" + to_string(cr.size()) + ")" <<endl;
+        this->chainIndexes.clear();
+        this->chainIDs.clear();
+    } else {
+        this->chainIndexes = ci;
+        this->resIndexes = cr;
+        this->withChainIndex = true;
+        this->withResIndex = true;
     }
-    this->chainIndexes = ci;
-    this->resIndexes = cr;
-    this->withChainIndex = true;
-    this->withResIndex = true;
 }
 
 BMSelection::BMSelection(const vector<int>& ci, const vector<vector<string> >& cr) {
@@ -81,7 +84,7 @@ BriqxModule::BriqxModule() {
 }
 
 BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
-    const string& name, const BMSelection& bms) {
+    const string& name, const BMSelection& bms, bool beLazy) {
     this->BMname = name;
     RNAPDB rnapdb(pdbFile, name);
     auto& chains_tmp = rnapdb.getChains();
@@ -247,6 +250,9 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
             }
         }
     }
+
+    if(beLazy) return;
+    
     int lbp = this->basePairList.size();
     for(int i=0;i<lbp;i++){
         BasePair* curBp = this->basePairList[i];
