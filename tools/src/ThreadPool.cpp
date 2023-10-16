@@ -18,8 +18,9 @@ namespace NSPthread {
 
 using namespace std;
 
-ThreadPool::ThreadPool(size_t threadCount) : terminate(false) {
-    for(int i = 0; i<threadCount; i++) {
+ThreadPool::ThreadPool(size_t threadRequested) : terminate(false) {
+    threadCount = 0;
+    for(int i = 0; i<threadRequested; i++) {
         threads.emplace_back(&ThreadPool::threadFunction, this);
         threadCount++;
     }

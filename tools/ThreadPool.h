@@ -78,8 +78,8 @@ namespace NSPthread {
 
             virtual ~IntFuncTask(){}
 
-            template <typename F, typename... FArgs, typename... Args>
-            void asynBind(F(*f)(FArgs...), Args... args)
+            template <typename F, typename... FArgs, typename... Args>  
+            void asynBind(F(*f)(FArgs...), Args... args) // FArgs 和 Args 区分，避免常数不一致导致模板参数推导失败
             {
                 wf = bind(f,args...);
             }
@@ -112,7 +112,8 @@ namespace NSPthread {
             atomic<bool> terminate;  // 线程池终止标记
 
             //统计信息
-            atomic<size_t> threadCount;  // 线程数量
+            atomic<size_t> threadRequested;  // 要求的线程数量
+            atomic<size_t> threadCount;  // 当前线程数量
             atomic<size_t> taskCount;  // 任务数量
             atomic<size_t> completedTaskCount;  //已完成任务数量
             chrono::steady_clock::time_point startTime;  // 线程池启动时间

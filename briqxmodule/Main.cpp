@@ -180,7 +180,10 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
     cout<<"[Result] Normed score:" << to_string(normedSc) << endl;
 
     if(outPath != "") {
-        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<outfileAln<<"_onA"<<endl;
+        filesystem::path pthAln(outfileAln);
+        auto pAStem = pthAln.stem();
+        auto pAExt = pthAln.extension();
+        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem<<"_onA."<<pAExt<<endl;
         ofstream output;
         string filePath = outPath+"/"+outfileAln+"_onA";
         output.open(filePath, ios::out);
@@ -194,7 +197,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
             bestAlignBP->writeAlignment(output, score, normedSc, true);
         }
         output.close();
-        cout<<"[Info] Write alignment on "<<BMbName<<" to " <<outPath<<"/"<<outfileAln<<"_onB"<<endl;
+        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem<<"_onB."<<pAExt<<endl;
         filePath = outPath+"/"+outfileAln+"_onB";
         output.open(filePath, ios::out);
         if (! output.is_open())
@@ -260,12 +263,12 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
  * 
  * @return success code.
  */
-int alignAndScoreMT(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, AtomLib& atl, size_t jid,
-    map<array<string, 2>, double>& scoreMap, map<array<string, 2>, double>& normedScMap,
-    const BMSelection& BMaSel = 0, const BMSelection& BMbSel = 0,
-    const string& BMaName = "BMa", const string& BMbName = "BMb",
-    const string& outPath = NULL,
-    const string& outfileAln = "align.aln", const string& outfilePDB = "alignedB.pdb")
+int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, shared_ptr<AtomLib> atl, size_t jid,
+    shared_ptr<map<array<string, 2>, double> > scoreMap, shared_ptr<map<array<string, 2>, double> > normedScMap,
+    shared_ptr<BMSelection> BMaSel = nullptr, shared_ptr<BMSelection> BMbSel = nullptr,
+    string BMaName = "BMa", string BMbName = "BMb",
+    string outPath = NULL,
+    string outfileAln = "align.aln", string outfilePDB = "alignedB.pdb")
 {
     
     const double DDMCutoff = DDMCUTOFF;
@@ -274,8 +277,15 @@ int alignAndScoreMT(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl
     double score, normedSc;
     vector<array<RNABase*, 2> > alignVec;
 
-    BriqxModule BMa(BMaPDB, bpl, atl, BMaName, BMaSel);
-    BriqxModule BMb(BMbPDB, bpl, atl, BMbName, BMbSel);
+    shared_ptr<BMSelection> emptyBMS(new BMSelection);
+    if(BMaSel == nullptr) {
+        BMaSel = emptyBMS;
+    }
+    if(BMbSel == nullptr) {
+        BMbSel = emptyBMS;
+    }
+    BriqxModule BMa(BMaPDB, *bpl, *atl, BMaName, *BMaSel);
+    BriqxModule BMb(BMbPDB, *bpl, *atl, BMbName, *BMbSel);
 
     if(BMa.getChains().size() != BMb.getChains().size()) {
         clog << "[Result]["<<to_string(jid)<<"] ChainNum Unmatch: "<<
@@ -369,9 +379,12 @@ int alignAndScoreMT(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl
     }
     
     if(bestScore == 0) {
-        cout << "[Result]["<<to_string(jid)<<"] NoAlignmnet: " <<BMaName<<" - "<<BMbName << endl;
+        cout << "[Result]["<<to_string(jid)<<"] NoAlignmnet: " <<BMaName<<" vs "<<BMbName << endl;
         score = -2;
         normedSc = -2;
+        array<string,2> alnKey{BMaName, BMbName};
+        scoreMap->at(alnKey) = score;
+        normedScMap->at(alnKey) = normedSc;
         alignVec.clear();
         return EXIT_SUCCESS;
     }
@@ -380,17 +393,22 @@ int alignAndScoreMT(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl
     double idealSc = scer.idealScore();
     normedSc = score/idealSc;
 
-    cout<<"[Result]["<<to_string(jid)<<"] "<< BMa.getBMname() <<"-"<<BMb.getBMname()<<" Base-Base alignment completed" <<endl;
+    cout<<"[Result]["<<to_string(jid)<<"] "<< BMa.getBMname() <<"-"<<BMb.getBMname()<<
+        " Base-Base alignment completed" <<endl;
     cout<<"[Result]["<<to_string(jid)<<"] Alignment score:" << to_string(score) << endl;
     cout<<"[Result]["<<to_string(jid)<<"] Normed score:" << to_string(normedSc) << endl;
     array<string,2> alnKey{BMaName, BMbName};
-    scoreMap.at(alnKey) = score;
-    normedScMap.at(alnKey) = normedSc;
+    scoreMap->at(alnKey) = score;
+    normedScMap->at(alnKey) = normedSc;
 
     if(outPath != "") {
-        cout<<"[Info]["<<to_string(jid)<<"] Write alignment on "<<BMa.getBMname()<<" to " <<outPath<<"/"<<outfileAln<<"_onA"<<endl;
+        filesystem::path pthAln(outfileAln);
+        auto pAStem = pthAln.stem();
+        auto pAExt = pthAln.extension();
+        cout<<"[Info]["<<to_string(jid)<<"] Write alignment on "<<BMa.getBMname()<<" to " <<outPath<<
+        "/"<<pAStem.string()<<"_"<<BMaName<<"-"<<BMbName<<pAExt.string()<<endl;
         ofstream output;
-        string filePath = outPath+"/"+outfileAln+"_onA";
+        string filePath = outPath+"/" + pAStem.string() + "_" + BMaName + "-" + BMbName + pAExt.string();
         output.open(filePath, ios::out);
         if (! output.is_open())
         {
@@ -402,8 +420,13 @@ int alignAndScoreMT(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl
             bestAlignBP->writeAlignment(output, score, normedSc, true);
         }
         output.close();
-        cout<<"[Info]["<<to_string(jid)<<"] Write transformed "<<BMb.getBMname()<<" to " <<outPath<<"/"<<outfilePDB<<endl;
-        filePath = outPath + "/" + outfilePDB;
+
+        filesystem::path pthPDB(outfilePDB);
+        auto pPStem = pthPDB.stem();
+        auto pPExt = pthPDB.extension();
+        cout<<"[Info]["<<to_string(jid)<<"] Write transformed "<<BMbName<<" to " <<BMaName << " to " << outPath << "/"
+            << pPStem.string() << "_"<<BMaName<<"-"<<BMbName<<pPExt.string() << endl;
+        filePath = outPath + "/" + pPStem.string() + "_" + BMbName + "_To_" + BMaName + pPExt.string();
         output.open(filePath, ios::out);
         if (! output.is_open())
         {
@@ -412,10 +435,10 @@ int alignAndScoreMT(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl
         BriqxModule* BMnew;
         if(bestAlign) {
             BMnew =  new BriqxModule(BMb, bestAlign->getRotTrans(), bestAlign->getAcog(), bestAlign->getBcog(),
-            bpl, atl, "", true);
+            *bpl, *atl, "", true);
         } else {
             BMnew = new BriqxModule(BMb, bestAlignBP->getRotTrans(), bestAlignBP->getAcog(), bestAlignBP->getBcog(),
-            bpl, atl, "", true);
+            *bpl, *atl, "", true);
         }
         BMnew->printPDBFormat(output);
         output.close();
@@ -436,6 +459,8 @@ int alignAndScoreMT(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl
 void printHelp() {
     cout << "Usage:" <<endl;
     cout << "bmalign -a PDBA -b PDBB -o outPath -op outPDBFileName -oa outAlignmentFileName" << endl;
+    cout << "bmalign -n NumThreads -f PDBList -o outPath -op outPDBFileName -oa outAlignmentFileName"<<
+            " -os outScoreFileName" << endl;
 }
 
 /**
@@ -448,12 +473,12 @@ void printHelp() {
  * @param -o: Output path
  * @param -op: filename (no path included) of output PDB file recording aligned module B
  * @param -oa: filename (no path included) of output alignment files (based on module A and module B, respectively).
- * @param Options not implemented:
  * @param -f: Read input PDB list from given file.
- * @param -d: Read input PDB from given directory.
  * @param -os: filename (path included) to write overall scores in csv format, suffixes labeling nChains and ".csv" will
  * be appended. Default is path from -o with filename "overallScores".
  * @param -n: number of threads to use.
+ * @param Options not implemented:
+ * @param -d: Read input PDB from given directory.
  * @param -selA: Apply base-based selections from input PDB of module A. 
  * @param -selB: Apply base-based selections from input PDB of module B. 
  * 
@@ -533,10 +558,10 @@ int main(int argc, char** argv) {
         }
         string s;
         map<int,vector<string> > chainNum2MotifMap;
-        BasePairLib bpl;
-        AtomLib atl;
+        shared_ptr<BasePairLib> pbpl(new BasePairLib);
+        shared_ptr<AtomLib> patl(new AtomLib);
         while(getline(input,s)) {
-            BriqxModule BM0(s, bpl, atl, "BM0", 0, true);
+            BriqxModule BM0(s, *pbpl, *patl, "BM0", 0, true);
             int nChains = BM0.getChains().size();
             if(chainNum2MotifMap.contains(nChains)) {
                 chainNum2MotifMap[nChains].emplace_back(s);
@@ -553,7 +578,9 @@ int main(int argc, char** argv) {
         shared_ptr<ThreadPool> thrPool(new ThreadPool(nt));
         size_t jid = 0;
         for(auto &iter: chainNum2MotifMap) {
-            map<array<string, 2>, double> scoreMap, normedScMap;
+            shared_ptr<map<array<string, 2>, double> > scoreMap(new map<array<string, 2>, double>);
+            shared_ptr<map<array<string, 2>, double> > normedScMap(new map<array<string, 2>, double>);
+            shared_ptr<BMSelection> emptyBMS(new BMSelection);
             vector<string> stemVec;  // vector of filename w/o suffix
             int lv = iter.second.size();
             for(int i=0;i<lv;i++) {
@@ -564,8 +591,8 @@ int main(int argc, char** argv) {
                 string BMaName = stemVec[i];
                 for(int j=i+1;j<lv;j++) {
                     string BMbName = stemVec[j];
-                    scoreMap.emplace(array<string,2>{BMaName,BMbName}, 0);
-                    normedScMap.emplace(array<string,2>{BMaName,BMbName}, 0);
+                    scoreMap->emplace(array<string,2>{BMaName,BMbName}, 0);
+                    normedScMap->emplace(array<string,2>{BMaName,BMbName}, 0);
                 }
             }
             for(int i=0;i<lv;i++) {
@@ -573,8 +600,9 @@ int main(int argc, char** argv) {
                 for(int j=i+1;j<lv;j++) {
                     string BMbName = stemVec[j];
                     shared_ptr<IntFuncTask> request(new IntFuncTask);
-                    request->asynBind(alignAndScoreMT, iter.second[i], iter.second[j], bpl, atl, jid++,
-                        scoreMap, normedScMap, 0, 0, BMaName, BMbName, outPath, outfileAln, outfilePDB);
+                    request->asynBind(alignAndScoreMT, iter.second[i], iter.second[j], pbpl, patl, jid,
+                        scoreMap, normedScMap, emptyBMS, emptyBMS, BMaName, BMbName, outPath, outfileAln, outfilePDB);
+                    jid++;
                     thrPool->addTask(request);
                 }
             }
@@ -584,10 +612,10 @@ int main(int argc, char** argv) {
                     break;
                 }
             }
-            cout<<"[Info][Main] Aligment for "<<iter.first<<" chain motifs complete, writing scores."<<endl;
+            cout<<"[Info][Main] Aligment for "<<iter.first<<"-chain motifs complete, writing scores."<<endl;
             ofstream scout;
-            string scSuf = "_score-" + to_string(iter.first) + "chains.csv"; 
-            string scOutFile = outfileSc.concat(scSuf);
+            string scSuf = "_score-" + to_string(iter.first) + "chain.csv"; 
+            string scOutFile = outfileSc.string() + scSuf;
             scout.open(scOutFile, ios::out);
             if (! scout.is_open())
             {
@@ -599,7 +627,7 @@ int main(int argc, char** argv) {
                 for(int j=i+1;j<lv;j++) {
                     string BMbName = stemVec[j];
                     array<string,2> key{BMaName, BMbName};
-                    scout << BMaName<<BMbName<<scoreMap.at(key) <<normedScMap.at(key)<<endl;
+                    scout << BMaName<<","<<BMbName<<","<<scoreMap->at(key) <<","<<normedScMap->at(key)<<endl;
                 }
             }
             scout.close();
