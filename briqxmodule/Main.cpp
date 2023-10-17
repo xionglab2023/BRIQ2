@@ -71,7 +71,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
     BriqxModule BMb(BMbPDB, bpl, atl, BMbName, BMbSel);
 
     if(BMa.getChains().size() != BMb.getChains().size()) {
-        clog << "[Info] ChainNum Unmatch: "<< BMaName << ": " << BMa.getChains().size() << ", "
+        cout << "[Info] ChainNum Unmatch: "<< BMaName << ": " << BMa.getChains().size() << ", "
                                            << BMbName << ": " << BMb.getChains().size() <<endl;
         score = -1;
         normedSc = -1;
@@ -97,7 +97,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
     while(DDMMatrix.at(p1->first) <= DDMCutoff) {
         auto* iniAlign = new BMAlign<vector<array<BasePair*,2> > >(BMa, BMb, vector<array<BasePair*,2> >{p1->first});
         #ifdef DEBUG
-            clog << "[DEBUG][Info] Evaluating initial alignment by pair " << i << endl;
+            cout << "[DEBUG][Info] Evaluating initial alignment by pair " << i << endl;
             int itCount = 0;
             // ofstream debugOut;
             // debugOut.open("iniTransformed.pdb", ios::out);
@@ -109,7 +109,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         #endif //DEBUG
         if(iniAlign->getAlignVec().size() == 0) {
             #ifdef DEBUG
-                clog << "[DEBUG][Info] Stop coz initial alignment get empty alignVec" <<endl;
+                cout << "[DEBUG][Info] Stop coz initial alignment get empty alignVec" <<endl;
             #endif //DEBUG
             break;
         }
@@ -119,7 +119,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         if(curSc-nextSc < iterStopAt) {
             #ifdef DEBUG
                 itCount++;
-                clog << "[DEBUG][Info] IniBP: " << i << ", Iteration " << itCount << endl;
+                cout << "[DEBUG][Info] IniBP: " << i << ", Iteration " << itCount << endl;
             #endif // DEBUG
             lastSc = curSc;
             curSc = nextSc;
@@ -129,7 +129,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         while(curSc-nextSc < iterStopAt) {
             #ifdef DEBUG
                 itCount++;
-                clog << "[DEBUG][Info] IniBP: " << i << ", Iteration " << itCount << endl;
+                cout << "[DEBUG][Info] IniBP: " << i << ", Iteration " << itCount << endl;
             #endif // DEBUG
             lastSc = curSc;
             curSc = nextSc;
@@ -143,12 +143,13 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         if(curSc > bestScore) {
             bestScore = curSc;
             #ifdef DEBUG
-                clog << "[DEBUG][Info] Refreshing, best score now from iniBP " << i << endl;
+                cout << "[DEBUG][Info] Refreshing, best score now from iniBP " << i << endl;
             #endif //DEBUG
-            if(bestAlign) delete bestAlign;
             if(curAlign) {
+                if(bestAlign) delete bestAlign;
                 bestAlign = curAlign;
             } else {
+                if(bestAlignBP) delete bestAlignBP;
                 bestAlignBP = iniAlign;
             }
         } else {
@@ -183,7 +184,8 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         filesystem::path pthAln(outfileAln);
         auto pAStem = pthAln.stem();
         auto pAExt = pthAln.extension();
-        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem<<"_onA."<<pAExt<<endl;
+        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem.string()<<"_onA."<<pAExt.string()<<
+            endl;
         ofstream output;
         string filePath = outPath+"/"+outfileAln+"_onA";
         output.open(filePath, ios::out);
@@ -197,7 +199,8 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
             bestAlignBP->writeAlignment(output, score, normedSc, true);
         }
         output.close();
-        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem<<"_onB."<<pAExt<<endl;
+        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem.string()<<"_onB."<<
+            pAExt.string()<<endl;
         filePath = outPath+"/"+outfileAln+"_onB";
         output.open(filePath, ios::out);
         if (! output.is_open())
@@ -288,9 +291,9 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
     BriqxModule BMb(BMbPDB, *bpl, *atl, BMbName, *BMbSel);
 
     if(BMa.getChains().size() != BMb.getChains().size()) {
-        clog << "[Result]["<<to_string(jid)<<"] ChainNum Unmatch: "<<
-            BMaName << ": " << BMa.getChains().size() << ", "<<
-            BMbName << ": " << BMb.getChains().size() <<endl;
+        string outstr = "[Result][" + to_string(jid) + "] ChainNum Unmatch: " +\
+            BMaName + ": " + to_string(BMa.getChains().size()) + ", " + \
+            BMbName + ": " + to_string(BMb.getChains().size()) + "\n";
         return EXIT_SUCCESS;
     }
 
@@ -312,7 +315,9 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
     while(DDMMatrix.at(p1->first) <= DDMCutoff) {
         auto* iniAlign = new BMAlign<vector<array<BasePair*,2> > >(BMa, BMb, vector<array<BasePair*,2> >{p1->first});
         #ifdef DEBUG
-            clog << "[DEBUG][Info]["<<to_string(jid)<<"] Evaluating initial alignment by pair " << i << endl;
+            string outstr = "[DEBUG][Info][" + to_string(jid) + "] Evaluating initial alignment by pair " +\
+                            to_string(i) + "\n";
+            cout << outstr ;
             int itCount = 0;
             // ofstream debugOut;
             // debugOut.open("iniTransformed.pdb", ios::out);
@@ -324,8 +329,10 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
         #endif //DEBUG
         if(iniAlign->getAlignVec().size() == 0) {
             #ifdef DEBUG
-                clog << "[DEBUG][Info]["<<to_string(jid)<<"] Stop coz initial alignment get empty alignVec" <<endl;
+                outstr = "[DEBUG][Info][" + to_string(jid) + "] Stop coz initial alignment get empty alignVec\n";
+                cout << outstr; // << operator is not thread-safe, i.e. we can use it atomically only
             #endif //DEBUG
+            delete iniAlign;
             break;
         }
         BMAlign<vector<array<RNABase*,2> > >* curAlign = nullptr, *lastAlign = nullptr, *nextAlign;
@@ -334,7 +341,9 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
         if(curSc-nextSc < iterStopAt) {
             #ifdef DEBUG
                 itCount++;
-                clog << "[DEBUG][Info]["<<to_string(jid)<<"] IniBP: " << i << ", Iteration " << itCount << endl;
+                outstr = "[DEBUG][Info][" + to_string(jid) + "] IniBP: " + to_string(i) + ", Iteration " + \
+                         to_string(itCount) + "\n";
+                cout << outstr;
             #endif // DEBUG
             lastSc = curSc;
             curSc = nextSc;
@@ -344,7 +353,9 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
         while(curSc-nextSc < iterStopAt) {
             #ifdef DEBUG
                 itCount++;
-                clog << "[DEBUG][Info]["<<to_string(jid)<<"] IniBP: " << i << ", Iteration " << itCount << endl;
+                outstr = "[DEBUG][Info][" + to_string(jid) + "] IniBP: " + to_string(i) + ", Iteration " + \
+                to_string(itCount) + "\n";
+                cout << outstr;
             #endif // DEBUG
             lastSc = curSc;
             curSc = nextSc;
@@ -358,12 +369,15 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
         if(curSc > bestScore) {
             bestScore = curSc;
             #ifdef DEBUG
-                clog << "[DEBUG][Info]["<<to_string(jid)<<"] Refreshing, best score now from iniBP " << i << endl;
+                outstr = "[DEBUG][Info][" + to_string(jid) + "] Refreshing, best score now from iniBP " + \
+                         to_string(i) + "\n";
+                cout << outstr; 
             #endif //DEBUG
-            if(bestAlign) delete bestAlign;
             if(curAlign) {
+                if(bestAlign) delete bestAlign;
                 bestAlign = curAlign;
             } else {
+                if(bestAlignBP) delete bestAlignBP;
                 bestAlignBP = iniAlign;
             }
         } else {
@@ -379,7 +393,8 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
     }
     
     if(bestScore == 0) {
-        cout << "[Result]["<<to_string(jid)<<"] NoAlignmnet: " <<BMaName<<" vs "<<BMbName << endl;
+        string outstr = "[Result][" + to_string(jid) + "] NoAlignmnet: " + BMaName + " vs " + BMbName + "\n";
+        cout << outstr;
         score = -2;
         normedSc = -2;
         array<string,2> alnKey{BMaName, BMbName};
@@ -393,10 +408,13 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
     double idealSc = scer.idealScore();
     normedSc = score/idealSc;
 
-    cout<<"[Result]["<<to_string(jid)<<"] "<< BMa.getBMname() <<"-"<<BMb.getBMname()<<
-        " Base-Base alignment completed" <<endl;
-    cout<<"[Result]["<<to_string(jid)<<"] Alignment score:" << to_string(score) << endl;
-    cout<<"[Result]["<<to_string(jid)<<"] Normed score:" << to_string(normedSc) << endl;
+    string outstr = "[Result][" + to_string(jid) + "] " + BMa.getBMname() + "-" + BMb.getBMname() +\
+        " Base-Base alignment completed\n";
+    cout<<outstr;
+    outstr = "[Result][" + to_string(jid) + "] Alignment score:" + to_string(score) + "\n";
+    cout<<outstr;
+    outstr = "[Result][" + to_string(jid) + "] Normed score:" + to_string(normedSc) + "\n";
+    cout<<outstr;
     array<string,2> alnKey{BMaName, BMbName};
     scoreMap->at(alnKey) = score;
     normedScMap->at(alnKey) = normedSc;
@@ -405,8 +423,9 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
         filesystem::path pthAln(outfileAln);
         auto pAStem = pthAln.stem();
         auto pAExt = pthAln.extension();
-        cout<<"[Info]["<<to_string(jid)<<"] Write alignment on "<<BMa.getBMname()<<" to " <<outPath<<
-        "/"<<pAStem.string()<<"_"<<BMaName<<"-"<<BMbName<<pAExt.string()<<endl;
+        string outstr = "[Info][" + to_string(jid) + "] Write alignment on " + BMa.getBMname() + " to "  + outPath +\
+        "/" + pAStem.string() + "_" + BMaName + "-" + BMbName + pAExt.string() + "\n";
+        cout << outstr;
         ofstream output;
         string filePath = outPath+"/" + pAStem.string() + "_" + BMaName + "-" + BMbName + pAExt.string();
         output.open(filePath, ios::out);
@@ -424,8 +443,9 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
         filesystem::path pthPDB(outfilePDB);
         auto pPStem = pthPDB.stem();
         auto pPExt = pthPDB.extension();
-        cout<<"[Info]["<<to_string(jid)<<"] Write transformed "<<BMbName<<" to " <<BMaName << " to " << outPath << "/"
-            << pPStem.string() << "_"<<BMaName<<"-"<<BMbName<<pPExt.string() << endl;
+        outstr = "[Info][" + to_string(jid) + "] Write transformed " + BMbName + " to "  + BMaName + " to " + outPath \
+            + "/" + pPStem.string() + "_" + BMaName + "-" + BMbName + pPExt.string() + "\n";
+        cout<<outstr;
         filePath = outPath + "/" + pPStem.string() + "_" + BMbName + "_To_" + BMaName + pPExt.string();
         output.open(filePath, ios::out);
         if (! output.is_open())

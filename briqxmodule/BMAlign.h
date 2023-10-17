@@ -178,7 +178,6 @@ namespace NSPbm
 
     template<IsValid T>
     BMAlign<T>::~BMAlign() {
-        // do nothing
     }
 
 } // namespace NSPbm

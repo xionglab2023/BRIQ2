@@ -2,15 +2,15 @@
  * @file BriqxModule.h
  * @author Klark Chen (klarkchen@ustc.edu.cn)
  * @brief  Header file declaring class BriqxModule and BMSelection
- * 
+ *
  * BriqxModule is the main class that handles the Briqx modules. BMselection is a supporting class used to locate the Briqx module
  * from a RNAPDB object.
- * 
+ *
  * @version udef
  * @date 2023/08/08
- * 
+ *
  * @copyright Copyright (c) 2023 XLAB
- * 
+ *
  * modification history :
  * Date:      Version:    Author:
  * Changes:
@@ -18,16 +18,16 @@
 
 #ifndef BRIQXMODULE_BRIQXMODULE_H_
 #define BRIQXMODULE_BRIQXMODULE_H_
-#define DEBUG
+// #define DEBUG
 
 /**
  * @addtogroup BriqxModule
  * @brief  BriqxModule api description
- * 
+ *
  * Detailed BriqxModule api description
- * 
+ *
  * @{
- * 
+ *
  */
 #include "model/BaseDistanceMatrix.h"
 #include "model/StructureModel.h"
@@ -45,13 +45,13 @@ namespace NSPbm {
 
     /**
      * @brief  The selection class of BriqxModule.
-     * 
-     * A way to specify a subset of bases from BriqxModule or RNAPDB objects. The selection is based on chains and 
+     *
+     * A way to specify a subset of bases from BriqxModule or RNAPDB objects. The selection is based on chains and
      * bases. Chains are selected alternatively with a @c vector of @c int as 0-based chain indexes (of the
      * original object), or a @c vector of @c string as chain IDs; Bases are selected alternatively with a 2D
      * (axis0->chain, axis1->base) @c vector of @c int as 0-based base indexes of the whole sequence (RNABase baseSeqID), or a 2D
      * @c vector of @c string as base ids in the original PDB (RNABase baseID).
-     * 
+     *
      */
     class BMSelection {
         private:
@@ -95,11 +95,11 @@ namespace NSPbm {
 
     /**
      * @brief  The main working class of BriqxModule
-     * 
-     * The class holds the topology of Briqx module by holding the vectors of pointers to the RNAChain and RNABase 
+     *
+     * The class holds the topology of Briqx module by holding the vectors of pointers to the RNAChain and RNABase
      * objects created by RNAPDB. Functions calculating the distance of DistanceMatrixes, aligning and scoring
      * the alignmments are included.
-     * 
+     *
      */
     class BriqxModule {
         private:
@@ -112,25 +112,25 @@ namespace NSPbm {
                 // 指针引用的RNABase 对象由 new 在堆区创建，不用delete不会自动释放
                 // RNABase 对象在计算DM时会被修改
             /**
-             * 
+             *
              * @brief  Vector of BasePair pointers to BasePairs within the module, size <= Nb(Nb-1)/2 due to filter out
              * of non-contact basepairs.
              */
             vector<BasePair*> basePairList;
             /**
-             * 
+             *
              * @brief  Vector of BasePair pointers to reversed BasePairs within the module, size=basePairList.size().
              * This list is introduced coz BasePairs are ordered in their DMs.
              */
-            vector<BasePair*> revBasePairList; 
+            vector<BasePair*> revBasePairList;
             /**
              *
-             * @brief Map from 2-elem array of RNAbase* to BasePair*, i.e. from member bases to basepair. Both basepairs 
+             * @brief Map from 2-elem array of RNAbase* to BasePair*, i.e. from member bases to basepair. Both basepairs
              * and reversed basepairs are included.
              */
             map<array<RNABase*,2>, BasePair*> bb2bpMap;
             /**
-             * 
+             *
              * @brief Map from BasePair to BasePair energies in BasePairLib, both BasePair and reversed BasePairs are included.
              */
             map<BasePair*, double>  PairEneMap;
@@ -138,39 +138,39 @@ namespace NSPbm {
         public:
             /**
              * @brief  Construct a new empty Briqx Module object
-             * 
+             *
              */
             BriqxModule();
 
             /**
              * @brief  Construct a new BriqxModule object from PDB file.
-             * 
+             *
              * Construct a new Briqx Module object by reading contents of @p pdbFile and get a part of the structure
-             * through @p bms . Optionally user can customize the name of the module by @p name . 
-             * 
+             * through @p bms . Optionally user can customize the name of the module by @p name .
+             *
              * @param pdbFile string. Path to the pdb file, required.
              * @param bpl BasePairLib object for basepair type and energy determination, required.
              * @param atl AtomLib object for BasePair determination, required.
              * @param name string. Name of the Briqx module, optional. By default the name of @p pdbFile is used.
              * @param bms BMSelection object. Specifing the range of the module, optional. By default use the whole structure.
-             * @param beLazy: if true, build module in lazy mode, only build @c this->chains and @c this->baseList , else 
+             * @param beLazy: if true, build module in lazy mode, only build @c this->chains and @c this->baseList , else
              * additionally build basePairList, revBasePairList and PaireneMap. Optional, default false
-             * 
+             *
              * @note This constructor allocates new Atom, RNABase, RNAChain and BasePair objects.
-             * 
+             *
              */
-            BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl, const string& name = "NewModule", 
+            BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl, const string& name = "NewModule",
                 const BMSelection& bms = 0, bool beLazy= false); // BasePair constructor requires non-const Atomlib.
 
             /**
              * @brief  Construct a new BriqxModule object from given list of chains and list of bases.
-             * 
-             * @param chains: list of chains; required. 
+             *
+             * @param chains: list of chains; required.
              * @param baseList: list of bases; required.
-             * @param bpl: BasePairLib; required. 
-             * @param atl: AtomLib; required. 
-             * @param name: name of module; optional, default "NewModule". 
-             * @param beLazy: if true, build module in lazy mode, only build @c this->chains and @c this->baseList , else 
+             * @param bpl: BasePairLib; required.
+             * @param atl: AtomLib; required.
+             * @param name: name of module; optional, default "NewModule".
+             * @param beLazy: if true, build module in lazy mode, only build @c this->chains and @c this->baseList , else
              * additionally build basePairList, revBasePairList and PaireneMap. Optional, default false
              * @note This constructor may allocate new BasePair objects. It does not check correspondence between chains and
              * baseLists (correctly correlated chains and baseList are expected)
@@ -185,31 +185,31 @@ namespace NSPbm {
 
             /**
              * @brief  Construct a new BriqxModule object by transforming the coordinates of an existing BriqxModule object.
-             * 
+             *
              * @p tf and @p tv are applied to all atoms within @p bm0 , while BasePair related members are generated only
              * when @p beLazy is false.
-             * 
-             * @param bm0: The original BriqxModule object. 
-             * @param tf: The rotational matrix. 
+             *
+             * @param bm0: The original BriqxModule object.
+             * @param tf: The rotational matrix.
              * @param Acog: An XYZ object that holds the center-of-geometry of aligned Bases of module A (the stational one).
              * @param Bcog: An XYZ object that holds the center-of-geometry of aligned Bases of module B (the transfomed one).
-             * @param bpl: BasePairLib; required. 
-             * @param atl: AtomLib; required. 
-             * @param name: name of module; optional, default use the name of @p bm0. 
-             * @param beLazy: if true, build module in lazy mode, only build @c this->chains and @c this->baseList , else 
+             * @param bpl: BasePairLib; required.
+             * @param atl: AtomLib; required.
+             * @param name: name of module; optional, default use the name of @p bm0.
+             * @param beLazy: if true, build module in lazy mode, only build @c this->chains and @c this->baseList , else
              * additionally build basePairList, revBasePairList and PaireneMap. Optional, default false
-             * 
+             *
              * @note This constructor allocates new Atom, RNABase, RNAChain and BasePair objects, which should be destructed
              * before destructing objects constructed with this constructor. BriqxModule::deepClear() can be employed for the
-             * job.  
+             * job.
              */
             BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ& Acog, const XYZ& Bcog, BasePairLib& bpl,
                 AtomLib& atl, const string& name = NULL, bool beLazy = false);
 
             /**
              * @brief  Set name of the module
-             * 
-             * @param name string. Name of the module 
+             *
+             * @param name string. Name of the module
              */
             void setBMname(const string& name) {
                 BMname = name;
@@ -217,17 +217,17 @@ namespace NSPbm {
 
             /**
              * @brief  Get name of the module
-             * 
+             *
              * @return const sting& BMname the name of the module
-             * @note the reference is const and not editable unless BMname is received by a usual string object. 
+             * @note the reference is const and not editable unless BMname is received by a usual string object.
              */
             const string& getBMname() const {
                 return BMname;
             }
 
             /**
-             * @brief  Get ID of the chains in the module 
-             * 
+             * @brief  Get ID of the chains in the module
+             *
              * @return const vector<string>& Reference to a vector of the chain IDs
              * @note   The referenced vector from getChainIDs is allocated by @c new operator,
              *         thus should be deleted manually.
@@ -239,7 +239,7 @@ namespace NSPbm {
                     chainIDs->emplace_back(chains[i]->getChainID());
                 }
                 return *chainIDs;
-            }   
+            }
 
             const vector<RNAChain*>& getChains() const {
                 return chains;
@@ -251,8 +251,8 @@ namespace NSPbm {
 
             /**
              * @brief  Get the BasePairList within the BriqxModule object
-             * 
-             * @return const vector<BasePair*>& 
+             *
+             * @return const vector<BasePair*>&
              */
             const vector<BasePair*>& getBasePairList() const {
                 return this->basePairList;
@@ -260,8 +260,8 @@ namespace NSPbm {
 
             /**
              * @brief  Get the revBasePairList within the BriqxModule object
-             * 
-             * @return const vector<BasePair*>& 
+             *
+             * @return const vector<BasePair*>&
              */
             const vector<BasePair*>& getRevBasePairList() const {
                 return this->revBasePairList;
@@ -277,7 +277,7 @@ namespace NSPbm {
 
             /**
              * @brief  Get a list of BasePairs within the module according to a given @p bms
-             * 
+             *
              * @param bms A BMSelection object specifiing the range of bases to take account of, optional.
              *            By default return all BasePairs within the module.
              * @param withReversed A flag specifying whether return reversed BasePairList, if true, the basepairs from
@@ -289,30 +289,30 @@ namespace NSPbm {
 
             /**
              * @brief  Calculate a matrix of Distances between base Distance Matrixes (DDM) to another module.
-             * 
+             *
              * For each basepair in current module, calculate the Distance bwteen its base Distance Matrix and that of
              * each basepair from another module, which composes the Matrix of DDM, with row axis being basepairs (
              * reverse basepairs included) from the current module and the column axis being basepairs (reverse
              * basepairs ignored) from the other module.
-             * 
+             *
              * @param [in] other: Reference to a BriqxModule object.
              *      The other module.
              * @param [out] DDMMatrix: Matrix of the calculated DDMs, initialized as a map mapping a 2-elem array
              *      denoting BasePairs from @c current and @p other module respectively, to the DDM value.
-             * 
+             *
              * @return int, code of successfulness.
              */
             int calcDDMMatrix(const BriqxModule& other, map<array<BasePair*, 2>, double>& DDMMatrix) const;
 
             /**
              * @brief  Sort given map by value.
-             * 
-             * Sort given map by value, return a vector composed of sorted key-value pairs. 
-             * 
+             *
+             * Sort given map by value, return a vector composed of sorted key-value pairs.
+             *
              * @param [in] unsortMap:
              * @param [in] order: order of sorting, accepts "desc", "asc", default "desc" corresponds to descending order
-             * @param [out] sortedVec: 
-             * 
+             * @param [out] sortedVec:
+             *
              * @return int: code of successfulness.
              * @note replaced by utils::sortMapByValue
              */
@@ -321,11 +321,11 @@ namespace NSPbm {
 
             /**
              * @brief  Resolve the transform to a BriqxModule according to aligned BasePairs ( @p alignVec ).
-             * 
+             *
              * The transform includes a rotational matrix @p tf and a translational vector @p tv .
-             * 
-             * @param [in] alignVec: vector of pairs of aligned BasePairs. In each element, the first BasePair is from the first 
-             * module and the second BasePair is from the second one. 
+             *
+             * @param [in] alignVec: vector of pairs of aligned BasePairs. In each element, the first BasePair is from the first
+             * module and the second BasePair is from the second one.
              * @param [out] tf: A TransForm object that holds rotational matrix, which when applied will rotate the second module
              * to the first one.
              * @param [out] Acog: An XYZ object that holds the center-of-geometry of aligned Bases of module A (the stational one,
@@ -338,11 +338,11 @@ namespace NSPbm {
 
             /**
              * @brief  Resolve the transform to a BriqxModule according to aligned Bases ( @p alignVec ).
-             * 
+             *
              * The transform includes a rotational matrix @p tf and a translational vector @p tv .
-             * 
-             * @param [in] alignVec: vector of pairs of aligned RNABases. In each element, the first RNABase is from the first 
-             * module and the second RNABase is from the second one. 
+             *
+             * @param [in] alignVec: vector of pairs of aligned RNABases. In each element, the first RNABase is from the first
+             * module and the second RNABase is from the second one.
              * @param [out] tf: A TransForm object that holds rotational matrix, which when applied will rotate the second module
              * to the first one.
              * @param [out] Acog: An XYZ object that holds the center-of-geometry of aligned Bases of module A (the stational one,
@@ -356,8 +356,8 @@ namespace NSPbm {
 
             /**
              * @brief  Apply transform (TransForm @p tm  and translational vector @p tv ) to @c this BriqxModule, return
-             * transformed FourPseudoAtoms coordinates of bases in @c this BriqxModule. 
-             * 
+             * transformed FourPseudoAtoms coordinates of bases in @c this BriqxModule.
+             *
              * @param [in] tf: A TransForm object that rotate @c this module to the orientation of another module.
              * @param [in] Acog: An XYZ object that holds the center-of-geometry of aligned Bases of module A (the stational one).
              * @param [in] Bcog: An XYZ object that holds the center-of-geometry of aligned Bases of module B (the transfomed one).
@@ -372,8 +372,8 @@ namespace NSPbm {
              * @brief  Resolve base-base alignment to another BriqxModule according to base distance. The base distance
              * is defined as the mean of distances between corresponding FourPseudoAtoms. Bases are aligned to the nearest
              * base in @p other module.
-             * 
-             * @param [in] other: The other BriqxModule. 
+             *
+             * @param [in] other: The other BriqxModule.
              * @param [in] dCutoff: Cutoff of base-base distance to treat two bases as aligned.
              * @param [in] BasePos: New position of the bases of @p other . The alignment evaluation will base on
              * it if it is not empty. Optional, default empty.
@@ -386,7 +386,7 @@ namespace NSPbm {
 
             /**
              * @brief  Print object in PDB format to @p out.
-             * 
+             *
              * @param out: Output stream.
              */
             void printPDBFormat(ofstream& out) const;
@@ -394,26 +394,26 @@ namespace NSPbm {
             /**
              * @brief  Delete all allocated memory that referenced by pointers within the BriqxModule object.
              * RNABase, BasePair and RNAChain objects will be deleted. This function is expected to be called
-             * only before destruction. 
-             * 
+             * only before destruction.
+             *
              * @note Class members holding the pointers to these objects are not removed (they are expected
              * to be deleted during destruction)
              * @warning Call with caution that the cleared objects are no longer used by any other instances.
-             * 
+             *
              */
             void deepClear();
 
             /**
              * @brief  Delete BasePair objects referenced by basePairList and revBasePairList. This function is
              * expected to be called only before destruction.
-             * 
+             *
              * @note Class members holding the pointers to these objects are not removed (they are expected
              * to be deleted during destruction)
              * @warning Call with caution that the cleared objects are no longer used by any other instances.
-             * 
+             *
              */
             void clearBasePairs();
-            
+
             virtual ~BriqxModule();
     };
 } // NSPbm

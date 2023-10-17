@@ -1,12 +1,12 @@
 /**
  * @file BMScore.cpp
  * @author Klark Chen (klarkchen@ustc.edu.cn)
- * @brief  
+ * @brief
  * @version udef
  * @date 2023/08/19
- * 
+ *
  * @copyright Copyright (c) 2023 XLAB
- * 
+ *
  * modification history :
  * Date:      Version:    Author:
  * Changes:
@@ -27,7 +27,7 @@ namespace NSPbm
         BMb = NULL;
         DDMMap = NULL;
     }
-    
+
     BMScore::BMScore(const BriqxModule& BM1, const BriqxModule& BM2, const map<array<BasePair*, 2>, double>& DDMMatrix)
     {
         BMa = &BM1;
@@ -74,7 +74,7 @@ namespace NSPbm
                 */
                 array<RNABase*, 2> arrBbA, arrBbB;
                 if(find(blB.begin(), blB.end(), bB1) - find(blB.begin(), blB.end(), bB2) < 0) {
-                    // bB1-bB2 is forward basepair 
+                    // bB1-bB2 is forward basepair
                     arrBbA[0] = bA1;
                     arrBbA[1] = bA2;
                     arrBbB[0] = bB1;
@@ -89,10 +89,13 @@ namespace NSPbm
                 if(bb2bpMapB.contains(arrBbB) && bb2bpMapA.contains(arrBbA)){
                     out->emplace_back(array<BasePair*,2>{bb2bpMapA.at(arrBbA), bb2bpMapB.at(arrBbB)});
                 } else {
-                    cout << "Warning: " << BMa->getBMname() << ":" << bA1->baseType << bA1->baseID << "-" << \
-                    bA2->baseType<<bA2->baseID << " or " \
-                    << BMb->getBMname() << ":" << bB1->baseType << bB1->baseID << "-" \
-                    << bB2->baseType << bB2->baseID << " BasePair not qualified" << endl;
+                    # ifdef DEBUG
+                    string outstr = "[DEBUG][Warning] " + BMa->getBMname() + ":" + bA1->baseType + bA1->baseID + "-" \
+                                     + bA2->baseType + bA2->baseID + " or " + \
+                                     BMb->getBMname() + ":" + bB1->baseType + bB1->baseID + "-" \
+                                     + bB2->baseType + bB2->baseID + " BasePair not qualified" + "\n";
+                    cout << outstr;
+                    #endif
                 }
             }
         }
@@ -142,7 +145,7 @@ namespace NSPbm
     }
 
     BMScore::~BMScore(){
-        
+
     }
 
 } // namespace NSPbm

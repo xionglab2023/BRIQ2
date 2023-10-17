@@ -87,14 +87,15 @@ namespace NSPthread {
             virtual int run() throw()
             {
                 if(wf == nullptr)
-                    return 86;
+                    return 4;
                 try {
                     return wf();
                 } catch(exception& ex) {
-                    cerr << ex.what() <<endl;
+                    string outstr = ex.what();
+                    cerr << outstr + "\n";
                     return EXIT_FAILURE;
                 } catch(const string& estr) {
-                    cerr << estr << endl;
+                    cerr << estr + "\n";
                     return EXIT_FAILURE;
                 }
             }
