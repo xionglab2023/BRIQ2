@@ -135,6 +135,12 @@ namespace NSPbm {
              */
             map<BasePair*, double>  PairEneMap;
 
+            /**
+             * @brief Number of strands within the motif, note one chain may contain multiple strands due to motif 
+             * fragmentation.
+            */
+            int nStrand;
+
         public:
             /**
              * @brief  Construct a new empty Briqx Module object
@@ -413,6 +419,10 @@ namespace NSPbm {
              *
              */
             void clearBasePairs();
+
+            int getNStrand() const {
+                return nStrand;
+            }
 
             virtual ~BriqxModule();
     };

@@ -424,10 +424,10 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
         auto pAStem = pthAln.stem();
         auto pAExt = pthAln.extension();
         string outstr = "[Info][" + to_string(jid) + "] Write alignment on " + BMa.getBMname() + " to "  + outPath +\
-        "/" + pAStem.string() + "_" + BMaName + "-" + BMbName + pAExt.string() + "\n";
+        "/" + pAStem.string() + "_" + BMaName + "_with_" + BMbName + pAExt.string() + "\n";
         cout << outstr;
         ofstream output;
-        string filePath = outPath+"/" + pAStem.string() + "_" + BMaName + "-" + BMbName + pAExt.string();
+        string filePath = outPath+"/" + pAStem.string() + "_" + BMaName + "_with_" + BMbName + pAExt.string();
         output.open(filePath, ios::out);
         if (! output.is_open())
         {
@@ -444,7 +444,7 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
         auto pPStem = pthPDB.stem();
         auto pPExt = pthPDB.extension();
         outstr = "[Info][" + to_string(jid) + "] Write transformed " + BMbName + " to "  + BMaName + " to " + outPath \
-            + "/" + pPStem.string() + "_" + BMaName + "-" + BMbName + pPExt.string() + "\n";
+            + "/" + pPStem.string() + "_" + BMaName + "_To_" + BMbName + pPExt.string() + "\n";
         cout<<outstr;
         filePath = outPath + "/" + pPStem.string() + "_" + BMbName + "_To_" + BMaName + pPExt.string();
         output.open(filePath, ios::out);
@@ -494,7 +494,7 @@ void printHelp() {
  * @param -op: filename (no path included) of output PDB file recording aligned module B
  * @param -oa: filename (no path included) of output alignment files (based on module A and module B, respectively).
  * @param -f: Read input PDB list from given file.
- * @param -os: filename (path included) to write overall scores in csv format, suffixes labeling nChains and ".csv" will
+ * @param -os: filename (path included) to write overall scores in csv format, suffixes labeling nStrand and ".csv" will
  * be appended. Default is path from -o with filename "overallScores".
  * @param -n: number of threads to use.
  * @param Options not implemented:
@@ -577,27 +577,27 @@ int main(int argc, char** argv) {
             throw "[Error][Main] fail to open file " + listFile;
         }
         string s;
-        map<int,vector<string> > chainNum2MotifMap;
+        map<int,vector<string> > strandNum2MotifMap;
         shared_ptr<BasePairLib> pbpl(new BasePairLib);
         shared_ptr<AtomLib> patl(new AtomLib);
         while(getline(input,s)) {
             BriqxModule BM0(s, *pbpl, *patl, "BM0", 0, true);
-            int nChains = BM0.getChains().size();
-            if(chainNum2MotifMap.contains(nChains)) {
-                chainNum2MotifMap[nChains].emplace_back(s);
+            int nStrand = BM0.getNStrand();
+            if(strandNum2MotifMap.contains(nStrand)) {
+                strandNum2MotifMap[nStrand].emplace_back(s);
             } else{
                 vector<string> vec0{s};
-                chainNum2MotifMap.emplace(nChains, vec0);
+                strandNum2MotifMap.emplace(nStrand, vec0);
             }
         }
         cout<<"[Info][Main] List of Motifs Summary:"<<endl;
-        cout<<"     nChains  Population"<<endl;
-        for(auto &iter: chainNum2MotifMap) {
+        cout<<"     nStrand  Population"<<endl;
+        for(auto &iter: strandNum2MotifMap) {
             cout<<setw(12)<<iter.first<<setw(12)<<iter.second.size()<<endl;
         }
         shared_ptr<ThreadPool> thrPool(new ThreadPool(nt));
         size_t jid = 0;
-        for(auto &iter: chainNum2MotifMap) {
+        for(auto &iter: strandNum2MotifMap) {
             shared_ptr<map<array<string, 2>, double> > scoreMap(new map<array<string, 2>, double>);
             shared_ptr<map<array<string, 2>, double> > normedScMap(new map<array<string, 2>, double>);
             shared_ptr<BMSelection> emptyBMS(new BMSelection);
@@ -632,9 +632,9 @@ int main(int argc, char** argv) {
                     break;
                 }
             }
-            cout<<"[Info][Main] Aligment for "<<iter.first<<"-chain motifs complete, writing scores."<<endl;
+            cout<<"[Info][Main] Aligment for "<<iter.first<<"-strand motifs complete, writing scores."<<endl;
             ofstream scout;
-            string scSuf = "_score-" + to_string(iter.first) + "chain.csv"; 
+            string scSuf = "_score-" + to_string(iter.first) + "strand.csv"; 
             string scOutFile = outfileSc.string() + scSuf;
             scout.open(scOutFile, ios::out);
             if (! scout.is_open())

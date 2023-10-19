@@ -81,6 +81,7 @@ BMSelection::~BMSelection() {
 
 BriqxModule::BriqxModule() {
     this->BMname = "NewModule";
+    nStrand = 0;
 }
 
 BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
@@ -251,6 +252,36 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
         }
     }
 
+    vector<RNAChain*> Strands;
+    RNAChain* curStrand = new RNAChain();
+    Strands.emplace_back(curStrand);
+    curStrand->addBase(baseList[0]);
+    for(int i=0;i<lb-1;i++) {
+        if(baseList[i]->connectToNeighbor(baseList[i+1])) {
+            curStrand->addBase(baseList[i+1]);
+        } else {
+            int ls = Strands.size();
+            bool isNewStrand = true;
+            for(int j=0;j<ls;j++) {
+                if(Strands[j]->getBaseList().back()->connectToNeighbor(baseList[i+1])) {
+                    curStrand = Strands[j];
+                    curStrand->addBase(baseList[i+1]);
+                    isNewStrand = false;
+                    break;
+                }
+            }
+            if(isNewStrand) {
+                curStrand = new RNAChain;
+                Strands.emplace_back(curStrand);
+                curStrand->addBase(baseList[i+1]);
+            }
+        }
+    }
+    nStrand = Strands.size();
+    for(int i=0;i<nStrand;i++) {
+        delete Strands[i];
+    }
+    
     if(beLazy) return;
     
     int lbp = this->basePairList.size();
@@ -274,6 +305,36 @@ BriqxModule::BriqxModule(const vector<RNAChain*>& chains, const vector<RNABase*>
     int lb = baseList.size();
     for(int i=0;i<lb;i++) {
         this->baseList.emplace_back(baseList[i]);
+    }
+
+    vector<RNAChain*> Strands;
+    RNAChain* curStrand = new RNAChain();
+    Strands.emplace_back(curStrand);
+    curStrand->addBase(baseList[0]);
+    for(int i=0;i<lb-1;i++) {
+        if(baseList[i]->connectToNeighbor(baseList[i+1])) {
+            curStrand->addBase(baseList[i+1]);
+        } else {
+            int ls = Strands.size();
+            bool isNewStrand = true;
+            for(int j=0;j<ls;j++) {
+                if(Strands[j]->getBaseList().back()->connectToNeighbor(baseList[i+1])) {
+                    curStrand = Strands[j];
+                    curStrand->addBase(baseList[i+1]);
+                    isNewStrand = false;
+                    break;
+                }
+            }
+            if(isNewStrand) {
+                curStrand = new RNAChain;
+                Strands.emplace_back(curStrand);
+                curStrand->addBase(baseList[i+1]);
+            }
+        }
+    }
+    nStrand = Strands.size();
+    for(int i=0;i<nStrand;i++) {
+        delete Strands[i];
     }
 
     if(beLazy) return;
@@ -305,6 +366,7 @@ BriqxModule::BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ&
     } else {
         BMname = name;
     }
+    nStrand = bm0.nStrand;
     string lastChainID = "@";
     RNAChain* curChain;
     int lb = bm0.baseList.size();
