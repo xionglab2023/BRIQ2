@@ -667,48 +667,82 @@ PolarAtom::PolarAtom(RNABase* base, string atomName){
 
 	sprintf(xx, "%c-%s", base->baseType, atomName.c_str());
 	this->uniqueName = string(xx);
-	if(base->baseTypeInt == 0){
+
+	if(atomName == "O2'" && base->getAtom("O2'") != NULL && base->getAtom("C2'") != NULL){
+		XYZ c = base->getAtom("O2'")->getCoord();
+		XYZ sup = base->getAtom("C2'")->getCoord();
+		this->core = c;
+		this->support = sup;
+		this->isAcceptor = true;
+		this->isDonor = true;
+	}
+	else if(atomName == "OP1" && base->getAtom("P") != NULL && base->getAtom("OP1") != NULL){
+		XYZ c = base->getAtom("OP1")->getCoord();
+		XYZ sup = base->getAtom("P")->getCoord();
+		this->core = c;
+		this->support = sup;
+		this->isAcceptor = true;
+	}
+	else if(atomName == "OP2" && base->getAtom("P") != NULL && base->getAtom("OP2") != NULL){
+		XYZ c = base->getAtom("OP2")->getCoord();
+		XYZ sup = base->getAtom("P")->getCoord();
+		this->core = c;
+		this->support = sup;
+		this->isAcceptor = true;
+	}
+
+	if(base->baseTypeInt == 0 || base->baseTypeInt == 4){
 		if(atomName == "N1"){
-			XYZ c = base->getAtom("N1")->coord;
-			XYZ sup1 = base->getAtom("C2")->coord;
-			XYZ sup2 = base->getAtom("C6")->coord;
-			this->core = c;
-			this->support = sup1 + sup2 - c;
-			this->isDonor = true;
+			if(base->getAtom("N1") != NULL && base->getAtom("N1") != NULL && base->getAtom("N1") != NULL){
+				XYZ c = base->getAtom("N1")->coord;
+				XYZ sup1 = base->getAtom("C2")->coord;
+				XYZ sup2 = base->getAtom("C6")->coord;
+				this->core = c;
+				this->support = sup1 + sup2 - c;
+				this->isDonor = true;
+			}
+
 		}
 		else if(atomName == "N3"){
-			XYZ c = base->getAtom("N3")->coord;
-			XYZ sup1 = base->getAtom("C2")->coord;
-			XYZ sup2 = base->getAtom("C4")->coord;
-			this->core = c;
-			this->support = sup1 + sup2 - c;
-			this->isDonor = true;
+			if(base->getAtom("N3") != NULL && base->getAtom("C2") != NULL && base->getAtom("C4") != NULL){
+				XYZ c = base->getAtom("N3")->coord;
+				XYZ sup1 = base->getAtom("C2")->coord;
+				XYZ sup2 = base->getAtom("C4")->coord;
+				this->core = c;
+				this->support = sup1 + sup2 - c;
+				this->isDonor = true;
+			}
 		}
 		else if(atomName == "N6"){
-			XYZ c = base->getAtom("N6")->coord;
-			XYZ sup = base->getAtom("C6")->coord;
-			this->core = c;
-			this->support = sup;
-			this->isDonor = true;
+			if(base->getAtom("N6") != NULL && base->getAtom("C6") != NULL){
+				XYZ c = base->getAtom("N6")->coord;
+				XYZ sup = base->getAtom("C6")->coord;
+				this->core = c;
+				this->support = sup;
+				this->isDonor = true;
+			}
+
 		}
 		else if(atomName == "N7"){
-			XYZ c = base->getAtom("N7")->coord;
-			XYZ sup1 = base->getAtom("C5")->coord;
-			XYZ sup2 = base->getAtom("C8")->coord;
-			this->core = c;
-			this->support = sup1 + sup2 - c;
-			this->isDonor = true;
+			if(base->getAtom("N7") != NULL && base->getAtom("C2") != NULL && base->getAtom("C8") != NULL){
+				XYZ c = base->getAtom("N7")->coord;
+				XYZ sup1 = base->getAtom("C5")->coord;
+				XYZ sup2 = base->getAtom("C8")->coord;
+				this->core = c;
+				this->support = sup1 + sup2 - c;
+				this->isDonor = true;
+			}
 		}
 	}
-	else if(base->baseTypeInt == 1){
-		if(atomName == "O2"){
+	else if(base->baseTypeInt == 1 || base->baseTypeInt == 5){
+		if(atomName == "O2" && base->getAtom("O2") != NULL && base->getAtom("C2") != NULL){
 			XYZ c = base->getAtom("O2")->coord;
 			XYZ sup1 = base->getAtom("C2")->coord;
 			this->core = c;
 			this->support = sup1;
 			this->isAcceptor = true;
 		}
-		else if(atomName == "N3"){
+		else if(atomName == "N3" && base->getAtom("N3") != NULL && base->getAtom("C2") != NULL && base->getAtom("C4") != NULL){
 			XYZ c = base->getAtom("N3")->coord;
 			XYZ sup1 = base->getAtom("C2")->coord;
 			XYZ sup2 = base->getAtom("C4")->coord;
@@ -716,7 +750,7 @@ PolarAtom::PolarAtom(RNABase* base, string atomName){
 			this->support = sup1 + sup2 - c;
 			this->isDonor = true;
 		}
-		else if(atomName == "O4"){
+		else if(atomName == "O4" && base->getAtom("O4") != NULL && base->getAtom("C4") != NULL){
 			XYZ c = base->getAtom("O4")->coord;
 			XYZ sup = base->getAtom("C4")->coord;
 			this->core = c;
@@ -724,8 +758,8 @@ PolarAtom::PolarAtom(RNABase* base, string atomName){
 			this->isAcceptor = true;
 		}
 	}
-	else if(base->baseTypeInt == 2){
-		if(atomName == "N1"){
+	else if(base->baseTypeInt == 2 || base->baseTypeInt == 6){
+		if(atomName == "N1" && base->getAtom("N1") != NULL && base->getAtom("C2") != NULL && base->getAtom("C6") != NULL ){
 			XYZ c = base->getAtom("N1")->coord;
 			XYZ sup1 = base->getAtom("C2")->coord;
 			XYZ sup2 = base->getAtom("C6")->coord;
@@ -733,14 +767,14 @@ PolarAtom::PolarAtom(RNABase* base, string atomName){
 			this->support = sup1 + sup2 - c;
 			this->isDonor = true;
 		}
-		else if(atomName == "N2"){
+		else if(atomName == "N2" && base->getAtom("N2") != NULL && base->getAtom("C2") != NULL){
 			XYZ c = base->getAtom("N2")->coord;
 			XYZ sup = base->getAtom("C2")->coord;
 			this->core = c;
 			this->support = sup;
 			this->isDonor = true;
 		}
-		else if(atomName == "N3"){
+		else if(atomName == "N3" && base->getAtom("N3") != NULL && base->getAtom("C2") != NULL && base->getAtom("C4") != NULL ){
 			XYZ c = base->getAtom("N3")->coord;
 			XYZ sup1 = base->getAtom("C2")->coord;
 			XYZ sup2 = base->getAtom("C4")->coord;
@@ -748,14 +782,14 @@ PolarAtom::PolarAtom(RNABase* base, string atomName){
 			this->support = sup1 + sup2 - c;
 			this->isDonor = true;
 		}
-		else if(atomName == "O6"){
+		else if(atomName == "O6" && base->getAtom("O6") != NULL && base->getAtom("C6") != NULL){
 			XYZ c = base->getAtom("O6")->coord;
 			XYZ sup = base->getAtom("C6")->coord;
 			this->core = c;
 			this->support = sup;
 			this->isAcceptor = true;
 		}
-		else if(atomName == "N7"){
+		else if(atomName == "N7" && base->getAtom("N7") != NULL && base->getAtom("C5") != NULL && base->getAtom("C8") != NULL){
 			XYZ c = base->getAtom("N7")->coord;
 			XYZ sup1 = base->getAtom("C5")->coord;
 			XYZ sup2 = base->getAtom("C8")->coord;
@@ -764,15 +798,15 @@ PolarAtom::PolarAtom(RNABase* base, string atomName){
 			this->isDonor = true;
 		}
 	}
-	else if(base->baseTypeInt == 3){
-		if(atomName == "O2"){
+	else if(base->baseTypeInt == 3 || base->baseTypeInt == 7){
+		if(atomName == "O2" && base->getAtom("O2") != NULL && base->getAtom("C2") != NULL){
 			XYZ c = base->getAtom("O2")->coord;
 			XYZ sup1 = base->getAtom("C2")->coord;
 			this->core = c;
 			this->support = sup1;
 			this->isAcceptor = true;
 		}
-		else if(atomName == "N3"){
+		else if(atomName == "N3" && base->getAtom("N3") != NULL && base->getAtom("C2") != NULL && base->getAtom("C4") != NULL){
 			XYZ c = base->getAtom("N3")->coord;
 			XYZ sup1 = base->getAtom("C2")->coord;
 			XYZ sup2 = base->getAtom("C4")->coord;
@@ -780,7 +814,7 @@ PolarAtom::PolarAtom(RNABase* base, string atomName){
 			this->support = sup1 + sup2 - c;
 			this->isDonor = true;
 		}
-		else if(atomName == "N4"){
+		else if(atomName == "N4" && base->getAtom("N4") != NULL && base->getAtom("C4") != NULL){
 			XYZ c = base->getAtom("N4")->coord;
 			XYZ sup = base->getAtom("C4")->coord;
 			this->core = c;

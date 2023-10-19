@@ -291,8 +291,10 @@ public:
 };
 
 inline double getBaseBaseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTable* et, bool verbose){
+
 	if(nodeA->seqID > nodeB->seqID)
 		return getBaseBaseEnergy(nodeB, nodeA, abs(sep), et, verbose);
+
 	double bpEnergy = 0.0;
 
 	double minDD, dd;
@@ -322,6 +324,7 @@ inline double getBaseBaseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergy
 }
 
 inline double baseBaseClash(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTable* et, bool verbose){
+
 	if(nodeA->seqID > nodeB->seqID)
 		return baseBaseClash(nodeB, nodeA, abs(sep), et, verbose);
 	double clashEnergy = 0.0;
@@ -335,7 +338,7 @@ inline double baseBaseClash(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTabl
 			for(j=0;j<nB;j++){
 				dd = squareDistance(nodeA->baseConf->coords[i], nodeB->baseConf->coords[j]);
 				if(dd < 16.0) {
-					clashEnergy += et->acET->getBaseBaseEnergy(nodeA->baseType, i, nodeB->baseType, j, dd);
+					clashEnergy += et->acET->getBaseBaseEnergy(nodeA->baseType, i, nodeB->baseType, j, dd, sep);
 				}
 			}
 		}
@@ -344,6 +347,7 @@ inline double baseBaseClash(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTabl
 }
 
 inline double getBaseBaseEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTable* et, bool verbose){
+
 	if(nodeA->seqID > nodeB->seqID)
 		return getBaseBaseEnergyTmp(nodeB, nodeA, abs(sep), et, verbose);
 	double bpEnergy = 0.0;
@@ -373,6 +377,7 @@ inline double getBaseBaseEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEne
 }
 
 inline double baseBaseClashTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTable* et, bool verbose){
+
 	if(nodeA->seqID > nodeB->seqID)
 		return baseBaseClashTmp(nodeB, nodeA, abs(sep), et, verbose);
 	double clashEnergy = 0.0;
@@ -386,7 +391,7 @@ inline double baseBaseClashTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyT
 			for(j=0;j<nB;j++){
 				dd = squareDistance(nodeA->baseConfTmp->coords[i], nodeB->baseConfTmp->coords[j]);
 				if(dd < 16.0) {
-					clashEnergy += et->acET->getBaseBaseEnergy(nodeA->baseType, i, nodeB->baseType, j, dd);
+					clashEnergy += et->acET->getBaseBaseEnergy(nodeA->baseType, i, nodeB->baseType, j, dd, sep);
 				}
 			}
 		}
@@ -398,6 +403,7 @@ inline double getBaseRiboseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEner
 	double baseOxyEnergy = 0.0;
 	double hbondEnergy = 0.0;
 	double clashEnergy = 0.0;
+
 	int i,j;
 	double dd;
 	LocalFrame csA, csB;
@@ -406,10 +412,10 @@ inline double getBaseRiboseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEner
 
 	if(squareDistance(nodeA->baseConf->coords[0], nodeB->riboseConf->coords[2]) < 144.0){
 		if(abs(sep) > 0) {
+
 			baseOxyEnergy = et->roET->getEnergy(nodeA->baseType, 0, global2local(nodeA->baseConf->cs1, nodeB->riboseConf->coords[5]), sep); //O3'
 			baseOxyEnergy = et->roET->getEnergy(nodeA->baseType, 1, global2local(nodeA->baseConf->cs1, nodeB->riboseConf->coords[4]), sep); //O4'
 
-			//hbondEnergy: NodeA-PolarAtom -> NodeB-O2'
 			for(i=0;i<nodeA->baseConf->rot->polarAtomNum;i++){
 				hbondEnergy += et->hbET->getEnergy(nodeA->baseConf->rot->polarAtomUniqueID[i], nodeA->baseConf->csPolar[i], O2UniqueID, nodeB->riboseConf->o2Polar);
 			}
@@ -418,7 +424,7 @@ inline double getBaseRiboseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEner
 				for(j=0;j<nodeB->riboseConf->rot->atomNum;j++){
 					dd = squareDistance(nodeA->baseConf->coords[i], nodeB->riboseConf->coords[j]);
 					if(dd < 16)
-						clashEnergy += et->acET->getBaseRiboseEnergy(nodeA->baseType, i, j, dd);
+						clashEnergy += et->acET->getBaseRiboseEnergy(nodeA->baseType, i, j, dd, sep);
 				}
 			}
 		}
@@ -429,7 +435,7 @@ inline double getBaseRiboseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEner
 		cout << "clash: " << clashEnergy << endl;
 
 	}
-	return baseOxyEnergy*et->para.wtBaseOxygen + hbondEnergy + clashEnergy;
+	return baseOxyEnergy + hbondEnergy + clashEnergy;
 }
 
 
@@ -455,7 +461,7 @@ inline double getBaseRiboseEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaE
 				for(j=0;j<nodeB->riboseConfTmp->rot->atomNum;j++){
 					dd = squareDistance(nodeA->baseConfTmp->coords[i], nodeB->riboseConfTmp->coords[j]);
 					if(dd < 16)
-						clashEnergy += et->acET->getBaseRiboseEnergy(nodeA->baseType, i, j, dd);
+						clashEnergy += et->acET->getBaseRiboseEnergy(nodeA->baseType, i, j, dd, sep);
 				}
 			}
 		}
@@ -465,7 +471,7 @@ inline double getBaseRiboseEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaE
 		cout << "hbond energy: " << hbondEnergy << endl;
 		cout << "clash: " << clashEnergy << endl;
 	}
-	return baseOxyEnergy*et->para.wtBaseOxygen + hbondEnergy + clashEnergy;
+	return baseOxyEnergy + hbondEnergy + clashEnergy;
 }
 
 inline double getBasePhoEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTable* et, bool verbose){
@@ -482,20 +488,21 @@ inline double getBasePhoEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyT
 
 	if(sep == 0) return 0.0;
 
+
 	//hbondEnergy: NodeA-PolarAtom -> NodeB-O2'
 	for(i=0;i<nodeA->baseConf->rot->polarAtomNum;i++){
 		hbondEnergy += et->hbET->getEnergy(nodeA->baseConf->rot->polarAtomUniqueID[i], nodeA->baseConf->csPolar[i], uniqueIDOP1, nodeB->phoConf->op1Polar);
 		hbondEnergy += et->hbET->getEnergy(nodeA->baseConf->rot->polarAtomUniqueID[i], nodeA->baseConf->csPolar[i], uniqueIDOP2, nodeB->phoConf->op2Polar);
 	}
 
-	baseOxyEnergy += et->roET->getEnergy(nodeA->baseType, 2, global2local(nodeA->baseConf->cs1, nodeB->phoConf->coords[1]), sep); //O5'
 
+	baseOxyEnergy += et->roET->getEnergy(nodeA->baseType, 2, global2local(nodeA->baseConf->cs1, nodeB->phoConf->coords[1]), sep); //O5'
 	nA = nodeA->baseConf->rot->atomNum;
 	for(i=0;i<nA;i++){
 		for(j=1;j<4;j++){
 			dd = squareDistance(nodeA->baseConf->coords[i], nodeB->phoConf->coords[j]);
 			if(dd < 16)
-				clashEnergy += et->acET->getBasePhoEnergy(nodeA->baseType, i, j, dd);
+				clashEnergy += et->acET->getBasePhoEnergy(nodeA->baseType, i, j, dd, sep);
 		}
 	}
 
@@ -504,7 +511,7 @@ inline double getBasePhoEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyT
 		cout << "clash: " << clashEnergy << endl;
 		cout << "hbond: " << hbondEnergy << endl;
 	}
-	return baseOxyEnergy*et->para.wtBaseOxygen + hbondEnergy + clashEnergy;
+	return baseOxyEnergy + hbondEnergy + clashEnergy;
 }
 
 inline double getBasePhoEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTable* et, bool verbose){
@@ -526,6 +533,7 @@ inline double getBasePhoEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEner
 		hbondEnergy += et->hbET->getEnergy(nodeA->baseConfTmp->rot->polarAtomUniqueID[i], nodeA->baseConfTmp->csPolar[i], uniqueIDOP2, nodeB->phoConfTmp->op2Polar);
 	}
 
+
 	baseOxyEnergy += et->roET->getEnergy(nodeA->baseType, 2, global2local(nodeA->baseConfTmp->cs1, nodeB->phoConfTmp->coords[1]), sep); //O5'
 	//need to be modified
 	//hbondEnergy =
@@ -535,16 +543,17 @@ inline double getBasePhoEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEner
 		for(j=1;j<4;j++){
 			dd = squareDistance(nodeA->baseConfTmp->coords[i], nodeB->phoConfTmp->coords[j]);
 			if(dd < 16)
-				clashEnergy += et->acET->getBasePhoEnergy(nodeA->baseType, i, j, dd);
+				clashEnergy += et->acET->getBasePhoEnergy(nodeA->baseType, i, j, dd, sep);
 		}
 	}
+
 
 	if(verbose && (baseOxyEnergy+clashEnergy)>10){
 		cout << "base oxy: " << baseOxyEnergy << endl;
 		cout << "clash: " << clashEnergy << endl;
 		cout << "hbond: " << hbondEnergy << endl;
 	}
-	return baseOxyEnergy*et->para.wtBaseOxygen + hbondEnergy + clashEnergy;
+	return baseOxyEnergy + hbondEnergy + clashEnergy;
 }
 
 inline double getRiboseRiboseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTable* et, bool verbose){
@@ -568,8 +577,8 @@ inline double getRiboseRiboseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEn
 					printf("hbond energy: %7.3f\n", hbondEnergy);
 				}
 			}
-		}
 
+		}
 		nA = nodeA->riboseConf->rot->atomNum;
 		nB = nodeB->riboseConf->rot->atomNum;
 		for(i=0;i<nA;i++){
@@ -585,6 +594,7 @@ inline double getRiboseRiboseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEn
 				}
 			}
 		}
+
 	}
 	return clashEnergy + hbondEnergy;
 }
@@ -619,6 +629,7 @@ inline double getRiboseRiboseEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, Rn
 				}
 			}
 		}
+
 	}
 	return clashEnergy + hbondEnergy;
 }
@@ -638,6 +649,7 @@ inline double getRibosePhoEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnerg
 	hbondEnergy += et->hbET->getEnergy(O2UniqueID, nodeA->riboseConf->o2Polar, uniqueIDOP1, nodeB->phoConf->op1Polar);
 	hbondEnergy += et->hbET->getEnergy(O2UniqueID, nodeA->riboseConf->o2Polar, uniqueIDOP2, nodeB->phoConf->op2Polar);
 
+
 	nA = nodeA->riboseConf->rot->atomNum;
 	for(i=0;i<nA;i++){
 		for(j=1;j<4;j++){
@@ -646,6 +658,7 @@ inline double getRibosePhoEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnerg
 				clashEnergy += et->acET->getRibosePhoEnergy(i,j,dd, sep);
 		}
 	}
+
 	return clashEnergy + hbondEnergy;
 }
 
@@ -671,6 +684,7 @@ inline double getRibosePhoEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEn
 				clashEnergy += et->acET->getRibosePhoEnergy(i,j,dd, sep);
 		}
 	}
+
 	return clashEnergy + hbondEnergy;
 }
 
@@ -695,6 +709,7 @@ inline double getPhoPhoEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTa
 				clashEnergy += et->acET->getPhoPhoEnergy(i,j,dd, sep);
 		}
 	}
+
 	return clashEnergy;
 }
 
@@ -717,6 +732,7 @@ inline double getPhoPhoEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnerg
 				clashEnergy += et->acET->getPhoPhoEnergy(i,j,dd, sep);
 		}
 	}
+
 	return clashEnergy;
 }
 

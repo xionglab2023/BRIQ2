@@ -143,7 +143,7 @@ void MCRun::optimizeFromInit(const string& keyFile, const string& outFilePrefix,
 					}
 					else {
 						node = ft->nodes[rand()%tn];
-						rotMut = ft->rotLib->riboseRotLib->getRandomRotamerLv1(node->baseType);
+						rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
 						ft->updateRiboseRotamerTmp(node, rotMut, verbose);
 						mutE = ft->riboseRotamerMutEnergy(node,breakCTWT,connectWT,clashWT, verbose);
 						if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
@@ -358,7 +358,7 @@ void MCRun::generateDecoysRandInit(const string& output){
 					}
 					else {
 						node = ft->nodes[rand()%tn];
-						rotMut = ft->rotLib->riboseRotLib->getRandomRotamerLv1(node->baseType);
+						rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
 						ft->updateRiboseRotamerTmp(node, rotMut, verbose);
 						mutE = ft->riboseRotamerMutEnergy(node,breakCTWT,connectWT,clashWT, verbose);
 						if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
@@ -450,7 +450,6 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 		}
 	}
 
-	stepNum = stepNum/2;
 
 
 	int ctChooseNum = ctChooseIndex.size();
@@ -464,9 +463,9 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 	double connectWT;
 	double breakCTWT;
 
-	double shift = ft->et->para.initShift;
+	double shift = 0.0;
 
-	pair<double,double> mutE;
+	pair<double,double> mutE(0.0, 0.0);
 
 
 	int fc = ft->flexibleConnectionList.size();
@@ -518,7 +517,7 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 	F2Fragment* frag;
 	F3Fragment* f3Frag;
 
-	int outFreq = ft->et->para.outFreq;
+	int outFreq = ft->et->para->outFreq;
 	int modelID = 1;
 
 
@@ -529,20 +528,22 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 	double lastEne = curEne;
 
 
-	double ctRate = ft->et->para.connectWTFactor;
-	double clashIncreaseRate = ft->et->para.clashWTFactor;
+	double ctRate = ft->et->para->connectWTFactor;
+	double clashIncreaseRate = ft->et->para->clashWTFactor;
 
-	clashWT = ft->et->para.initClashWT;
-	connectWT = ft->et->para.initConnectWT;
-	breakCTWT = 0.6*ft->et->para.initConnectWT;
+	clashWT = ft->et->para->initClashWT;
+	connectWT = ft->et->para->initConnectWT;
+	breakCTWT = 0.6*ft->et->para->initConnectWT;
 
 
-	T0 = ft->et->para.T0;
-	double anneal = ft->et->para.anneal;
+	T0 = ft->et->para->T0;
+	double anneal = ft->et->para->anneal;
+
+	cout << "step number: " << stepNum << endl;
 
 	for(double T=T0;T>0.1;T=T*anneal){
 
-		shift = shift - ft->et->para.dShift;
+		shift = shift - ft->et->para->dShift;
 		if(shift < 0) shift = 0;
 		ft->updateEnergies();
 
@@ -589,7 +590,7 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 				randType = rand()%10;
 				if(randType < 4) {
 					if(ct->f2Lib == NULL) continue;
-					if(ct->ctType == "loopNb" && rand()%3 != 0 && ft->et->para.loopRiboConnectMove){
+					if(ct->ctType == "loopNb" && rand()%3 != 0 && ft->et->para->loopRiboConnectMove){
 						CsMove cm = ct->fatherNode->riboseConf->rot->mv12 + ft->fragLib->ribLib->getRandomMove() + ct->childNode->riboseConf->rot->mv31;
 						ft->updateCtChildTmpCs(ct, cm, false);
 						mutE = ft->ctMutEnergy(ct, breakCTWT, connectWT, clashWT, false);
@@ -634,7 +635,7 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 				else if(randType < 8) {
 
 					if(ct->ctType == "nwc" || ct->ctType == "wc" || ct->ctType == "bulge13" || ct->ctType == "AG" || ct->ctType == "GA") continue;
-					if(!ft->et->para.ctRandMove) continue;
+					if(!ft->et->para->ctRandMove) continue;
 					mvMut = mvLib.getRandomMove2(ct->cm);
 					ft->updateCtChildTmpCs(ct, mvMut, verbose);
 					mutE = ft->ctMutEnergy(ct,breakCTWT,connectWT,clashWT, verbose);
@@ -653,7 +654,7 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 			else {
 				randType = rand()%10;
 				if(randType < 1 && freeNodeNum > 0){
-					if(!ft->et->para.singleBaseMove) continue;
+					if(!ft->et->para->singleBaseMove) continue;
 					node = ft->nodes[ft->freeNodeIDs[rand()%freeNodeNum]];
 					mvMut = mvLib.getRandomMove2();
 					ft->updateSingleBaseCoordTmp(node, mvMut, false);
@@ -670,9 +671,9 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 					}
 				}
 				else if(randType < 3 && freeNodeNum > 0){
-					if(!ft->et->para.reverseRotMove) continue;
+					if(!ft->et->para->reverseRotMove) continue;
 					node = ft->nodes[ft->freeNodeIDs[rand()%freeNodeNum]];
-					rotMut = ft->rotLib->riboseRotLib->getRandomRotamerLv1(node->baseType);
+					rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
 					ft->updateReverseRiboseRotamerTmp(node, rotMut, verbose);
 					mutE = ft->singleBaseMutEnergy(node,breakCTWT,connectWT,clashWT, verbose);
 
@@ -688,9 +689,11 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 				}
 				else if(rfn > 0){
 					node = ft->riboFlexibleNodes[rand()%rfn];
-					rotMut = ft->rotLib->riboseRotLib->getRandomRotamerLv1(node->baseType);
+					rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
+
 					ft->updateRiboseRotamerTmp(node, rotMut, verbose);
 					mutE = ft->riboseRotamerMutEnergy(node,breakCTWT,connectWT,clashWT, verbose);
+
 					if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
 						curEne += mutE.first;
 						ft->acceptRiboseRotamerTmp(node, verbose);
@@ -704,13 +707,15 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 			}
 		}
 		BRTreeInfo* x = ft->getTreeInfo();
-		printf("T=%9.5f Ene: %7.3f TotEne: %7.3f rmsd: %6.3f\n",T,curEne,ft->totalEnergy(1.0, 1.0, 1.0, verbose), x->rmsd(init));
+		printf("T=%9.5f Ene: %7.3f TotEne: %7.3f ac1: %5d ac2: %5d ac3: %5d ac4: %5d ac5: %5d ac6: %5d ac7: %5d rmsd: %6.3f\n",T,curEne,ft->totalEnergy(1.0, 1.0, 1.0, verbose), ac1, ac2, ac3, ac4, ac5, ac6, ac7, x->rmsd(init));
 		delete x;
 	}
 
 	connectWT = 1.0;
 	clashWT = 1.0;
 	breakCTWT = 1.0;
+
+
 
 	for(double T=0.1;T>0.01;T=T*0.9){
 		int acNum = 0;
@@ -765,7 +770,7 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 				}
 				else if(randType < 3 && freeNodeNum > 0){
 					node = ft->nodes[ft->freeNodeIDs[rand()%freeNodeNum]];
-					rotMut = ft->rotLib->riboseRotLib->getRandomRotamerLv1(node->baseType);
+					rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
 					ft->updateReverseRiboseRotamerTmp(node, rotMut, verbose);
 					mutE = ft->singleBaseMutEnergy(node,breakCTWT,connectWT,clashWT,  verbose);
 					if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
@@ -780,7 +785,7 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 				}
 				else if(rfn > 0){
 					node = ft->riboFlexibleNodes[rand()%rfn];
-					rotMut = ft->rotLib->riboseRotLib->getRandomRotamerLv1(node->baseType);
+					rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
 					ft->updateRiboseRotamerTmp(node, rotMut, verbose);
 					mutE = ft->riboseRotamerMutEnergy(node,breakCTWT,connectWT,clashWT,  verbose);
 					if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
@@ -884,7 +889,7 @@ void MCRun::optimize(double t0, double kStep){
 	F2Fragment* frag;
 	F3Fragment* f3Frag;
 
-	int outFreq = ft->et->para.outFreq;
+	int outFreq = ft->et->para->outFreq;
 	int modelID = 1;
 
 
@@ -901,9 +906,7 @@ void MCRun::optimize(double t0, double kStep){
 		int indexX;
 		double phoMutE;
 		for(int k=0;k<stepNum;k++){
-			if(k % 10000 ==0) {
-				cout << "step: " << k << endl;
-			}
+
 			randIndex = rand()%fcn;
 			if(randIndex < fc){
 				ct = flexConnectList[randIndex];
@@ -977,7 +980,7 @@ void MCRun::optimize(double t0, double kStep){
 				}
 				else if(rfn > 0){
 					node = ft->riboFlexibleNodes[rand()%rfn];
-					rotMut = ft->rotLib->riboseRotLib->getRandomRotamerLv1(node->baseType);
+					rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
 					ft->updateRiboseRotamerTmp(node, rotMut, verbose);
 					mutE = ft->riboseRotamerMutEnergy(node,breakCTWT,connectWT,clashWT,  verbose);
 					if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
@@ -1048,7 +1051,7 @@ void MCRun::optimize(double t0, double kStep){
 				}
 				else if(rfn >0){
 					node = ft->riboFlexibleNodes[rand()%rfn];
-					rotMut = ft->rotLib->riboseRotLib->getRandomRotamerLv1(node->baseType);
+					rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
 					ft->updateRiboseRotamerTmp(node, rotMut, verbose);
 					mutE = ft->riboseRotamerMutEnergy(node,breakCTWT,connectWT,clashWT,  verbose);
 					if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
@@ -1517,7 +1520,7 @@ void MCRun::debug(){
 		CsMove cm = moveLib->getRandomMove1();
 
 		cout << "update node child coordinate" << endl;
-		RiboseRotamer* rot = ft->rotLib->riboseRotLib->getRandomRotamerLv1(node->baseType);
+		RiboseRotamer* rot = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
 		ft->updateRiboseRotamerTmp(node, rot, true);
 
 

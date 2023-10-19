@@ -10,7 +10,6 @@ namespace NSPforcefield {
 ProAtomicEnergyTable::ProAtomicEnergyTable(DesignPara* dp) {
 	// TODO Auto-generated constructor stub
 	ifstream file;
-	char xx[20];
 	string fileName = NSPdataio::datapath() + "energy/vdwCurve" + dp->curve;
 	cout << "open vdw curve:" << fileName << endl;
 	file.open(fileName, ios::in);

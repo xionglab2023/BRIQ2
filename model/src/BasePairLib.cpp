@@ -146,6 +146,12 @@ BasePairLib::BasePairLib() {
 
 int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
 
+	if(typeA > 3)
+		typeA = typeA - 4;
+
+	if(typeB > 3)
+		typeB = typeB - 4;
+
 	if(typeA < 0 || typeA > 3) {
 		cout << "invalid base type: " << typeA << endl;
 		return -1;
@@ -212,7 +218,13 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 
 	int hbondNum = 0;
 	PolarAtom* o2A = new PolarAtom(baseA, "O2'");
+	PolarAtom* op1A = new PolarAtom(baseA, "OP1");
+	PolarAtom* op2A = new PolarAtom(baseA, "OP2");
+
 	PolarAtom* o2B = new PolarAtom(baseB, "O2'");
+	PolarAtom* op1B = new PolarAtom(baseB, "OP1");
+	PolarAtom* op2B = new PolarAtom(baseB, "OP2");
+
 	vector<PolarAtom*> paListA;
 	vector<PolarAtom*> paListB;
 
@@ -231,14 +243,38 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 			paListB.push_back(new PolarAtom(baseB, a->getName()));
 	}
 
-	if(o2A->hbondedTo(o2B)) hbondNum++;
+	double hbondEne = -7.0;
+
+	if(o2A->hbondedTo(o2B)) ene += hbondEne;
+
 	for(int i=0;i<paListA.size();i++){
-		if(o2B->hbondedTo(paListA[i])) hbondNum++;
+		if(o2B->hbondedTo(paListA[i])) ene += hbondEne;
+		if(op1B->hbondedTo(paListA[i])) ene += hbondEne;
+		if(op2B->hbondedTo(paListA[i])) ene += hbondEne;
+
 	}
+
 	for(int i=0;i<paListB.size();i++){
-		if(o2A->hbondedTo(paListB[i])) hbondNum++;
+		if(o2A->hbondedTo(paListB[i])) ene += hbondEne;
+		if(op1A->hbondedTo(paListB[i])) ene += hbondEne;
+		if(op2A->hbondedTo(paListB[i])) ene += hbondEne;
 	}
-	return (ene + hbondNum*7.0)/4.32;
+
+	/*
+	Atom* a1 = baseA->getAtom("O2'");
+	Atom* a2 = baseA->getAtom("O4'");
+	Atom* a3 = baseB->getAtom("O2'");
+	Atom* a4 = baseB->getAtom("O4'");
+
+	if(a1 != NULL && a2 != NULL && a3 != NULL && a4 != NULL){
+		double d1 = a1->distance(*a4);
+		double d2 = a2->distance(*a3);
+		if(d1 < 4.0 && d1 > 3.0) ene += -4.5;
+		if(d2 < 4.0 && d2 > 3.0) ene += -4.5;
+	}
+	*/
+
+	return ene/4.32;
 }
 
 BasePairLib::~BasePairLib() {

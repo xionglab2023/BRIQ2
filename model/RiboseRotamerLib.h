@@ -11,7 +11,7 @@
 #include <time.h>
 #include "model/StructureModel.h"
 #include "model/RiboseRotamer.h"
-#include "forcefield/XPara.h"
+#include "forcefield/ForceFieldPara.h"
 
 namespace NSPmodel {
 
@@ -22,17 +22,17 @@ public:
 	RiboseRotamer* rotLib[8][1500];
 
 	RiboseRotamerLib();
-	RiboseRotamerLib(XPara* para);
+	RiboseRotamerLib(ForceFieldPara* para);
 
 	RiboseRotamer* getLowestEnergyRotamer(int type){
 		if(type == 0)
-			return rotLib[0][264];
+			return rotLib[0][30];
 		else if(type == 1)
-			return rotLib[1][361];
+			return rotLib[1][105];
 		else if(type == 2)
-			return rotLib[2][78];
+			return rotLib[2][595];
 		else if(type == 3)
-			return rotLib[3][398];
+			return rotLib[3][209];
 		else if(type == 4)
 			return rotLib[4][1375];
 		else if(type == 5)
@@ -45,7 +45,30 @@ public:
 			return NULL;
 	}
 
-	RiboseRotamer* getRandomRotamerLv1(int baseType){
+	RiboseRotamer* getRandomRotamerLv1(int baseType, int typeLv1){
+		if(baseType < 4) {
+			if(typeLv1 == 0)
+				return rotLib[baseType][rand()%600];
+			else if(typeLv1 == 1)
+				return rotLib[baseType][600 + rand()%300];
+			else if(typeLv1 == 2)
+				return rotLib[baseType][900 + rand()%300];
+			else
+				return rotLib[baseType][1200 + rand()%300];
+		}
+		else {
+			if(typeLv1 == 0)
+				return rotLib[baseType][rand()%300];
+			else if(typeLv1 == 1)
+				return rotLib[baseType][300 + rand()%75];
+			else if(typeLv1 == 2)
+				return rotLib[baseType][375 + rand()%1050];
+			else
+				return rotLib[baseType][1425 + rand()%75];
+		}
+	}
+
+	RiboseRotamer* getRandomRotamer(int baseType){
 		return rotLib[baseType][rand()%1500];
 	}
 

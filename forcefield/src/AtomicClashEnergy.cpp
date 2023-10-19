@@ -15,13 +15,14 @@ AtomicClashEnergy::AtomicClashEnergy(ForceFieldPara* ffp) {
 	this->atLib = new AtomLib();
 
 	double d0,d;
-	double lamda = ffp->clashLamda;
-	double shift = ffp->clashShift;
+	double shift = 0.0;
+
 	for(int i=0;i<200;i++){
 		d0 = 2.0 + i*0.01 + 0.005;
 		for(int j=0;j<2500;j++){
 			d = sqrt(j*0.01+0.005);
-			clashEnergyTable[i][j] = clash(d0,d,lamda,shift);
+			clashEnergyTableNb[i][j] = clash(d0,d,ffp->clashLamdaNb,shift);
+			clashEnergyTableNnb[i][j] = clash(d0,d,ffp->clashLamdaNnb,shift);
 		}
 	}
 

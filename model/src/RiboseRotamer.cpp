@@ -188,6 +188,8 @@ RiboseConformer::RiboseConformer(RiboseRotamer* rot, LocalFrame& cs1){
 }
 
 void RiboseConformer::copyValueFrom(RiboseConformer* other){
+
+
 	this->rot = other->rot;
 	for(int i=0;i<8;i++){
 		this->coords[i] = other->coords[i];
@@ -197,9 +199,11 @@ void RiboseConformer::copyValueFrom(RiboseConformer* other){
 	cs3 = other->cs3;
 	hasO2 = other->hasO2;
 	o2Polar = other->o2Polar;
+
 }
 
 void RiboseConformer::updateLocalFrame(LocalFrame& cs1){
+
 	this->cs1 = cs1;
 	this->cs2 = cs1 + rot->mv12;
 	this->cs3 = cs1 + rot->mv13;
@@ -211,9 +215,11 @@ void RiboseConformer::updateLocalFrame(LocalFrame& cs1){
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 void RiboseConformer::updateRotamer(RiboseRotamer* rot){
+
 	this->rot = rot;
 	//cs1 fixed
 	this->cs2 = cs1 + rot->mv12;
@@ -231,9 +237,11 @@ void RiboseConformer::updateRotamer(RiboseRotamer* rot){
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 void RiboseConformer::updateRotamerCs2Fixed(RiboseRotamer* rot){
+
 	this->rot = rot;
 	//cs2 fixed
 	this->cs1 = cs2 + rot->mv21;
@@ -251,9 +259,11 @@ void RiboseConformer::updateRotamerCs2Fixed(RiboseRotamer* rot){
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 void RiboseConformer::updateRotamerCs3Fixed(RiboseRotamer* rot){
+
 	this->rot = rot;
 	//cs3 fixed
 	this->cs1 = cs3 + rot->mv31;
@@ -271,9 +281,11 @@ void RiboseConformer::updateRotamerCs3Fixed(RiboseRotamer* rot){
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 void RiboseConformer::updateLocalFrameAndRotamer(LocalFrame& cs1, RiboseRotamer* rot){
+
 	this->rot = rot;
 	this->cs1 = cs1;
 	this->cs2 = cs1 + rot->mv12;
@@ -291,6 +303,7 @@ void RiboseConformer::updateLocalFrameAndRotamer(LocalFrame& cs1, RiboseRotamer*
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 

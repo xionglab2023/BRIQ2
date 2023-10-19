@@ -86,9 +86,10 @@ int main(int argc, char** argv){
 
 
 	RotamerLib* rotLib = new RotamerLib();
-	XPara* para = new XPara();
-	RnaAtomicEnergyTable* et = new RnaAtomicEnergyTable(para);
-	RiboseOxygenEnergyTable* rET = new RiboseOxygenEnergyTable();
+	ForceFieldPara* para = new ForceFieldPara();
+	XPara xpara;
+	RnaAtomicEnergyTable* et = new RnaAtomicEnergyTable(&xpara);
+	RiboseOxygenEnergyTable* rET = new RiboseOxygenEnergyTable(para);
 	PO3Builder* pb = new PO3Builder(para);
 
 	ofstream out;

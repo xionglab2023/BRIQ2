@@ -50,6 +50,9 @@ class RiboseRotamer {
 	 * 4:  O4'
 	 * 5:  O3'
 	 * 6:  C5'
+	 *
+	 * cs2: C2'-C3'-O3'
+	 * cs3: O4'-C4'-C5'
 	 */
 
 
@@ -160,9 +163,11 @@ public:
 
 	XYZ coords[8];
 	LocalFrame cs1;
-	LocalFrame cs2;
-	LocalFrame cs3;
+	LocalFrame cs2; //C2'-C3'-O3'
+	LocalFrame cs3; //O4'-C4'-C5'
+
 	bool hasO2;
+
 	LocalFrame o2Polar;
 
 	RiboseConformer();

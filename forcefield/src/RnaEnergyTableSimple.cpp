@@ -10,8 +10,10 @@ namespace NSPforcefield {
 RnaEnergyTableSimple::~RnaEnergyTableSimple() {
 	// TODO Auto-generated destructor stub
 
-	delete this->acET;
-	delete this->roET;
+	delete pb;
+	delete hbET;
+	delete acET;
+	delete roET;
 }
 
 } /* namespace NSPforcefield */

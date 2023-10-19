@@ -539,7 +539,7 @@ CsMoveTo6DKey::~CsMoveTo6DKey() {
 }
 
 
-BasePair6DEnergyTable::BasePair6DEnergyTable(XPara* para) {
+BasePair6DEnergyTable::BasePair6DEnergyTable(ForceFieldPara* para) {
 
 	this->wt1 = para->wtBp1;
 	this->wt2 = para->wtBp2;
@@ -552,7 +552,7 @@ BasePair6DEnergyTable::BasePair6DEnergyTable(XPara* para) {
 	ifstream file;
 	string augc = "AUGC";
 
-	string sp = para->spType;
+	string sp = "2000";
 
 	for(int i=0;i<4;i++){
 		for(int j=0;j<4;j++){

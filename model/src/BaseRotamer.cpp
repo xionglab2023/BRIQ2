@@ -187,15 +187,20 @@ namespace NSPmodel {
 
 
 	BaseConformer::BaseConformer(BaseRotamer* rot, LocalFrame& cs){
+
+
 		this->rot = rot;
 		this->cs1 = cs;
 
 		for(int i=0;i<rot->atomNum;i++){
 			coords[i] = local2global(cs1, rot->coordsLocal[i]);
 		}
+
+
 		for(int i=0;i<rot->polarAtomNum;i++){
 			csPolar[i] = cs1 + rot->polarCmList[i];
 		}
+
 	}
 
 	void BaseConformer::copyValueFrom(BaseConformer* other){
@@ -211,6 +216,7 @@ namespace NSPmodel {
 	}
 
 	void BaseConformer::updateCoords(LocalFrame& cs){
+
 		this->cs1 = cs;
 		for(int i=0;i<rot->atomNum;i++){
 			coords[i] = local2global(cs, rot->coordsLocal[i]);
@@ -218,6 +224,7 @@ namespace NSPmodel {
 		for(int i=0;i<rot->polarAtomNum;i++){
 			csPolar[i] = cs1 + rot->polarCmList[i];
 		}
+
 	}
 
 	double BaseConformer::distanceTo(BaseConformer* other){

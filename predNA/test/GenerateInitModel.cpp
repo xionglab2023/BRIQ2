@@ -104,11 +104,8 @@ int main(int argc, char** argv){
 		nodeList[i] = node;
 	}
 
-	XPara para;
-
-	cout << "d " << endl;
-
-	PO3Builder* pb = new PO3Builder(&para);
+	ForceFieldPara* para = new ForceFieldPara();
+	PO3Builder* pb = new PO3Builder(para);
 	for(int i=0;i<len-1;i++){
 
 		BRNode* nodeA = nodeList[i];

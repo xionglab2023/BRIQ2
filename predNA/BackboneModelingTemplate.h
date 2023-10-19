@@ -11,7 +11,7 @@
 
 #include "forcefield/RnaEnergyTableSimple.h"
 #include "forcefield/PO3Builder.h"
-#include "forcefield/XPara.h"
+#include "forcefield/ForceFieldPara.h"
 #include "model/RNABaseName.h"
 #include "model/RotamerLib.h"
 #include "tools/InputParser.h"
@@ -39,12 +39,8 @@ public:
 	RnaEnergyTableSimple* et;
 	PO3Builder* pb;
 	RotamerLib* rotLib;
-	XPara* para;
-
-	vector<vector<double>> initDihedsList;
-	vector<vector<double>> predDihedsList;
-
 	vector<XYZ> initBackboneAtomList;
+	ForceFieldPara* para;
 
 	int* sepTable;
 	double* allBaseRiboseE;
@@ -62,110 +58,16 @@ public:
 	double* allRcE;
 	double* tmpRcE;
 
-	BackboneModelingTemplate(const string& inputPDB, const string& paraFile);
-	BackboneModelingTemplate(const string& inputPDB);
-
-	void updateDiheds();
-
-	double calPhoEnergy(double len, double xang3, double xang4, int dihed1, int dihed2, int dihed3, int dihed4, int dihed5, XYZ& p, XYZ& o5, XYZ& op1, XYZ op2, int seqID){
-		double e = 0;
-		double u;
-
-		double len1 = 1.605;
-		double len2 = 1.592;
-		double len3 = 1.422;
-		double ang1 = 120.1;
-		double ang2 = 103.5;
-		double ang3 = 120.7;
-		double ang4 = 111.1;
-
-		u = (len-len3)*para->kBond;
-		//e += u*u;
-
-		if(u<1 && u>-1)
-			e += u*u;
-		else if(u > 1)
-			e += (2*u-1);
-		else
-			e += (-2*u-1);
-
-		u = (xang3-ang3)*para->kAng;
-		//e += u*u;
-
-		if(u<1 && u>-1)
-			e += u*u;
-		else if(u > 1)
-			e += (2*u-1);
-		else
-			e += (-2*u-1);
-
-		u = (xang4-ang4)*para->kAng;
-		//e += u*u;
-
-		if(u<1 && u>-1)
-			e += u*u;
-		else if(u > 1)
-			e += (2*u-1);
-		else
-			e += (-2*u-1);
-
-		e += pb->eDihed1[dihed1]*para->wtDihed;
-		e += pb->eDihed2[dihed2]*para->wtDihed;
-		e += pb->eDihed3[dihed3]*para->wtDihed;
-		e += pb->eDihed4[dihed4]*para->wtDihed;
-		e += pb->eDihed5[dihed5]*para->wtDihed;
-
-		double baseOxyEnergy = 0;
-		double clashEnergy = 0;
-		/*
-
-		BRNode* node;
-		for(int i=0;i<seqLen;i++){
-			if(i == seqID || i == seqID + 1) continue;
-			node = nodes[i];
-			if(squareDistance(node->cs1.origin_, p) < 144){
-				// base pho energy
-				baseOxyEnergy += et->roET.getEnergy(node->baseType, 3, global2local(node->cs1, o5));
-				baseOxyEnergy += et->roET.getEnergy(node->baseType, 4, global2local(node->cs1, op1));
-				baseOxyEnergy += et->roET.getEnergy(node->baseType, 4, global2local(node->cs1, op2));
-				for(int j=0;j<node->baseAtomNum;j++) {
-					clashEnergy += et->atET.getBasePhoEnergy(node->baseType, j, 1, squareDistance(node->baseAtomCoords[j], o5));
-					clashEnergy += et->atET.getBasePhoEnergy(node->baseType, j, 2, squareDistance(node->baseAtomCoords[j], op1));
-					clashEnergy += et->atET.getBasePhoEnergy(node->baseType, j, 3, squareDistance(node->baseAtomCoords[j], op2));
-				}
-				// ribose pho energy
-
-				for(int j=0;j<8;j++){
-					clashEnergy += et->atET.getRibosePhoEnergy(j,1,squareDistance(node->riboAtomCoords[j], o5));
-					clashEnergy += et->atET.getRibosePhoEnergy(j,2,squareDistance(node->riboAtomCoords[j], op1));
-					clashEnergy += et->atET.getRibosePhoEnergy(j,3,squareDistance(node->riboAtomCoords[j], op2));
-				}
-
-				// pho pho energy
-				for(int j=1;j<4;j++){
-					clashEnergy += et->atET.getPhoPhoEnergy(j,1,squareDistance(node->pho.tList[j], o5));
-					clashEnergy += et->atET.getPhoPhoEnergy(j,2,squareDistance(node->pho.tList[j], op1));
-					clashEnergy += et->atET.getPhoPhoEnergy(j,3,squareDistance(node->pho.tList[j], op2));
-				}
-			}
-		}
-		*/
-
-		return e+baseOxyEnergy+clashEnergy;
-	}
+	BackboneModelingTemplate(const string& inputPDB, ForceFieldPara* para);
 
 
-	//double fastBuildPho(int seqID);
-
-	//double phoEnergy(int seqID, bool verbose); //old method
-
-	double phoEnergy2(int seqID, bool verbose); //updated method, improper dependent dihedral energy
+	double buildPho(int seqID, bool verbose); //updated method, improper dependent dihedral energy
 
 	//double phoEnergy3(int seqID); //pho energy is backbone dependent
 
 	void rebuildPho(bool verbose){
 		for(int i=0;i<seqLen;i++){
-			phoEnergy2(i, verbose);
+			buildPho(i, verbose);
 			this->nodes[i]->phoConf->copyValueFrom(this->nodes[i]->phoConfTmp);
 		}
 	}
@@ -174,7 +76,7 @@ public:
 
 	void updateEnergy(){
 		bool verbose = false;
-		int i,j, pi, pj, sep;
+		int i,j, pi, pj;
 		for(int i=0;i<seqLen;i++){
 			for(int j=0;j<seqLen;j++){
 				pi = i*seqLen+j;
@@ -210,6 +112,7 @@ public:
 				allPhoPhoE[pj] = allPhoPhoE[pi];
 			}
 		}
+
 
 		for(i=0;i<seqLen;i++){
 			allRotE[i] = nodes[i]->riboseConf->rot->energy;
@@ -248,10 +151,11 @@ public:
 	double rms(){
 		vector<XYZ> backboneCoords;
 		for(int i=0;i<seqLen;i++){
-			for(int j=0;j<nodes[i]->riboseConf->rot->atomNum;j++){
-				backboneCoords.push_back(nodes[i]->riboseConf->coords[j]);
-			}
-			if(connectToDownstream[i]){
+
+			if(i>0 && i < seqLen-1 && connectToDownstream[i-1] && connectToDownstream[i]) {
+				for(int j=0;j<nodes[i]->riboseConf->rot->atomNum;j++){
+					backboneCoords.push_back(nodes[i]->riboseConf->coords[j]);
+				}
 				backboneCoords.push_back(nodes[i]->phoConf->coords[0]);
 				backboneCoords.push_back(nodes[i]->phoConf->coords[1]);
 			}
@@ -264,9 +168,9 @@ public:
 		return sqrt(rms/initBackboneAtomList.size());
 	}
 
-	void printDiheds(const string& outfile);
+
 	void printEnergyDetail();
-	void runMC();
+	double runMC();
 	double fragMC();
 
 	void checkTotalEnergy();
@@ -276,97 +180,115 @@ public:
 		double baseOxyEnergy = 0.0;
 		double hbondEnergy = 0.0;
 		double clashEnergy = 0.0;
+
 		int i,j;
 		double dd;
 		LocalFrame csA, csB;
 
+		int O2UniqueID = 177; //uniqueID: A-O2'
+
 		if(squareDistance(nodeA->baseConf->coords[0], nodeB->riboseConf->coords[2]) < 144.0){
 			if(abs(sep) > 0) {
+
 				baseOxyEnergy = et->roET->getEnergy(nodeA->baseType, 0, global2local(nodeA->baseConf->cs1, nodeB->riboseConf->coords[5]), sep); //O3'
 				baseOxyEnergy = et->roET->getEnergy(nodeA->baseType, 1, global2local(nodeA->baseConf->cs1, nodeB->riboseConf->coords[4]), sep); //O4'
 
-				//need to be modified
-				//hbondEnergy =
 				for(i=0;i<nodeA->baseConf->rot->polarAtomNum;i++){
-					csA = nodeA->baseConf->csPolar[i];
-					csB = nodeB->riboseConf->o2Polar;
-
+					hbondEnergy += et->hbET->getEnergy(nodeA->baseConf->rot->polarAtomUniqueID[i], nodeA->baseConf->csPolar[i], O2UniqueID, nodeB->riboseConf->o2Polar);
 				}
 
 				for(i=0;i<nodeA->baseConf->rot->atomNum;i++){
 					for(j=0;j<nodeB->riboseConf->rot->atomNum;j++){
 						dd = squareDistance(nodeA->baseConf->coords[i], nodeB->riboseConf->coords[j]);
-						if(dd < 36)
-							clashEnergy += et->acET->getBaseRiboseEnergy(nodeA->baseType, i, j, dd);
+						if(dd < 16)
+							clashEnergy += et->acET->getBaseRiboseEnergy(nodeA->baseType, i, j, dd, sep);
 					}
 				}
 			}
 		}
-		if(verbose && (baseOxyEnergy+clashEnergy)>100){
+		if(verbose){
 			cout << "base oxy: " << baseOxyEnergy << endl;
+			cout << "hbond energy: " << hbondEnergy << endl;
 			cout << "clash: " << clashEnergy << endl;
+
 		}
-		return baseOxyEnergy*et->para.wtBaseOxygen + clashEnergy;
+		return baseOxyEnergy + hbondEnergy + clashEnergy;
 	}
 
 
 	inline double getBaseRiboseEnergyTmpBM(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTableSimple* et, bool verbose){
 		double baseOxyEnergy = 0.0;
 		double clashEnergy = 0.0;
+		double hbondEnergy = 0.0;
 		int i,j;
 		double dd;
+		int O2UniqueID = 177; //uniqueID: A-O2'
 
 		if(squareDistance(nodeA->baseConfTmp->coords[0], nodeB->riboseConfTmp->coords[2]) < 144.0){
 			if(abs(sep) > 0) {
-				baseOxyEnergy = et->roET->getEnergy(nodeA->baseType, 0, global2local(nodeA->baseConfTmp->cs1, nodeB->baseConfTmp->coords[5]), sep); //O3'
-				baseOxyEnergy = et->roET->getEnergy(nodeA->baseType, 1, global2local(nodeA->baseConfTmp->cs1, nodeB->baseConfTmp->coords[4]), sep); //O4'
-				//need to be modified
-				//hbondEnergy =
+				baseOxyEnergy = et->roET->getEnergy(nodeA->baseType, 0, global2local(nodeA->baseConfTmp->cs1, nodeB->riboseConfTmp->coords[5]), sep); //O3'
+				baseOxyEnergy = et->roET->getEnergy(nodeA->baseType, 1, global2local(nodeA->baseConfTmp->cs1, nodeB->riboseConfTmp->coords[4]), sep); //O4'
+
+				//hbondEnergy: NodeA-PolarAtom -> NodeB-O2'
+				for(i=0;i<nodeA->baseConfTmp->rot->polarAtomNum;i++){
+					hbondEnergy += et->hbET->getEnergy(nodeA->baseConfTmp->rot->polarAtomUniqueID[i], nodeA->baseConfTmp->csPolar[i], O2UniqueID, nodeB->riboseConfTmp->o2Polar);
+				}
 
 				for(i=0;i<nodeA->baseConfTmp->rot->atomNum;i++){
 					for(j=0;j<nodeB->riboseConfTmp->rot->atomNum;j++){
 						dd = squareDistance(nodeA->baseConfTmp->coords[i], nodeB->riboseConfTmp->coords[j]);
-						if(dd < 36)
-							clashEnergy += et->acET->getBaseRiboseEnergy(nodeA->baseType, i, j, dd);
+						if(dd < 16)
+							clashEnergy += et->acET->getBaseRiboseEnergy(nodeA->baseType, i, j, dd, sep);
 					}
 				}
 			}
 		}
-		if(verbose && (baseOxyEnergy+clashEnergy)>100){
+		if(verbose){
 			cout << "base oxy: " << baseOxyEnergy << endl;
+			cout << "hbond energy: " << hbondEnergy << endl;
 			cout << "clash: " << clashEnergy << endl;
 		}
-		return baseOxyEnergy*et->para.wtBaseOxygen + clashEnergy;
+		return baseOxyEnergy + hbondEnergy + clashEnergy;
 	}
 
 	inline double getBasePhoEnergyBM(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTableSimple* et, bool verbose){
 		if(!nodeB->connectToNeighbor) return 0;
+
 		double baseOxyEnergy = 0.0;
 		double clashEnergy = 0.0;
 		double hbondEnergy = 0.0;
 		int i,j, nA;
 		double dd;
 
+		int uniqueIDOP1 = 168;
+		int uniqueIDOP2 = 169;
+
 		if(sep == 0) return 0.0;
 
-		baseOxyEnergy += et->roET->getEnergy(nodeA->baseType, 2, global2local(nodeA->baseConf->cs1, nodeB->phoConf->coords[1]), sep); //O5'
-		//need to be modified
-		//hbondEnergy =
 
+		//hbondEnergy: NodeA-PolarAtom -> NodeB-O2'
+		for(i=0;i<nodeA->baseConf->rot->polarAtomNum;i++){
+			hbondEnergy += et->hbET->getEnergy(nodeA->baseConf->rot->polarAtomUniqueID[i], nodeA->baseConf->csPolar[i], uniqueIDOP1, nodeB->phoConf->op1Polar);
+			hbondEnergy += et->hbET->getEnergy(nodeA->baseConf->rot->polarAtomUniqueID[i], nodeA->baseConf->csPolar[i], uniqueIDOP2, nodeB->phoConf->op2Polar);
+		}
+
+
+		baseOxyEnergy += et->roET->getEnergy(nodeA->baseType, 2, global2local(nodeA->baseConf->cs1, nodeB->phoConf->coords[1]), sep); //O5'
 		nA = nodeA->baseConf->rot->atomNum;
 		for(i=0;i<nA;i++){
 			for(j=1;j<4;j++){
 				dd = squareDistance(nodeA->baseConf->coords[i], nodeB->phoConf->coords[j]);
-				if(dd < 36)
-					clashEnergy += et->acET->getBasePhoEnergy(nodeA->baseType, i, j, dd);
+				if(dd < 16)
+					clashEnergy += et->acET->getBasePhoEnergy(nodeA->baseType, i, j, dd, sep);
 			}
 		}
 
 		if(verbose && (baseOxyEnergy+clashEnergy)>100){
 			cout << "base oxy: " << baseOxyEnergy << endl;
 			cout << "clash: " << clashEnergy << endl;
+			cout << "hbond: " << hbondEnergy << endl;
 		}
-		return baseOxyEnergy*et->para.wtBaseOxygen + clashEnergy;
+		return baseOxyEnergy + hbondEnergy + clashEnergy;
 	}
 
 	inline double getBasePhoEnergyTmpBM(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTableSimple* et, bool verbose){
@@ -377,26 +299,38 @@ public:
 		int i,j, nA;
 		double dd;
 
+		int uniqueIDOP1 = 168;
+		int uniqueIDOP2 = 169;
+
 		if(sep == 0) return 0.0;
 
-		baseOxyEnergy += et->roET->getEnergy(nodeA->baseType, 2, global2local(nodeA->baseConfTmp->cs1, nodeB->baseConfTmp->coords[1]), sep); //O5'
+		//hbondEnergy: NodeA-PolarAtom -> NodeB-O2'
+		for(i=0;i<nodeA->baseConfTmp->rot->polarAtomNum;i++){
+			hbondEnergy += et->hbET->getEnergy(nodeA->baseConfTmp->rot->polarAtomUniqueID[i], nodeA->baseConfTmp->csPolar[i], uniqueIDOP1, nodeB->phoConfTmp->op1Polar);
+			hbondEnergy += et->hbET->getEnergy(nodeA->baseConfTmp->rot->polarAtomUniqueID[i], nodeA->baseConfTmp->csPolar[i], uniqueIDOP2, nodeB->phoConfTmp->op2Polar);
+		}
+
+
+		baseOxyEnergy += et->roET->getEnergy(nodeA->baseType, 2, global2local(nodeA->baseConfTmp->cs1, nodeB->phoConfTmp->coords[1]), sep); //O5'
 		//need to be modified
 		//hbondEnergy =
 
 		nA = nodeA->baseConfTmp->rot->atomNum;
 		for(i=0;i<nA;i++){
 			for(j=1;j<4;j++){
-				dd = squareDistance(nodeA->baseConfTmp->coords[i], nodeB->baseConfTmp->coords[j]);
-				if(dd < 36)
-					clashEnergy += et->acET->getBasePhoEnergy(nodeA->baseType, i, j, dd);
+				dd = squareDistance(nodeA->baseConfTmp->coords[i], nodeB->phoConfTmp->coords[j]);
+				if(dd < 16)
+					clashEnergy += et->acET->getBasePhoEnergy(nodeA->baseType, i, j, dd, sep);
 			}
 		}
 
-		if(verbose && (baseOxyEnergy+clashEnergy)>100){
+
+		if(verbose && (baseOxyEnergy+clashEnergy)>10){
 			cout << "base oxy: " << baseOxyEnergy << endl;
 			cout << "clash: " << clashEnergy << endl;
+			cout << "hbond: " << hbondEnergy << endl;
 		}
-		return baseOxyEnergy*et->para.wtBaseOxygen + clashEnergy;
+		return baseOxyEnergy + hbondEnergy + clashEnergy;
 	}
 
 	inline double getRiboseRiboseEnergyBM(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTableSimple* et, bool verbose){
@@ -408,27 +342,36 @@ public:
 		double hbondEnergy = 0;
 		double dd;
 
+		int O2UniqueID = 177; //uniqueID: A-O2'
+
 		if(squareDistance(nodeA->riboseConf->coords[2], nodeB->riboseConf->coords[2]) < 81.0) {
 
 			if(abs(sep) >= 2)
 			{
+				hbondEnergy = et->hbET->getEnergy(O2UniqueID, nodeA->riboseConf->o2Polar, O2UniqueID, nodeB->riboseConf->o2Polar);
+				if(verbose){
+					if(abs(hbondEnergy) > 0.1){
+						printf("hbond energy: %7.3f\n", hbondEnergy);
+					}
+				}
 
-				//need to be modified
-				//hbondEnergy =
 			}
-
 			nA = nodeA->riboseConf->rot->atomNum;
 			nB = nodeB->riboseConf->rot->atomNum;
 			for(i=0;i<nA;i++){
 				for(j=0;j<nB;j++){
 					dd = squareDistance(nodeA->riboseConf->coords[i], nodeB->riboseConf->coords[j]);
-					if(dd < 36)
+					if(dd < 16)
 						clashEnergy += et->acET->getRiboseRiboseEnergy(i,j,dd, sep);
 					if(verbose){
-						//
+						if(dd < 36){
+							printf("ribose ribose energy: ");
+							printf("distance: %7.3f energy: %7.3f\n", sqrt(dd), et->acET->getRiboseRiboseEnergy(i,j,dd, sep));
+						}
 					}
 				}
 			}
+
 		}
 		return clashEnergy + hbondEnergy;
 	}
@@ -441,14 +384,14 @@ public:
 		double clashEnergy = 0;
 		double hbondEnergy = 0;
 		double dd;
+		int O2UniqueID = 177; //uniqueID: A-O2'
+
 
 		if(squareDistance(nodeA->riboseConfTmp->coords[2], nodeB->riboseConfTmp->coords[2]) < 81.0) {
 
 			if(abs(sep) >= 2)
 			{
-
-				//need to be modified
-				//hbondEnergy =
+				hbondEnergy = et->hbET->getEnergy(O2UniqueID, nodeA->riboseConfTmp->o2Polar, O2UniqueID, nodeB->riboseConfTmp->o2Polar);
 			}
 
 			nA = nodeA->riboseConfTmp->rot->atomNum;
@@ -456,13 +399,14 @@ public:
 			for(i=0;i<nA;i++){
 				for(j=0;j<nB;j++){
 					dd = squareDistance(nodeA->riboseConfTmp->coords[i], nodeB->riboseConfTmp->coords[j]);
-					if(dd < 36)
+					if(dd < 16)
 						clashEnergy += et->acET->getRiboseRiboseEnergy(i,j,dd, sep);
 					if(verbose){
 						//
 					}
 				}
 			}
+
 		}
 		return clashEnergy + hbondEnergy;
 	}
@@ -474,21 +418,24 @@ public:
 		double clashEnergy = 0;
 		double hbondEnergy = 0;
 		double dd;
-		if(sep > 2)
-		{
-			//need to be modified
-			//hbondEnergy =
-		}
+
+		int O2UniqueID = 177; //uniqueID: A-O2'
+		int uniqueIDOP1 = 168; //uniqueID: A-OP1
+		int uniqueIDOP2 = 169; //uniqueID: A-OP2
+
+		hbondEnergy += et->hbET->getEnergy(O2UniqueID, nodeA->riboseConf->o2Polar, uniqueIDOP1, nodeB->phoConf->op1Polar);
+		hbondEnergy += et->hbET->getEnergy(O2UniqueID, nodeA->riboseConf->o2Polar, uniqueIDOP2, nodeB->phoConf->op2Polar);
+
 
 		nA = nodeA->riboseConf->rot->atomNum;
 		for(i=0;i<nA;i++){
 			for(j=1;j<4;j++){
-
 				dd = squareDistance(nodeA->riboseConf->coords[i], nodeB->phoConf->coords[j]);
-				if(dd < 36)
+				if(dd < 16)
 					clashEnergy += et->acET->getRibosePhoEnergy(i,j,dd, sep);
 			}
 		}
+
 		return clashEnergy + hbondEnergy;
 	}
 
@@ -499,21 +446,22 @@ public:
 		double clashEnergy = 0;
 		double hbondEnergy = 0;
 		double dd;
-		if(sep > 2)
-		{
-			//need to be modified
-			//hbondEnergy =
-		}
+		int O2UniqueID = 177; //uniqueID: A-O2'
+		int uniqueIDOP1 = 168; //uniqueID: A-OP1
+		int uniqueIDOP2 = 169; //uniqueID: A-OP2
+
+		hbondEnergy += et->hbET->getEnergy(O2UniqueID, nodeA->riboseConfTmp->o2Polar, uniqueIDOP1, nodeB->phoConfTmp->op1Polar);
+		hbondEnergy += et->hbET->getEnergy(O2UniqueID, nodeA->riboseConfTmp->o2Polar, uniqueIDOP2, nodeB->phoConfTmp->op2Polar);
 
 		nA = nodeA->riboseConfTmp->rot->atomNum;
 		for(i=0;i<nA;i++){
 			for(j=1;j<4;j++){
-
 				dd = squareDistance(nodeA->riboseConfTmp->coords[i], nodeB->phoConfTmp->coords[j]);
-				if(dd < 36)
+				if(dd < 16)
 					clashEnergy += et->acET->getRibosePhoEnergy(i,j,dd, sep);
 			}
 		}
+
 		return clashEnergy + hbondEnergy;
 	}
 
@@ -529,22 +477,17 @@ public:
 
 		int i,j;
 		double clashEnergy = 0;
-		double hbondEnergy = 0;
-		if(sep > 1)
-		{
-			//need to be modified
-			//hbondEnergy =
-		}
 
 		double dd;
 		for(i=1;i<4;i++){
 			for(j=1;j<4;j++){
 				dd = squareDistance(nodeA->phoConf->coords[i], nodeB->phoConf->coords[j]);
-				if(dd < 25)
+				if(dd < 16)
 					clashEnergy += et->acET->getPhoPhoEnergy(i,j,dd, sep);
 			}
 		}
-		return clashEnergy+hbondEnergy;
+
+		return clashEnergy;
 	}
 
 	inline double getPhoPhoEnergyTmpBM(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTableSimple* et, bool verbose){
@@ -557,23 +500,19 @@ public:
 
 		int i,j;
 		double clashEnergy = 0;
-		double hbondEnergy = 0;
-		if(sep > 1)
-		{
-			//need to be modified
-			//hbondEnergy =
-		}
 
 		double dd;
 		for(i=1;i<4;i++){
 			for(j=1;j<4;j++){
 				dd = squareDistance(nodeA->phoConfTmp->coords[i], nodeB->phoConfTmp->coords[j]);
-				if(dd < 25)
+				if(dd < 16)
 					clashEnergy += et->acET->getPhoPhoEnergy(i,j,dd, sep);
 			}
 		}
-		return clashEnergy+hbondEnergy;
+
+		return clashEnergy;
 	}
+
 
 	virtual ~BackboneModelingTemplate();
 };

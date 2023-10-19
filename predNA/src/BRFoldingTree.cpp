@@ -1434,7 +1434,7 @@ void BRFoldingTree::randInit(){
 	cout << "random init" << endl;
 	for(int i=0;i<riboFlexibleNodes.size();i++){
 		//cout << "random init node: " << riboFlexibleNodes[i]->seqID << endl;
-		riboFlexibleNodes[i]->riboseConf->updateRotamer(rotLib->riboseRotLib->getRandomRotamerLv1(riboFlexibleNodes[i]->baseType));
+		riboFlexibleNodes[i]->riboseConf->updateRotamer(rotLib->riboseRotLib->getRandomRotamer(riboFlexibleNodes[i]->baseType));
 		riboFlexibleNodes[i]->riboseConfTmp->copyValueFrom(riboFlexibleNodes[i]->riboseConf);
 	}
 
@@ -2830,6 +2830,7 @@ void BRFoldingTree::updateF2ChildTmpCs(BRConnection* ct, F2Fragment* frag, bool 
 	BRNode* nodeA;
 	BRNode* nodeB;
 
+	/**
 	if(frag->hasRibose && frag->baseFlip) {
 		if(verbose){
 			cout << "has flip" << endl;
@@ -2898,7 +2899,7 @@ void BRFoldingTree::updateF2ChildTmpCs(BRConnection* ct, F2Fragment* frag, bool 
 		childNode->riboseConfTmp->updateRotamer(minEChildRot);
 		ct->childRotTmp = minEChildRot;
 	}
-
+	**/
 
 
 	int phoChangeNum = ct->f2PhoGroupC.size();
@@ -3033,278 +3034,6 @@ void BRFoldingTree::acceptF2ChildTmpCs(BRConnection* ct, bool verbose){
 		}
 	}
 }
-
-/*
-void BRFoldingTree::updateF3ChildTmpCs(BRConnection* ct1, F3Fragment* frag, bool verbose){
-	BRNode* father = ct1->fatherNode;
-	BRNode* child = ct1->childNode;
-	BRNode* grandChild = child->midChild;
-
-	if(child->fixed) return;
-	if(grandChild->fixed) return;
-
-	ct1->cmTmp = frag->cmAB;
-
-
-	LocalFrame cs1Child = father->riboseConfTmp->cs1 + frag->cmAB;
-	LocalFrame cs1Grandchild = child->riboseConfTmp->cs1 + frag->cmBC;
-
-
-	grandChild->upConnection->cmTmp = frag->cmBC;
-
-	father->riboseConfTmp->updateRotamer(frag->rotA);
-	child->riboseConfTmp->updateLocalFrameAndRotamer(cs1Child, frag->rotB);
-	grandChild->riboseConfTmp->updateLocalFrameAndRotamer(cs1Grandchild, frag->rotC);
-
-	int i,j;
-
-	if(verbose){
-		cout << "update base: " << child->seqID << endl;
-		cout << "update base: " << grandChild->seqID << endl;
-	}
-
-	if(verbose){
-		cout << "update ribose: " << father->seqID << endl;
-		cout << "update ribose: " << child->seqID << endl;
-		cout << "update ribose: " << grandChild->seqID << endl;
-	}
-
-
-	for(j=0;j<ct1->childConnectionList.size();j++){
-
-		BRConnection* cct = ct1->childConnectionList[j];
-		if(verbose){
-					cout << "ct: " << cct->fatherNode->seqID << " " << cct->childNode->seqID << endl;
-		}
-		CsMove cmv = cct->cm;
-		BRNode* childNode = cct->childNode;
-		BRNode* fatherNode = cct->fatherNode;
-		if(childNode->fixed) continue;
-
-		if(childNode->seqID == grandChild->seqID) continue;
-		cs1Child = father->riboseConfTmp->cs1 + cmv;
-		childNode->baseConfTmp->updateCoords(cs1Child);
-		childNode->riboseConfTmp->updateLocalFrame(cs1Child);
-
-		if(verbose){
-			cout << "update node: " << childNode->seqID << endl;
-		}
-	}
-
-	int chainBreakNum = ct1->f3PhoGroupC.size();
-	int indexA, indexB;
-	double minE;
-	int minIndexA1, minIndexB1, minIndexA2, minIndexB2, d1d2Index;
-	int riboKeyIndex;
-	double phoE;
-	RiboseRotamer* rotA;
-	RiboseRotamer* rotB;
-	BRNode* nodeA;
-	BRNode* nodeB;
-	for(int i=0;i<chainBreakNum;i++){
-
-		indexA = ct1->f3PhoGroupC[i];
-		indexB = indexA+1;
-		nodeA = nodes[indexA];
-		nodeB = nodes[indexB];
-
-		if(verbose){
-			cout << "update pho: " << indexA << endl;
-		}
-
-		if(indexA == ct1->fatherNode->seqID){
-			nodeA->phoLocalTmp = frag->plA;
-			nodeA->phoTmp = PhophateGroup(nodeA->phoLocalTmp, nodeA->tmpCs2);
-		}
-		else if(indexA == ct1->childNode->seqID){
-			nodeA->phoLocalTmp = frag->plB;
-			nodeA->phoTmp = PhophateGroup(nodeA->phoLocalTmp, nodeA->tmpCs2);
-		}
-		else {
-			nodeA->phoLocalTmp = this->et->pb->getPhoLocal(nodeA->tmpCs2, nodeB->riboAtomCoordsTmp, nodeA->tmpRot->improper, nodeB->tmpRot->improper);
-			nodeA->phoTmp = PhophateGroup(nodeA->phoLocalTmp, nodeA->tmpCs2);
-		}
-	}
-
-	int upPhoNum = ct1->f3PhoGroupB.size();
-	int index;
-
-	//cout << "pho without local change: " << upPhoNum << endl;
-	for(int i=0;i<upPhoNum;i++){
-
-		index = ct1->f3PhoGroupB[i];
-		if(verbose){
-					cout << "update pho: " <<  index << " without local change" << endl;
-			}
-		nodes[index]->phoTmp = PhophateGroup(nodes[index]->phoLocalTmp, nodes[index]->tmpCs2);
-	}
-
-}
-
-void BRFoldingTree::clearF3ChildTmpCs(BRConnection* ct1, bool verbose){
-
-	BRNode* father = ct1->fatherNode;
-	BRNode* child = ct1->childNode;
-	BRNode* grandChild = child->midChild;
-
-	father->riboseConfTmp->copyValueFrom(father->riboseConf);
-	child->riboseConfTmp->copyValueFrom(child->riboseConf);
-	grandChild->riboseConfTmp->copyValueFrom(grandChild->riboseConf);
-
-
-	int i,j,k, pi;
-	BRNode* node;
-
-	ct1->cmTmp = ct1->cm;
-	BRConnection* ct2 = ct1->childNode->midChild->upConnection;
-	ct2->cmTmp = ct2->cm;
-
-	for(i=0;i<ct1->f3BaseGroupB.size();i++){
-		node = nodes[ct1->f3BaseGroupB[i]];
-		node->tmpCs1 = node->cs1;
-		for(j=0;j<node->baseAtomNum;j++){
-			node->baseAtomCoordsTmp[j] = node->baseAtomCoords[j];
-		}
-	}
-
-	for(i=0;i<ct1->f3BaseGroupC.size();i++){
-		node = nodes[ct1->f3BaseGroupC[i]];
-		node->tmpCs1 = node->cs1;
-		for(j=0;j<node->baseAtomNum;j++){
-			node->baseAtomCoordsTmp[j] = node->baseAtomCoords[j];
-		}
-	}
-
-	for(i=0;i<ct1->f3RiboseGroupB.size();i++){
-		node = nodes[ct1->f3RiboseGroupB[i]];
-		node->tmpCs2 = node->cs2;
-		node->tmpCs3 = node->cs3;
-		for(j=0;j<11;j++){
-			node->riboAtomCoordsTmp[j] = node->riboAtomCoords[j];
-		}
-	}
-
-	for(i=0;i<ct1->f3RiboseGroupC.size();i++){
-		node = nodes[ct1->f3RiboseGroupC[i]];
-		node->tmpRot = node->rot;
-		node->tmpCs2 = node->cs2;
-		node->tmpCs3 = node->cs3;
-		for(j=0;j<11;j++){
-			node->riboAtomCoordsTmp[j] = node->riboAtomCoords[j];
-		}
-	}
-
-	for(i=0;i<ct1->f3PhoGroupB.size();i++){
-		node = nodes[ct1->f3PhoGroupB[i]];
-		node->phoTmp = node->pho;
-	}
-
-	for(i=0;i<ct1->f3PhoGroupC.size();i++){
-		node = nodes[ct1->f3PhoGroupC[i]];
-		node->phoLocalTmp = node->phoLocal;
-		node->phoTmp = node->pho;
-	}
-
-	for(i=0;i<seqLen;i++){
-		tmpConstraint[i] = allConstraint[i];
-		tmpRotE[i] = allRotE[i];
-		tmpRcE[i] = allRcE[i];
-		for(j=0;j<seqLen;j++){
-			pi = i*seqLen+j;
-			tmpBaseClashE[pi] = allBaseClashE[pi];
-			tmpBaseBaseE[pi] = allBaseBaseE[pi];
-			tmpBaseRiboseE[pi] = allBaseRiboseE[pi];
-			tmpBasePhoE[pi] = allBasePhoE[pi];
-			tmpRiboseRiboseE[pi] = allRiboseRiboseE[pi];
-			tmpRibosePhoE[pi] = allRibosePhoE[pi];
-			tmpPhoPhoE[pi] = allPhoPhoE[pi];
-			tmpPairConstraint[pi] = allPairConstraint[pi];
-		}
-	}
-}
-
-void BRFoldingTree::acceptF3ChildTmpCs(BRConnection* ct1, bool verbose){
-	BRNode* father = ct1->fatherNode;
-	BRNode* child = ct1->childNode;
-	BRNode* grandChild = child->midChild;
-
-	father->rot = father->tmpRot;
-	child->rot = child->tmpRot;
-	grandChild->rot = grandChild->tmpRot;
-
-	int i,j,k, pi;
-	BRNode* node;
-
-	ct1->cm = ct1->cmTmp;
-	BRConnection* ct2 = ct1->childNode->midChild->upConnection;
-	ct2->cm = ct2->cmTmp;
-
-	for(i=0;i<ct1->f3BaseGroupB.size();i++){
-		node = nodes[ct1->f3BaseGroupB[i]];
-		node->cs1 = node->tmpCs1;
-		for(j=0;j<node->baseAtomNum;j++){
-			node->baseAtomCoords[j] = node->baseAtomCoordsTmp[j];
-		}
-	}
-
-	for(i=0;i<ct1->f3BaseGroupC.size();i++){
-		node = nodes[ct1->f3BaseGroupC[i]];
-		node->cs1 = node->tmpCs1;
-		for(j=0;j<node->baseAtomNum;j++){
-			node->baseAtomCoords[j] = node->baseAtomCoordsTmp[j];
-		}
-	}
-
-	for(i=0;i<ct1->f3RiboseGroupB.size();i++){
-		node = nodes[ct1->f3RiboseGroupB[i]];
-		node->cs2 = node->tmpCs2;
-		node->cs3 = node->tmpCs3;
-		for(j=0;j<11;j++){
-			node->riboAtomCoords[j] = node->riboAtomCoordsTmp[j];
-		}
-	}
-
-	for(i=0;i<ct1->f3RiboseGroupC.size();i++){
-		node = nodes[ct1->f3RiboseGroupC[i]];
-		node->rot = node->tmpRot;
-		node->cs2 = node->tmpCs2;
-		node->cs3 = node->tmpCs3;
-		for(j=0;j<11;j++){
-			node->riboAtomCoords[j] = node->riboAtomCoordsTmp[j];
-		}
-	}
-
-	for(i=0;i<ct1->f3PhoGroupB.size();i++){
-		node = nodes[ct1->f3PhoGroupB[i]];
-		node->pho = node->phoTmp;
-	}
-
-	for(i=0;i<ct1->f3PhoGroupC.size();i++){
-		node = nodes[ct1->f3PhoGroupC[i]];
-		node->phoLocal = node->phoLocalTmp;
-		node->pho = node->phoTmp;
-	}
-
-	for(i=0;i<seqLen;i++){
-		allConstraint[i] = tmpConstraint[i];
-		allRotE[i] = tmpRotE[i];
-		allRcE[i] = tmpRcE[i];
-		for(j=0;j<seqLen;j++){
-			pi = i*seqLen+j;
-			allBaseClashE[pi] = tmpBaseClashE[pi];
-			allBaseBaseE[pi] = tmpBaseBaseE[pi];
-			allBaseRiboseE[pi] = tmpBaseRiboseE[pi];
-			allBasePhoE[pi] = tmpBasePhoE[pi];
-			allRiboseRiboseE[pi] = tmpRiboseRiboseE[pi];
-			allRibosePhoE[pi] = tmpRibosePhoE[pi];
-			allPhoPhoE[pi] = tmpPhoPhoE[pi];
-			allPairConstraint[pi] = tmpPairConstraint[pi];
-		}
-	}
-}
-*/
-
-
 
 void BRFoldingTree::updateRiboseRotamerTmp(BRNode* node, RiboseRotamer* rot,  bool verbose){
 

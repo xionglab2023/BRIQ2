@@ -34,6 +34,7 @@ void checkInputFile(const string& inputFile){
 	string baseSec = input.getValue("sec");
 	string nwcSec = input.getValue("nwc");
 
+
 	if(pdbFile == ""){
 		cout << "invalid inputFile: initial pdb required" << endl;
 		exit(0);
@@ -71,6 +72,7 @@ void checkInputFile(const string& inputFile){
 		exit(0);
 	}
 }
+
 
 void printHelp(){
 	cout << "Usage: BRiQ_Predict $INPUT_FILE $OUTPUT_PDB $RANDOM_SEED" << endl;

@@ -9,10 +9,10 @@
 
 namespace NSPforcefield {
 
-HbondEnergy::HbondEnergy() {
+HbondEnergy::HbondEnergy(ForceFieldPara* para) {
 	// TODO Auto-generated constructor stub
 
-
+	this->para = para;
 	this->atLib = new AtomLib();
 	ifstream file;
 	string fileName;
@@ -124,12 +124,12 @@ double HbondEnergy::getEnergy(int uniqueA, LocalFrame& csA, int uniqueB, LocalFr
 	double len = csDonor.origin_.distance(csAcceptor.origin_);
 	if(len < d0)
 	{
-		double u = (len-d0)/d0/0.1;
+		double u = (len-d0)/d0/para->hbLamda1;
 		e = u*u+wd;
 	}
 	else
 	{
-		double u = (len-d0)/d0/0.15;
+		double u = (len-d0)/d0/para->hbLamda2;
 		if(u>4)
 			e = 0.0;
 		else
@@ -139,8 +139,6 @@ double HbondEnergy::getEnergy(int uniqueA, LocalFrame& csA, int uniqueB, LocalFr
 
 	if(e >= 0.0)
 		return e;
-
-
 
 	//csDonor: A
 	//csAcceptor: B
@@ -193,7 +191,7 @@ double HbondEnergy::getEnergy(int uniqueA, LocalFrame& csA, int uniqueB, LocalFr
   //  printf("logDenA: %7.3f logDenB: %7.3f kOrientation: %6.4f\n", logDensityA, logDensityB, kOrientation);
 
     if(kOrientation < 0) return 0.0;
-    return e*kOrientation;
+    return e*kOrientation*para->wtHb;
 
 }
 

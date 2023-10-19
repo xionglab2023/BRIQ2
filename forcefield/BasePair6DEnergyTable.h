@@ -8,7 +8,7 @@
 
 
 #include "dataio/datapaths.h"
-#include "forcefield/XPara.h"
+#include "forcefield/ForceFieldPara.h"
 #include "geometry/xyz.h"
 #include "geometry/localframe.h"
 #include <time.h>
@@ -70,7 +70,7 @@ public:
 
 	double wt1, wt2, wt3;
 
-	BasePair6DEnergyTable(XPara* para);
+	BasePair6DEnergyTable(ForceFieldPara* para);
 
 	double getEnergyBiInterpolation(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		//bilinear interpolation

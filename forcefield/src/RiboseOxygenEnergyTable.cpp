@@ -7,7 +7,7 @@
 
 namespace NSPforcefield {
 
-RiboseOxygenEnergyTable::RiboseOxygenEnergyTable() {
+RiboseOxygenEnergyTable::RiboseOxygenEnergyTable(ForceFieldPara* para) {
 	// TODO Auto-generated constructor stub
 	string path = NSPdataio::datapath() + "riboseOxygen/";
 	vector<string> oxygenNames;
@@ -19,7 +19,7 @@ RiboseOxygenEnergyTable::RiboseOxygenEnergyTable() {
 
 	vector<string> spt;
 	double ene;
-	int directIndex;
+
 	for(int i=0;i<8;i++){
 		for(int j=0;j<3;j++){
 			string energyFile = path + augc.substr(i,1) + "-" + oxygenNames[j]+".ene";
@@ -34,7 +34,10 @@ RiboseOxygenEnergyTable::RiboseOxygenEnergyTable() {
 			while(getline(file, line)){
 				NSPtools::splitString(line, " ", &spt);
 				ene = atof(spt[0].c_str());
-				ene = energyRescale(ene);
+				ene = riboseOxyEnergyRescale(ene);
+
+				ene = ene*para->wtRiboseOxy[(i%4)*4 + j];
+
 				this->etList[i*3+j].push_back(ene);
 			}
 			file.close();
@@ -44,7 +47,6 @@ RiboseOxygenEnergyTable::RiboseOxygenEnergyTable() {
 	/*
 	 * sep = -1
 	 */
-
 	vector<string> oxygenNamesM1;
 	oxygenNamesM1.push_back("O4");
 	for(int i=0;i<8;i++){
@@ -60,7 +62,9 @@ RiboseOxygenEnergyTable::RiboseOxygenEnergyTable() {
 		while(getline(file, line)){
 			NSPtools::splitString(line, " ", &spt);
 			ene = atof(spt[0].c_str());
-			ene = energyRescale(ene);
+			ene = riboseOxyEnergyRescale(ene);
+
+			ene = ene*para->wtRiboseOxy[(i%4)*4 + 3];
 			this->etListM1[i].push_back(ene);
 		}
 		file.close();

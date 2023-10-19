@@ -9,7 +9,7 @@
 #include "geometry/xyz.h"
 #include "geometry/Angles.h"
 #include "dataio/datapaths.h"
-#include "forcefield/XPara.h"
+#include "forcefield/ForceFieldPara.h"
 #include "tools/StringTool.h"
 #include <time.h>
 #include <math.h>
@@ -42,15 +42,16 @@ public:
 	 */
 
 	vector<double> etList[24];
-
+	double wtList1[24];
 	/*
 	 * sep=-1
 	 * base-O4
 	 */
 
 	vector<double> etListM1[8];
+	double wtList2[8];
 
-	RiboseOxygenEnergyTable();
+	RiboseOxygenEnergyTable(ForceFieldPara* para);
 
 	double getEnergy(int baseType, int oxygenType, const XYZ& localCoreCoord, int sep){
 		if(sep == 0 || sep == 1)
@@ -82,6 +83,13 @@ public:
 
 			return etList[type][index];
 		}
+	}
+
+	inline double riboseOxyEnergyRescale(double e){
+		if(e < 0.81)
+			return e;
+		else
+			return 1.8*sqrt(e) - 0.81;
 	}
 
 	virtual ~RiboseOxygenEnergyTable();

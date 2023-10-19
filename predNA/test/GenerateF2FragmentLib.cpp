@@ -83,10 +83,10 @@ int main(int argc, char** argv){
 
 	RotamerLib* rotLib = new RotamerLib();
 	XPara para;
-
+	ForceFieldPara* ffp = new ForceFieldPara();
 	RnaAtomicEnergyTable* et = new RnaAtomicEnergyTable(&para);
-	RiboseOxygenEnergyTable* rET = new RiboseOxygenEnergyTable();
-	PO3Builder* pb = new PO3Builder(&para);
+	RiboseOxygenEnergyTable* rET = new RiboseOxygenEnergyTable(ffp);
+	PO3Builder* pb = new PO3Builder(ffp);
 	ofstream out;
 	ifstream in;
 	string s;

@@ -106,6 +106,8 @@ int main(int argc, char** argv){
 	BRTreeInfo* info = ft->getTreeInfo();
 	info->printPDB(outPDB);
 
+
+
 }
 
 
