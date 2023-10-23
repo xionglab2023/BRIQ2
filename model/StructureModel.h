@@ -104,10 +104,10 @@ private:
 	vector<Atom*> sidechainAtoms;
 	map<string, Atom*> atomMap;
 public:
-	string baseID;
+	string baseID;  // ID number from PDB
 	int baseSeqID;
-	char baseType;
-	int baseTypeInt;
+	char baseType;  // AUGCatgc
+	int baseTypeInt;  // 0-7, and -1
 	string chainID;
 	int atomNum;
 	bool hasAltConf;

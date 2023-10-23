@@ -124,24 +124,43 @@ namespace NSPbm
 
     double BMScore::idealScore() {
         double score = 0;
-        // Ideally all matches are between forward basepairs
-        auto& bplA = BMa->getBasePairList();
-        int lbA = bplA.size();
-        for(int i=0;i<lbA;i++) {
-            score += bp2wMapa.at(bplA[i]);
+        int lA = BMa->getBaseList().size();
+        int lB = BMb->getBaseList().size();
+        if(lA == lB || lA -lB > LDIFFTOLERATE || lB - lA > LDIFFTOLERATE) {
+            // Ideally all matches are between forward basepairs
+            auto& bplA = BMa->getBasePairList();
+            int lbA = bplA.size();
+            for(int i=0;i<lbA;i++) {
+                score += bp2wMapa.at(bplA[i]);
+            }
+            auto& bplB = BMb->getBasePairList();
+            int lbB = bplB.size();
+            for(int i=0;i<lbB;i++) {
+                score += bp2wMapb.at(bplB[i]);
+            }
+            // for (auto& iter : bp2wMapa) {
+            //     score += iter.second;
+            // }
+            // for (auto& iter : bp2wMapb) {
+            //     score += iter.second;
+            // }
+            return score/2;
+        } else {
+            if(lA > lB) {
+                auto& bplB = BMb->getBasePairList();
+                int lbB = bplB.size();
+                for(int i=0;i<lbB;i++) {
+                    score += bp2wMapb.at(bplB[i]);
+                }
+            } else {
+                auto& bplA = BMa->getBasePairList();
+                int lbA = bplA.size();
+                for(int i=0;i<lbA;i++) {
+                    score += bp2wMapa.at(bplA[i]);
+                }
+            }
+            return score;
         }
-        auto& bplB = BMb->getBasePairList();
-        int lbB = bplB.size();
-        for(int i=0;i<lbB;i++) {
-            score += bp2wMapb.at(bplB[i]);
-        }
-        // for (auto& iter : bp2wMapa) {
-        //     score += iter.second;
-        // }
-        // for (auto& iter : bp2wMapb) {
-        //     score += iter.second;
-        // }
-        return score/2;
     }
 
     BMScore::~BMScore(){

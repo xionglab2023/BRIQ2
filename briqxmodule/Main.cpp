@@ -95,10 +95,17 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
     BMAlign<vector<array<RNABase*,2> > >* bestAlign = nullptr;
     BMAlign<vector<array<BasePair*,2> > >* bestAlignBP = nullptr;
     while(DDMMatrix.at(p1->first) <= DDMCutoff) {
-        auto* iniAlign = new BMAlign<vector<array<BasePair*,2> > >(BMa, BMb, vector<array<BasePair*,2> >{p1->first});
         #ifdef DEBUG
-            cout << "[DEBUG][Info] Evaluating initial alignment by pair " << i << endl;
+            string outstr = "[DEBUG][Info] Evaluating initial alignment by pair " + to_string(i) + ": " + \
+                (p1->first)[0]->baseA->baseType + (p1->first)[0]->baseA->baseID + "-" +\
+                (p1->first)[0]->baseB->baseType + (p1->first)[0]->baseB->baseID + " To " +\
+                (p1->first)[1]->baseA->baseType + (p1->first)[1]->baseA->baseID + "-" +\
+                (p1->first)[1]->baseB->baseType + (p1->first)[1]->baseB->baseID + "\n";
+            cout << outstr;
             int itCount = 0;
+        #endif //DEBUG
+        auto* iniAlign = new BMAlign<vector<array<BasePair*,2> > >(BMa, BMb, vector<array<BasePair*,2> >{p1->first});
+        // #ifdef DEBUG
             // ofstream debugOut;
             // debugOut.open("iniTransformed.pdb", ios::out);
             // auto BMnew = BriqxModule(BMb, iniAlign->getRotTrans(), iniAlign->getAcog(), iniAlign->getBcog(),
@@ -106,7 +113,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
             // BMnew.printPDBFormat(debugOut);
             // debugOut.close();
             // BMnew.deepClear();
-        #endif //DEBUG
+        // #endif //DEBUG
         if(iniAlign->getAlignVec().size() == 0) {
             #ifdef DEBUG
                 cout << "[DEBUG][Info] Stop coz initial alignment get empty alignVec" <<endl;
@@ -125,6 +132,10 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
             curSc = nextSc;
             nextAlign = new BMAlign<vector<array<RNABase*,2> > >(BMa, BMb, iniAlign->getAlignVec());
             nextSc = scer.score(nextAlign->getAlignVec());
+            #ifdef DEBUG
+                outstr = "[DEBUG][Info] New Score: " + to_string(nextSc) + "\n";
+                cout << outstr;
+            #endif
         }
         while(curSc-nextSc < iterStopAt) {
             #ifdef DEBUG
@@ -137,13 +148,19 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
             curAlign = nextAlign;
             nextAlign = new BMAlign<vector<array<RNABase*,2> > >(BMa, BMb, curAlign->getAlignVec());
             nextSc = scer.score(nextAlign->getAlignVec());
+            #ifdef DEBUG
+                outstr = "[DEBUG][Info] New Score: " + to_string(nextSc) + "\n";
+                cout << outstr;
+            #endif
             if(lastAlign) delete lastAlign;
         }
         delete nextAlign;
         if(curSc > bestScore) {
             bestScore = curSc;
             #ifdef DEBUG
-                cout << "[DEBUG][Info] Refreshing, best score now from iniBP " << i << endl;
+                outstr = "[DEBUG][Info] Refreshing, best score now from iniBP " + to_string(i) + "with value " +\
+                    to_string(bestScore) + "\n";
+                cout << outstr;
             #endif //DEBUG
             if(curAlign) {
                 if(bestAlign) delete bestAlign;

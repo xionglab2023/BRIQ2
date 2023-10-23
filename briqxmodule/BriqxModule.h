@@ -20,6 +20,9 @@
 #define BRIQXMODULE_BRIQXMODULE_H_
 // #define DEBUG
 
+#define BASEDISTMAX 4.0
+#define LDIFFTOLERATE 5
+
 /**
  * @addtogroup BriqxModule
  * @brief  BriqxModule api description
@@ -388,7 +391,7 @@ namespace NSPbm {
              * @note Function called by BMAlign, for usual taskes invoked through BMAlign is recommended.
              */
             int alignBasesByCoord(const BriqxModule& other, vector<array<RNABase*, 2> >& alignVec,
-            const vector<array<XYZ,4> >& BasePos = vector<array<XYZ,4> >{}, const double& distMax = 1.0) const;
+            const vector<array<XYZ,4> >& BasePos = vector<array<XYZ,4> >{}, const double& distMax = BASEDISTMAX) const;
 
             /**
              * @brief  Print object in PDB format to @p out.

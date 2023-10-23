@@ -633,6 +633,12 @@ int BriqxModule::alignBasesByCoord(const BriqxModule& other, vector<array<RNABas
     for(int i=0; i<lb1; i++) {
         for(int j=0;j<lb2;j++) {
             double dist = utils::meanDist<array<XYZ,4> >(aPos[i], bPos[j], 10, 1000);
+            #ifdef DEBUG
+            string outstr = "[DEBUG][Info] Distance between " + this->BMname + "_"+this->baseList[i]->baseType + \
+                this->baseList[i]->baseID + " and " + other.BMname + "_"+other.baseList[j]->baseType + \
+                other.baseList[j]->baseID + ": " + to_string(dist) + "\n";
+            cout << outstr;
+            #endif
             if(dist < distMax) {
                 abmdVec.emplace_back(
                     pair<pair<RNABase*,RNABase*>, double>(

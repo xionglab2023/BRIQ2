@@ -87,7 +87,7 @@ namespace NSPbm
         int l1 = invec1.size();
         int l2 = invec2.size();
         if(l1 != l2) throw invalid_argument("Inconsistent length of input vectors");
-        double totDist = -1;
+        double totDist = 0;
         if(dStop < 0 ) {
             for(int i=0;i<l1;i++) {
                 totDist += invec1[i].distance(invec2[i]);

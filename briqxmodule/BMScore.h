@@ -101,7 +101,8 @@ namespace NSPbm
              * @return double: The weight in bpp score.
              */
             static double getWeight(double ene) {
-                return 1/(1+exp(ene/2+5));
+                // return 1/(1+exp(ene/2+5)); // if ene in kcal/mol
+                return 1/(1+exp(ene*3+6)); // if ene in BRIQX unit
             }
 
             /**
