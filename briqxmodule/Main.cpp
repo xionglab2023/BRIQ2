@@ -70,9 +70,11 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
     BriqxModule BMa(BMaPDB, bpl, atl, BMaName, BMaSel);
     BriqxModule BMb(BMbPDB, bpl, atl, BMbName, BMbSel);
 
-    if(BMa.getChains().size() != BMb.getChains().size()) {
-        cout << "[Info] ChainNum Unmatch: "<< BMaName << ": " << BMa.getChains().size() << ", "
-                                           << BMbName << ": " << BMb.getChains().size() <<endl;
+    if(BMa.getNStrand() != BMb.getNStrand()) {
+        string outstr = "[Result] nStrand Unmatch: " +\
+            BMaName + ": " + to_string(BMa.getNStrand()) + ", " + \
+            BMbName + ": " + to_string(BMb.getNStrand()) + "\n";
+        cout << outstr;
         score = -1;
         normedSc = -1;
         alignVec.clear();
@@ -87,20 +89,19 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
 
     vector<pair<array<BasePair*, 2>, double> > sortedDDM{};
 
-    scer.sortBppByScore(sortedDDM);
+    // scer.sortBppByScore(sortedDDM);  // 应该以DDM排序，因为需要遍历所有DDM<DDMcutoff的 BasePair 对
+    utils::sortMapByValue(DDMMatrix, sortedDDM, false);
 
     int i = 0;
     auto* p1 = &sortedDDM[i];
     double bestScore = 0;
     BMAlign<vector<array<RNABase*,2> > >* bestAlign = nullptr;
     BMAlign<vector<array<BasePair*,2> > >* bestAlignBP = nullptr;
-    while(DDMMatrix.at(p1->first) <= DDMCutoff) {
+    // while(DDMMatrix.at(p1->first) <= DDMCutoff) {
+    while(p1->second <= DDMCutoff) {
         #ifdef DEBUG
             string outstr = "[DEBUG][Info] Evaluating initial alignment by pair " + to_string(i) + ": " + \
-                (p1->first)[0]->baseA->baseType + (p1->first)[0]->baseA->baseID + "-" +\
-                (p1->first)[0]->baseB->baseType + (p1->first)[0]->baseB->baseID + " To " +\
-                (p1->first)[1]->baseA->baseType + (p1->first)[1]->baseA->baseID + "-" +\
-                (p1->first)[1]->baseB->baseType + (p1->first)[1]->baseB->baseID + "\n";
+                (p1->first)[0]->print() + " To " + (p1->first)[1]->print() + "\n";
             cout << outstr;
             int itCount = 0;
         #endif //DEBUG
@@ -158,7 +159,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         if(curSc > bestScore) {
             bestScore = curSc;
             #ifdef DEBUG
-                outstr = "[DEBUG][Info] Refreshing, best score now from iniBP " + to_string(i) + "with value " +\
+                outstr = "[DEBUG][Info] Refreshing, best score now from iniBP " + to_string(i) + " with value " +\
                     to_string(bestScore) + "\n";
                 cout << outstr;
             #endif //DEBUG
@@ -307,10 +308,14 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
     BriqxModule BMa(BMaPDB, *bpl, *atl, BMaName, *BMaSel);
     BriqxModule BMb(BMbPDB, *bpl, *atl, BMbName, *BMbSel);
 
-    if(BMa.getChains().size() != BMb.getChains().size()) {
-        string outstr = "[Result][" + to_string(jid) + "] ChainNum Unmatch: " +\
-            BMaName + ": " + to_string(BMa.getChains().size()) + ", " + \
-            BMbName + ": " + to_string(BMb.getChains().size()) + "\n";
+    if(BMa.getNStrand() != BMb.getNStrand()) {
+        string outstr = "[Result][" + to_string(jid) + "] nStrand Unmatch: " +\
+            BMaName + ": " + to_string(BMa.getNStrand()) + ", " + \
+            BMbName + ": " + to_string(BMb.getNStrand()) + "\n";
+        cout << outstr;
+        array<string,2> alnKey{BMaName, BMbName};
+        scoreMap->at(alnKey) = -1;
+        normedScMap->at(alnKey) = -1;
         return EXIT_SUCCESS;
     }
 
@@ -322,14 +327,16 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
 
     vector<pair<array<BasePair*, 2>, double> > sortedDDM{};
 
-    scer.sortBppByScore(sortedDDM);
+    // scer.sortBppByScore(sortedDDM);
+    utils::sortMapByValue(DDMMatrix, sortedDDM, false);
 
     int i = 0;
     auto* p1 = &sortedDDM[i];
     double bestScore = 0;
     BMAlign<vector<array<RNABase*,2> > >* bestAlign = nullptr;
     BMAlign<vector<array<BasePair*,2> > >* bestAlignBP = nullptr;
-    while(DDMMatrix.at(p1->first) <= DDMCutoff) {
+    // while(DDMMatrix.at(p1->first) <= DDMCutoff) {
+    while(p1->second <= DDMCutoff) {
         auto* iniAlign = new BMAlign<vector<array<BasePair*,2> > >(BMa, BMb, vector<array<BasePair*,2> >{p1->first});
         #ifdef DEBUG
             string outstr = "[DEBUG][Info][" + to_string(jid) + "] Evaluating initial alignment by pair " +\
@@ -498,6 +505,8 @@ void printHelp() {
     cout << "bmalign -a PDBA -b PDBB -o outPath -op outPDBFileName -oa outAlignmentFileName" << endl;
     cout << "bmalign -n NumThreads -f PDBList -o outPath -op outPDBFileName -oa outAlignmentFileName"<<
             " -os outScoreFileName" << endl;
+    cout << "bmalign -a PDBA -f PDBList -n NumThreads -o outPath -op outPDBFileName -oa outAlignmentFileName"<<
+            " -os outScoreFileName" << endl;
 }
 
 /**
@@ -558,22 +567,106 @@ int main(int argc, char** argv) {
     }
     if(cmdArgs.specifiedOption("-a")) {
         pdbA = cmdArgs.getValue("-a");  // -a and -b must be specified at the same time
+        if(cmdArgs.specifiedOption("-d")) {
+            cout<<"[Warning][Main] OptionIgnored: Option -d is ignored at the presence of -a,-b,-f"<<endl;
+        }
         if(cmdArgs.specifiedOption("-b")) {
             pdbB = cmdArgs.getValue("-b");
+            BasePairLib bpl;
+            AtomLib atl;
+            alignAndScore(pdbA, pdbB, bpl, atl, score, alignVec, normedSc, 0, 0,  // for now use NULL(i.e. 0) BMSelection
+                "BMa", "BMb", outPath, outfileAln, outfilePDB);
+            return EXIT_SUCCESS;
+        } else if(cmdArgs.specifiedOption("-f")) {
+            listFile = cmdArgs.getValue("-f");  // read PDB file names from listfile
+            cout << "[Info][Main] Align Motifs from " + listFile + " to " + pdbA << endl;
+            filesystem::path pathA{pdbA};
+            string stemA = pathA.stem();
+            int nt = 1;
+            if(cmdArgs.specifiedOption("-n")) {
+                istringstream ss(cmdArgs.getValue("-n"));
+                ss >> nt;
+            }
+
+            //batch processing
+            ifstream input;
+            input.open(listFile, ios::in);
+            if (! input.is_open())
+            {
+                throw "[Error][Main] fail to open file " + listFile;
+            }
+            string s;
+            map<int,vector<string> > strandNum2MotifMap;
+            shared_ptr<BasePairLib> pbpl(new BasePairLib);
+            shared_ptr<AtomLib> patl(new AtomLib);
+            while(getline(input,s)) {
+                BriqxModule BM0(s, *pbpl, *patl, "BM0", 0, true);
+                int nStrand = BM0.getNStrand();
+                if(strandNum2MotifMap.contains(nStrand)) {
+                    strandNum2MotifMap[nStrand].emplace_back(s);
+                } else{
+                    vector<string> vec0{s};
+                    strandNum2MotifMap.emplace(nStrand, vec0);
+                }
+            }
+            BriqxModule BM0(pdbA, *pbpl, *patl, "BM0", 0, true);
+            int nStrandA = BM0.getNStrand();
+            input.close();
+            cout<<"[Info][Main] List of Motifs Summary:"<<endl;
+            cout<<"     nStrand  Population"<<endl;
+            for(auto &iter: strandNum2MotifMap) {
+                cout<<setw(12)<<iter.first<<setw(12)<<iter.second.size()<<endl;
+            }
+            shared_ptr<ThreadPool> thrPool(new ThreadPool(nt));
+            size_t jid = 0;
+            auto strandVec = strandNum2MotifMap.at(nStrandA);
+            shared_ptr<map<array<string, 2>, double> > scoreMap(new map<array<string, 2>, double>);
+            shared_ptr<map<array<string, 2>, double> > normedScMap(new map<array<string, 2>, double>);
+            shared_ptr<BMSelection> emptyBMS(new BMSelection);
+            vector<string> stemVec;  // vector of filename w/o suffix
+            int lv = strandVec.size();
+            string BMaName = stemA;
+            for(int i=0;i<lv;i++) {
+                filesystem::path path0{strandVec[i]};
+                stemVec.emplace_back(path0.stem());
+                string BMbName = stemVec[i];
+                scoreMap->emplace(array<string,2>{BMaName,BMbName}, 0);
+                normedScMap->emplace(array<string,2>{BMaName,BMbName}, 0);
+            }
+            for(int j=0;j<lv;j++) {
+                string BMbName = stemVec[j];
+                shared_ptr<IntFuncTask> request(new IntFuncTask);
+                request->asynBind(alignAndScoreMT, pdbA, strandVec[j], pbpl, patl, jid,
+                    scoreMap, normedScMap, emptyBMS, emptyBMS, BMaName, BMbName, outPath, outfileAln, outfilePDB);
+                jid++;
+                thrPool->addTask(request);
+            }
+            while(true) {
+                sleep(1);
+                if(thrPool->getTaskCount() == 0) {
+                    break;
+                }
+            }
+            cout<<"[Info][Main] Aligment for Motif "<<stemA<<" complete, writing scores."<<endl;
+            ofstream scout;
+            string scSuf = "_score-" + stemA + ".csv"; 
+            string scOutFile = outfileSc.string() + scSuf;
+            scout.open(scOutFile, ios::out);
+            if (! scout.is_open())
+            {
+                throw "[Error][Main] Fail to open file " + scOutFile;
+            }
+            scout << "MotifA,MotifB,score,normedScore" <<endl;
+            for(int j=0;j<lv;j++) {
+                string BMbName = stemVec[j];
+                array<string,2> key{BMaName, BMbName};
+                scout << BMaName<<","<<BMbName<<","<<scoreMap->at(key) <<","<<normedScMap->at(key)<<endl;
+            }
+            scout.close();
+            return EXIT_SUCCESS;
         } else {
-            throw invalid_argument("pdbB must be specified when pdbA present");
+            throw invalid_argument("pdbB or filelist must be specified when pdbA present");
         }
-        if(cmdArgs.specifiedOption("-f")) {
-            cout<<"[Warning][Main] OptionIgnored: Option -f is ignored at the presence of -a,-b"<<endl;
-        }
-        if(cmdArgs.specifiedOption("-d")) {
-            cout<<"[Warning][Main] OptionIgnored: Option -d is ignored at the presence of -a,-b"<<endl;
-        }
-        BasePairLib bpl;
-        AtomLib atl;
-        alignAndScore(pdbA, pdbB, bpl, atl, score, alignVec, normedSc, 0, 0,  // for now use NULL(i.e. 0) BMSelection
-            "BMa", "BMb", outPath, outfileAln, outfilePDB);
-        return EXIT_SUCCESS;
     }
     if(cmdArgs.specifiedOption("-f")) {
         listFile = cmdArgs.getValue("-f");  // read PDB file names from listfile
@@ -607,6 +700,7 @@ int main(int argc, char** argv) {
                 strandNum2MotifMap.emplace(nStrand, vec0);
             }
         }
+        input.close();
         cout<<"[Info][Main] List of Motifs Summary:"<<endl;
         cout<<"     nStrand  Population"<<endl;
         for(auto &iter: strandNum2MotifMap) {
@@ -669,7 +763,7 @@ int main(int argc, char** argv) {
             }
             scout.close();
         }
-    
+        return EXIT_SUCCESS;
     }
     return EXIT_SUCCESS;
 }

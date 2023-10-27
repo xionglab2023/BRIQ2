@@ -81,6 +81,7 @@ namespace NSPbm
              * @return double
              */
             double idealScore();
+            double idealScore2(); // scoring according to strands restricted to the length of the shorter strand
 
             /**
              * @brief  Sort BasePair pairs by score.

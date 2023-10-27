@@ -25,6 +25,7 @@ public:
 	bool isWCPair();
 	bool isHbondedPair();
 	double distanceToWCPair();
+	string print();
 
 	virtual ~BasePair();
 };

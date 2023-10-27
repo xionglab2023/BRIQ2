@@ -126,7 +126,7 @@ namespace NSPbm
         double score = 0;
         int lA = BMa->getBaseList().size();
         int lB = BMb->getBaseList().size();
-        if(lA == lB || lA -lB > LDIFFTOLERATE || lB - lA > LDIFFTOLERATE) {
+        if(lA == lB || lA -lB > lB* LDIFF_RATIO_TOLERATE || lB - lA > lA*LDIFF_RATIO_TOLERATE) {
             // Ideally all matches are between forward basepairs
             auto& bplA = BMa->getBasePairList();
             int lbA = bplA.size();
@@ -161,6 +161,11 @@ namespace NSPbm
             }
             return score;
         }
+    }
+
+    double BMScore::idealScore2() {
+        double score=0;
+        return score;
     }
 
     BMScore::~BMScore(){

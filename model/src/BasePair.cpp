@@ -108,6 +108,11 @@ double BasePair::distanceToWCPair(){
 	}
 }
 
+string BasePair::print() {
+	string ret = baseA->baseType + baseA->baseID + "-" + baseB->baseType + baseB->baseID;
+	return ret;
+}
+
 BasePair::~BasePair() {
 	// TODO Auto-generated destructor stub
 }

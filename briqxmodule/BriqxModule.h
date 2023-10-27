@@ -21,7 +21,7 @@
 // #define DEBUG
 
 #define BASEDISTMAX 4.0
-#define LDIFFTOLERATE 5
+#define LDIFF_RATIO_TOLERATE 0.5
 
 /**
  * @addtogroup BriqxModule

@@ -490,6 +490,11 @@ int BriqxModule::calcDDMMatrix(const BriqxModule& other, map<array<BasePair*, 2>
     const vector<BasePair*>& bpl1 = this->basePairList;
     const vector<BasePair*>& bplr1 = this->revBasePairList;
     const vector<BasePair*>& bpl2 = other.basePairList;
+    #ifdef DEBUG
+        string outstr = "[DEBUG][Info] DDMMatrix between " + this->BMname + " and " + other.BMname +\
+            ":\n";
+        cout << outstr;
+    #endif
     int l1 = bpl1.size();
     int l2 = bpl2.size();
     for(int i=0;i<l1;i++) {
@@ -503,6 +508,12 @@ int BriqxModule::calcDDMMatrix(const BriqxModule& other, map<array<BasePair*, 2>
             double DDMr = bpr1->dm.distanceTo(bp2->dm);
             array<BasePair*,2> keyr{bpr1,bp2};
             DDMMatrix.emplace(keyr, DDMr);
+            #ifdef DEBUG
+                outstr = bp1->print() + " to " + bp2->print() + ": " + to_string(DDM) + "\n";
+                cout << outstr;
+                outstr = bpr1->print() + " to " + bp2->print() + ": " + to_string(DDMr) + "\n";
+                cout << outstr;
+            #endif
         } // j loop
     } // i loop
     return EXIT_SUCCESS;
