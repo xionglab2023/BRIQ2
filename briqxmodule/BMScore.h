@@ -103,7 +103,8 @@ namespace NSPbm
              */
             static double getWeight(double ene) {
                 // return 1/(1+exp(ene/2+5)); // if ene in kcal/mol
-                return 1/(1+exp(ene*3+6)); // if ene in BRIQX unit
+                // return 1/(1+exp(ene*3+6)); // if ene in BRIQX unit, 中心于-2 BRIQX UNIT，饱和于-4 BRIQX UNIT
+                return 1/(1+exp(ene*2.4+3)); // if ene in BRIQX unit, 中心于-1.25 BRIQX UNIT，饱和于-2.5 BRIQX UNIT
             }
 
             /**
@@ -115,7 +116,10 @@ namespace NSPbm
              * @return double: The score of the BasePair pair.
              */
             static double bppScore(double wa, double wb, double ddm) {
-                return (wa+wb)/(ddm+1)*0.5;
+                // return (wa+wb)/(ddm+1)*0.5;
+                // return max((wa+wb)*0.5*(1-ddm/2),0.0);
+                return max((wa+wb)*0.5*(1-ddm/3),0.0);
+                // return max((wa+wb)*0.5*(1-ddm*ddm/4),0.0);
             }
 
             virtual ~BMScore();
