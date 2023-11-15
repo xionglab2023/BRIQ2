@@ -244,14 +244,6 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
         } // if isResInd
     } // if bms empty
     int lb = this->baseList.size();
-    for(int i=0;i<lb;i++) {
-        for( int j=i+1;j<lb;j++) {
-            if(baseList[i]->contactTo(baseList[j])) {
-                this->basePairList.emplace_back(new BasePair(baseList[i], baseList[j], &atl));
-            }
-        }
-    }
-
     vector<RNAChain*> Strands;
     RNAChain* curStrand = new RNAChain();
     Strands.emplace_back(curStrand);
@@ -284,6 +276,21 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
     
     if(beLazy) return;
     
+    for(int i=0;i<lb;i++) {
+        for( int j=i+1;j<lb;j++) {
+            if(baseList[i]->contactTo(baseList[j])) {
+                auto* pbp = new BasePair(baseList[i], baseList[j], &atl);
+                if(pbp->type.compare("Incomplete") != 0){
+                    this->basePairList.emplace_back(pbp);
+                } else {
+                    string outstr = "[Warn]Incomplete basepair in BriqxMotif " + name + "\n";
+                    cout << outstr;
+                    delete pbp;
+                }
+            }
+        }
+    }
+
     int lbp = this->basePairList.size();
     for(int i=0;i<lbp;i++){
         BasePair* curBp = this->basePairList[i];
@@ -342,7 +349,14 @@ BriqxModule::BriqxModule(const vector<RNAChain*>& chains, const vector<RNABase*>
     for(int i=0;i<lb;i++) {
         for( int j=i+1;j<lb;j++) {
             if(baseList[i]->contactTo(baseList[j])) {
-                this->basePairList.emplace_back(new BasePair(baseList[i], baseList[j], &atl));
+                auto* pbp = new BasePair(baseList[i], baseList[j], &atl);
+                if(pbp->type.compare("Incomplete") != 0){
+                    this->basePairList.emplace_back(pbp);
+                } else {
+                    string outstr = "[Warn]Incomplete basepair in BriqxMotif " + name + "\n";
+                    cout << outstr;
+                    delete pbp;
+                }
             }
         }
     }
@@ -405,7 +419,14 @@ BriqxModule::BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ&
     for(int i=0;i<lb;i++) {
         for( int j=i+1;j<lb;j++) {
             if(baseList[i]->contactTo(baseList[j])) {
-                this->basePairList.emplace_back(new BasePair(baseList[i], baseList[j], &atl));
+                auto* pbp = new BasePair(baseList[i], baseList[j], &atl);
+                if(pbp->type.compare("Incomplete") != 0){
+                    this->basePairList.emplace_back(pbp);
+                } else {
+                    string outstr = "[Warn]Incomplete basepair in BriqxMotif " + name + "\n";
+                    cout << outstr;
+                    delete pbp;
+                }
             }
         }
     }
@@ -699,6 +720,11 @@ void BriqxModule::printPDBFormat(ofstream& out) const {
 void BriqxModule::deepClear() {
     int lb = baseList.size();
     for(int i=0;i<lb;i++) {
+        auto *patl = baseList[i]->getAtomList();
+        int lat = patl->size();
+        for(int j=0;j<lat;j++) {
+            delete patl->at(j);
+        }
         delete baseList[i];
     }
     int lbp = basePairList.size();

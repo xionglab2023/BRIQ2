@@ -399,6 +399,7 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
             #endif //DEBUG
             if(curAlign) {
                 if(bestAlign) delete bestAlign;
+                delete iniAlign;
                 bestAlign = curAlign;
             } else {
                 if(bestAlignBP) delete bestAlignBP;
@@ -444,50 +445,54 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
     normedScMap->at(alnKey) = normedSc;
 
     if(outPath != "") {
-        filesystem::path pthAln(outfileAln);
-        auto pAStem = pthAln.stem();
-        auto pAExt = pthAln.extension();
-        string outstr = "[Info][" + to_string(jid) + "] Write alignment on " + BMa.getBMname() + " to "  + outPath +\
-        "/" + pAStem.string() + "_" + BMaName + "_with_" + BMbName + pAExt.string() + "\n";
-        cout << outstr;
-        ofstream output;
-        string filePath = outPath+"/" + pAStem.string() + "_" + BMaName + "_with_" + BMbName + pAExt.string();
-        output.open(filePath, ios::out);
-        if (! output.is_open())
-        {
-            throw "[Error][" + to_string(jid) + "] Fail to open file " + filePath;
+        if(outfileAln.compare("//") != 0) {
+            filesystem::path pthAln(outfileAln);
+            auto pAStem = pthAln.stem();
+            auto pAExt = pthAln.extension();
+            string outstr = "[Info][" + to_string(jid) + "] Write alignment on " + BMa.getBMname() + " to "  + outPath +\
+            "/" + pAStem.string() + "_" + BMaName + "_with_" + BMbName + pAExt.string() + "\n";
+            cout << outstr;
+            ofstream output;
+            string filePath = outPath+"/" + pAStem.string() + "_" + BMaName + "_with_" + BMbName + pAExt.string();
+            output.open(filePath, ios::out);
+            if (! output.is_open())
+            {
+                throw "[Error][" + to_string(jid) + "] Fail to open file " + filePath;
+            }
+            if(bestAlign) {
+                bestAlign->writeAlignment(output, score, normedSc, true);
+            } else {
+                bestAlignBP->writeAlignment(output, score, normedSc, true);
+            }
+            output.close();
         }
-        if(bestAlign) {
-            bestAlign->writeAlignment(output, score, normedSc, true);
-        } else {
-            bestAlignBP->writeAlignment(output, score, normedSc, true);
+        if(outfilePDB.compare("//") != 0) {
+            filesystem::path pthPDB(outfilePDB);
+            auto pPStem = pthPDB.stem();
+            auto pPExt = pthPDB.extension();
+            outstr = "[Info][" + to_string(jid) + "] Write transformed " + BMbName + " to "  + BMaName + " to " + outPath \
+                + "/" + pPStem.string() + "_" + BMaName + "_To_" + BMbName + pPExt.string() + "\n";
+            cout<<outstr;
+            string filePath = outPath + "/" + pPStem.string() + "_" + BMbName + "_To_" + BMaName + pPExt.string();
+            ofstream output;
+            output.open(filePath, ios::out);
+            if (! output.is_open())
+            {
+                throw "[Error][" + to_string(jid) + "] Fail to open file " + filePath;
+            }
+            BriqxModule* BMnew;
+            if(bestAlign) {
+                BMnew =  new BriqxModule(BMb, bestAlign->getRotTrans(), bestAlign->getAcog(), bestAlign->getBcog(),
+                *bpl, *atl, "", true);
+            } else {
+                BMnew = new BriqxModule(BMb, bestAlignBP->getRotTrans(), bestAlignBP->getAcog(), bestAlignBP->getBcog(),
+                *bpl, *atl, "", true);
+            }
+            BMnew->printPDBFormat(output);
+            output.close();
+            BMnew->deepClear();
+            delete BMnew;
         }
-        output.close();
-
-        filesystem::path pthPDB(outfilePDB);
-        auto pPStem = pthPDB.stem();
-        auto pPExt = pthPDB.extension();
-        outstr = "[Info][" + to_string(jid) + "] Write transformed " + BMbName + " to "  + BMaName + " to " + outPath \
-            + "/" + pPStem.string() + "_" + BMaName + "_To_" + BMbName + pPExt.string() + "\n";
-        cout<<outstr;
-        filePath = outPath + "/" + pPStem.string() + "_" + BMbName + "_To_" + BMaName + pPExt.string();
-        output.open(filePath, ios::out);
-        if (! output.is_open())
-        {
-            throw "[Error][" + to_string(jid) + "] Fail to open file " + filePath;
-        }
-        BriqxModule* BMnew;
-        if(bestAlign) {
-            BMnew =  new BriqxModule(BMb, bestAlign->getRotTrans(), bestAlign->getAcog(), bestAlign->getBcog(),
-            *bpl, *atl, "", true);
-        } else {
-            BMnew = new BriqxModule(BMb, bestAlignBP->getRotTrans(), bestAlignBP->getAcog(), bestAlignBP->getBcog(),
-            *bpl, *atl, "", true);
-        }
-        BMnew->printPDBFormat(output);
-        output.close();
-        BMnew->deepClear();
-        delete BMnew;
     }
 
     BMa.deepClear();
@@ -517,8 +522,10 @@ void printHelp() {
  * @param -a: path to module A PDB file
  * @param -b: Path to module B PDB file 
  * @param -o: Output path
- * @param -op: filename (no path included) of output PDB file recording aligned module B
+ * @param -op: filename (no path included) of output PDB file recording aligned module B.
+ *             default: alignedB.pdb without -f, "//"(suppressed) when -f is specified.
  * @param -oa: filename (no path included) of output alignment files (based on module A and module B, respectively).
+ *             default: align.aln without -f, "//"(suppressed) when -f is specified.
  * @param -f: Read input PDB list from given file.
  * @param -os: filename (path included) to write overall scores in csv format, suffixes labeling nStrand and ".csv" will
  * be appended. Default is path from -o with filename "overallScores".
@@ -582,6 +589,12 @@ int main(int argc, char** argv) {
             cout << "[Info][Main] Align Motifs from " + listFile + " to " + pdbA << endl;
             filesystem::path pathA{pdbA};
             string stemA = pathA.stem();
+            if(! cmdArgs.specifiedOption("-oa")) {
+                outfileAln = "//";
+            }
+            if(! cmdArgs.specifiedOption("-op")) {
+                outfilePDB = "//";
+            }
             int nt = 1;
             if(cmdArgs.specifiedOption("-n")) {
                 istringstream ss(cmdArgs.getValue("-n"));
@@ -673,6 +686,12 @@ int main(int argc, char** argv) {
         if(cmdArgs.specifiedOption("-d")) {
             cout<<"[Warning][Main] OptionIgnored: Option -d is ignored at the presence of -f"<<endl;
         }
+        if(! cmdArgs.specifiedOption("-oa")) {
+            outfileAln = "//";
+        }
+        if(! cmdArgs.specifiedOption("-op")) {
+            outfilePDB = "//";
+        }
         int nt = 1;
         if(cmdArgs.specifiedOption("-n")) {
             istringstream ss(cmdArgs.getValue("-n"));
@@ -699,6 +718,7 @@ int main(int argc, char** argv) {
                 vector<string> vec0{s};
                 strandNum2MotifMap.emplace(nStrand, vec0);
             }
+            BM0.deepClear();
         }
         input.close();
         cout<<"[Info][Main] List of Motifs Summary:"<<endl;

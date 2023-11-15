@@ -116,10 +116,15 @@ namespace NSPbm
              * @return double: The score of the BasePair pair.
              */
             static double bppScore(double wa, double wb, double ddm) {
-                // return (wa+wb)/(ddm+1)*0.5;
-                // return max((wa+wb)*0.5*(1-ddm/2),0.0);
-                return max((wa+wb)*0.5*(1-ddm/3),0.0);
-                // return max((wa+wb)*0.5*(1-ddm*ddm/4),0.0);
+                // return (wa+wb)/(ddm+1)*0.5;  // round 5-7
+                // return max((wa+wb)*0.5*(1-ddm/2),0.0);  // round 8
+                // return max((wa+wb)*0.5*(1-ddm/3),0.0);  // round 9
+                // return max((wa+wb)*0.5*(1-ddm*ddm/4),0.0);  //round 10
+                // return (wa+wb)*0.5*(exp(-ddm*ddm/0.98));  // round 11
+                return (wa+wb)*0.5*(exp(-ddm*ddm/2));  // round 12, current
+                // return (wa+wb)*0.5*(exp(-ddm*ddm/2.88));  // round 13
+                // return (wa+wb)*0.5*(exp(-ddm*ddm/3.92));  // round 14
+                // return (wa+wb)*0.5*(exp(-ddm*ddm/1.62));  // round 15
             }
 
             virtual ~BMScore();

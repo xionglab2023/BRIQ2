@@ -13,6 +13,7 @@ BasePair::BasePair(RNABase* baseA, RNABase* baseB, AtomLib* atLib) {
 	if(!baseA->sidechainComplete(atLib) || !baseB->sidechainComplete(atLib))
 	{
 		cout << "sidechain not complete" << endl;
+		this->type = "Incomplete";
 		return;
 	}
 

@@ -1,7 +1,7 @@
 /*
  * BasePairLib.cpp
  *
- *  Created on: 2023Äê8ÔÂ7ÈÕ
+ *  Created on: 2023ï¿½ï¿½8ï¿½ï¿½7ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -238,6 +238,18 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	for(int i=0;i<paListB.size();i++){
 		if(o2A->hbondedTo(paListB[i])) hbondNum++;
 	}
+
+	int la = paListA.size();
+	for(int i=0; i<la; i++) {
+		delete paListA.at(i);
+	}
+	int lb = paListB.size();
+	for(int i=0; i<lb; i++) {
+		delete paListB.at(i);
+	}
+	delete o2A;
+	delete o2B;
+
 	return (ene + hbondNum*7.0)/4.32;
 }
 
