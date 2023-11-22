@@ -58,9 +58,6 @@ public:
         virtual ~AtomProperty();
 };
 
-class PolarGroup{
-
-};
 
 class AtomLib {
 public:

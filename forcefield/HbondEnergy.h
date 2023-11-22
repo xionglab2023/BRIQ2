@@ -100,7 +100,7 @@ public:
 
 	HbondEnergy(ForceFieldPara* para);
 	double getEnergy(int uniqueIDA, LocalFrame& csA, int uniqueIDB, LocalFrame& csB);
-
+	double getO4O2C2Energy(double distance, int sep);
 	virtual ~HbondEnergy();
 };
 

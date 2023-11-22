@@ -36,9 +36,11 @@ public:
 	RiboseOxygenEnergyTable* roET;
 	HbondEnergy* hbET;
 	ForceFieldPara* para;
+	bool deleteTag;
 
 	RnaEnergyTable(){
 		this->para = new ForceFieldPara();
+		deleteTag = true;
 		bpET = new BasePair6DEnergyTable(para);
 		acET = new AtomicClashEnergy(para);
 		roET = new RiboseOxygenEnergyTable(para);
@@ -49,6 +51,17 @@ public:
 	RnaEnergyTable(const string& paraFile){
 
 		this->para = new ForceFieldPara();
+		deleteTag = true;
+		bpET = new BasePair6DEnergyTable(para);
+		acET = new AtomicClashEnergy(para);
+		roET = new RiboseOxygenEnergyTable(para);
+		pb = new PO3Builder(para);
+		hbET = new HbondEnergy(para);
+	}
+
+	RnaEnergyTable(ForceFieldPara* para){
+		this->para = para;
+		deleteTag = false;
 		bpET = new BasePair6DEnergyTable(para);
 		acET = new AtomicClashEnergy(para);
 		roET = new RiboseOxygenEnergyTable(para);

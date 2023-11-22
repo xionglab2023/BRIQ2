@@ -185,17 +185,89 @@ namespace NSPmodel {
 
 	}
 
+	BaseRotamerCG::BaseRotamerCG(int baseType, AtomLib* atLib){
+		vector<string> baseTypes;
+
+		baseTypes.push_back("A");
+		baseTypes.push_back("U");
+		baseTypes.push_back("G");
+		baseTypes.push_back("C");
+		baseTypes.push_back("DA");
+		baseTypes.push_back("DT");
+		baseTypes.push_back("DG");
+		baseTypes.push_back("DC");
+
+		vector<string>* scNames = atLib->baseScAtomNames[baseType];
+		this->baseType = baseType;
+
+		for(int i=0;i<scNames->size();i++){
+			string name = baseTypes[baseType]+"-"+scNames->at(i);
+			uniqueIDs[i] = atLib->uniqueNameToID(name);
+		}
+
+		LocalFrame cs0;
+
+		if(baseType == 0 || baseType == 4){
+
+			coordsLocal[0] = XYZ(3.577,  -0.770,   0.000); //N7
+			coordsLocal[1] = XYZ(5.904,   1.230,   0.000); //N6
+			coordsLocal[2] = XYZ(1.914,   2.391,   0.000); //N3
+			uniqueIDs[0] = 181;
+			uniqueIDs[1] = 184;
+			uniqueIDs[2] = 187;
+
+		}
+		else if(baseType == 1){
+			coordsLocal[0] = XYZ(1.528,   2.282,   0.000); //O2
+			coordsLocal[1] = XYZ(5.490,   0.123,   0.000); //O4
+			coordsLocal[2] = XYZ(2.191,  -1.173,   0.000); //C6
+			uniqueIDs[0] = 203;
+			uniqueIDs[1] = 206;
+			uniqueIDs[2] = 208;
+		}
+		else if(baseType == 5){
+			coordsLocal[0] = XYZ(1.528,   2.282,   0.000); //O2
+			coordsLocal[1] = XYZ(5.490,   0.123,   0.000); //O4
+			coordsLocal[2] = XYZ(2.191,  -1.173,   0.000); //C6
+			uniqueIDs[0] = 203;
+			uniqueIDs[1] = 206;
+			uniqueIDs[2] = 208;
+		}
+		else if(baseType == 2 || baseType == 6){
+			coordsLocal[0] = XYZ(3.560,  -0.779,   0.000); //N7
+			coordsLocal[1] = XYZ(5.864,   1.265,   0.000); //O6
+			coordsLocal[2] = XYZ(2.690,   4.543,   0.000); //N2
+			uniqueIDs[0] = 223;
+			uniqueIDs[1] = 226;
+			uniqueIDs[2] = 229;
+		}
+		else if(baseType == 3 || baseType == 7){
+			coordsLocal[0] = XYZ(1.490,   2.271,   0.000); //O2
+			coordsLocal[1] = XYZ(5.508,   0.150,   0.000); //N4
+			coordsLocal[2] = XYZ(2.181,  -1.170,   0.000); //C6
+			uniqueIDs[0] = 246;
+			uniqueIDs[1] = 249;
+			uniqueIDs[2] = 251;
+		}
+		else {
+			cout << "invalid base type: " << baseType << endl;
+			exit(0);
+		}
+	}
+
+	BaseRotamerCG::~BaseRotamerCG(){
+
+	}
+
+
 
 	BaseConformer::BaseConformer(BaseRotamer* rot, LocalFrame& cs){
-
-
 		this->rot = rot;
 		this->cs1 = cs;
 
 		for(int i=0;i<rot->atomNum;i++){
 			coords[i] = local2global(cs1, rot->coordsLocal[i]);
 		}
-
 
 		for(int i=0;i<rot->polarAtomNum;i++){
 			csPolar[i] = cs1 + rot->polarCmList[i];
@@ -238,6 +310,45 @@ namespace NSPmodel {
 	}
 
 	BaseConformer::~BaseConformer(){
+
+	}
+
+	BaseConformerCG::BaseConformerCG(BaseRotamerCG* rot, LocalFrame& cs){
+
+		this->rot = rot;
+		this->cs1 = cs;
+
+		for(int i=0;i<3;i++){
+			coords[i] = local2global(cs1, rot->coordsLocal[i]);
+		}
+	}
+
+	void BaseConformerCG::copyValueFrom(BaseConformerCG* other){
+		this->rot = other->rot;
+		this->cs1 = other->cs1;
+
+		for(int i=0;i<3;i++){
+			this->coords[i] = other->coords[i];
+		}
+	}
+
+	void BaseConformerCG::updateCoords(LocalFrame& cs){
+		this->cs1 = cs;
+		for(int i=0;i<3;i++){
+			coords[i] = local2global(cs, rot->coordsLocal[i]);
+		}
+	}
+
+	double BaseConformerCG::distanceTo(BaseConformerCG* other){
+		double dd = 0.0;
+
+		for(int i=0;i<3;i++){
+			dd += squareDistance(coords[i], other->coords[i]);
+		}
+		return sqrt(dd/3.0);
+	}
+
+	BaseConformerCG::~BaseConformerCG(){
 
 	}
 

@@ -29,15 +29,10 @@ LocalFrame getCsA(XYZ t, double dihed, double dist){
 	double sx = sqrt(1-x*x);
 	double sy = sqrt(1-y*y);
 	double sz = sqrt(1-z*z);
-
 	double sinD1, cosD1, sinD2, cosD2;
-
 	sinD1 = z/sx/sy;
 	cosD1 = -x*y/sx/sy;
-
-
 	double ang1 = atan2(sinD1, cosD1);
-
 	double ang0 = dihed*0.008726646;
 	double tm[3][3];
 	tm[0][0] = x;
@@ -104,19 +99,22 @@ int main(int argc, char** argv){
 	int bpType = atoi(argv[1]);
 	int id = atoi(argv[2]);
 
+	cout << "bpType: " << bpType << endl;
+	cout << "id: " << id << endl;
 
 	vector<XYZ> localTList;
 	ifstream input;
 	input.open("/public/home/pengx/cpp/briqx/data/sphere/sphere2000",ios::in);
 	double x,y,z;
 	while(input >> x >> y >> z){
+		cout << x << y << z << endl;
 		localTList.push_back(XYZ(x,y,z));
 	}
 	cout << localTList.size() << endl;
 	input.close();
 
 	ofstream out;
-	out.open("/public/home/pengx/rnaModeling/6dKeys/keyMoves/pair" + string(argv[1]) +"/km-"+string(argv[2]), ios::out);
+	out.open("/public/home/pengx/briqx/6dKeys/keyMoves/pair" + string(argv[1]) +"/km-"+string(argv[2]), ios::out);
 
 	AtomLib* atLib = new AtomLib();
 	BaseRotamerLib* baseLib = new BaseRotamerLib(atLib);
@@ -171,7 +169,7 @@ int main(int argc, char** argv){
 						}
 					}
 
-					if(minD < 5 && minD > 2.3)
+					if(minD < 5 && minD > 1.7)
 					{
 						indexA = k*45+l;
 						indexB = i*2000+j;

@@ -47,11 +47,8 @@ int main(int argc, char** argv){
 	of << "time: " << (float)(end-start)/CLOCKS_PER_SEC << "s" << endl;
 	of.close();
 
-
 	BRTreeInfo* info = ft->getTreeInfo();
 	info->printPDB(outPDB);
-
-
 
 	//treeInfo* out = run.optFromRandomInit(logFile);
 }

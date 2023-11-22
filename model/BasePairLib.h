@@ -43,6 +43,8 @@ public:
 	BasePairLib();
 
 	int getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int sep); //sep: sequence separation
+	double distanceToClusterCenter(BaseDistanceMatrix dm, int typeA, int typeB, int sep);
+	double getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int sep);
 	double getPairEnergy(RNABase* baseA, RNABase* baseB); //base-base energy + base-O2' hbond + O2'-O2' hbond
 
 	virtual ~BasePairLib();

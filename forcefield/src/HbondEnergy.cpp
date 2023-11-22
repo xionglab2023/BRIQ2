@@ -195,6 +195,15 @@ double HbondEnergy::getEnergy(int uniqueA, LocalFrame& csA, int uniqueB, LocalFr
 
 }
 
+double HbondEnergy::getO4O2C2Energy(double distance, int sep) {
+
+	double e = -1.5*exp(-12.5*(distance-3.4)*(distance-3.4));
+	if(sep == 1)
+		return para->wtO4O2C2Nb * e;
+	else
+		return para->wtO4O2C2Nnb * e;
+}
+
 HbondEnergy::~HbondEnergy() {
 	// TODO Auto-generated destructor stub
 	delete atLib;

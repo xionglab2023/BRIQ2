@@ -62,13 +62,13 @@ RiboseRotamerLib::RiboseRotamerLib(ForceFieldPara* para){
 
 			if(i < 4){
 				if(index < 600)
-					rot->energy = rot->energy+para->rnaRiboseRotamerShift[aaType*4 + 0];
+					rot->energy = (rot->energy+para->rnaRiboseRotamerShift[aaType*4 + 0])*para->wtRibose;
 				else if(index < 900)
-					rot->energy = rot->energy+para->rnaRiboseRotamerShift[aaType*4 + 1];
+					rot->energy = (rot->energy+para->rnaRiboseRotamerShift[aaType*4 + 1])*para->wtRibose;
 				else if(index < 1200)
-					rot->energy = rot->energy+para->rnaRiboseRotamerShift[aaType*4 + 2];
+					rot->energy = (rot->energy+para->rnaRiboseRotamerShift[aaType*4 + 2])*para->wtRibose;
 				else
-					rot->energy = rot->energy+para->rnaRiboseRotamerShift[aaType*4 + 3];
+					rot->energy = (rot->energy+para->rnaRiboseRotamerShift[aaType*4 + 3])*para->wtRibose;
 			}
 
 			rot->resType = i;

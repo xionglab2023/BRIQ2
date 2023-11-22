@@ -157,6 +157,80 @@ public:
 };
 
 
+class RiboseRotamerCG {
+
+	/*
+	 * Atom Order
+	 * 0:  C1'
+	 * 6:  O3'
+	 * 7:  C5'
+	 */
+
+
+public:
+
+	int resType;
+	int rotTypeLv1;
+	int rotType;
+
+	XYZ localCoords[3]; //local coordinate in cs1
+	double energy;
+
+	RiboseRotamerCG(){
+		this->resType = 0;
+		this->rotTypeLv1 = 0;
+		this->rotType = 0;
+		this->energy = 0;
+	}
+
+	RiboseRotamerCG(RNABase* base);
+	RiboseRotamerCG(const string& line);
+
+
+	RiboseRotamerCG& operator=(const RiboseRotamerCG& other){
+		this->resType = other.resType;
+		this->rotTypeLv1 = other.rotTypeLv1;
+		this->rotType = other.rotType;
+		for(int i=0;i<3;i++){
+			localCoords[i] = other.localCoords[i];
+		}
+		energy = other.energy;
+		return *this;
+	}
+
+	void copyValueFrom(RiboseRotamerCG* other){
+		this->resType = other->resType;
+		this->rotTypeLv1 = other->rotTypeLv1;
+		this->rotType = other->rotType;
+		for(int i=0;i<3;i++){
+			localCoords[i] = other->localCoords[i];
+		}
+		energy = other->energy;
+	}
+
+
+	bool equalTo(const RiboseRotamerCG& other){
+		if(this->resType != other.resType) return false;
+		if(this->rotTypeLv1 != other.rotTypeLv1) return false;
+		if(this->rotType != other.rotType) return false;
+		for(int i=0;i<3;i++){
+			if(squareDistance(localCoords[i], other.localCoords[i]) > 0.0001) return false;
+		}
+		return true;
+	}
+
+	double distanceTo(RiboseRotamerCG* other){
+		double d = 0;
+		for(int i=0;i<3;i++){
+			d += localCoords[i].squaredDistance(other->localCoords[i]);
+		}
+		return sqrt(d/3);
+	}
+
+	virtual ~RiboseRotamerCG();
+};
+
+
 class RiboseConformer {
 public:
 	RiboseRotamer* rot;
@@ -182,6 +256,23 @@ public:
 
 	double distanceTo(RiboseConformer* other);
 	virtual ~RiboseConformer();
+};
+
+class RiboseConformerCG {
+public:
+	RiboseRotamerCG* rot;
+
+	XYZ coords[3];
+	LocalFrame cs1;
+
+	RiboseConformerCG();
+	RiboseConformerCG(RiboseRotamerCG* rot, LocalFrame& cs1);
+	void copyValueFrom(RiboseConformerCG* other);
+	void updateLocalFrame(LocalFrame& cs1);
+	void updateRotamer(RiboseRotamerCG* rot);
+	void updateLocalFrameAndRotamer(LocalFrame& cs1, RiboseRotamerCG* rot);
+	double distanceTo(RiboseConformerCG* other);
+	virtual ~RiboseConformerCG();
 };
 
 } /* namespace NSPmodel */

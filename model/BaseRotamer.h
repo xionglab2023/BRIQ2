@@ -37,6 +37,17 @@ public:
 	virtual ~BaseRotamer();
 };
 
+class BaseRotamerCG{
+public:
+	int baseType;
+	XYZ coordsLocal[3];
+	int uniqueIDs[3];
+
+	BaseRotamerCG(int baseType, AtomLib* atLib);
+	virtual ~BaseRotamerCG();
+};
+
+
 class BaseConformer{
 public:
 
@@ -50,6 +61,19 @@ public:
 	void updateCoords(LocalFrame& cs);
 	double distanceTo(BaseConformer* other);
 	virtual ~BaseConformer();
+};
+
+class BaseConformerCG{
+public:
+	BaseRotamerCG* rot;
+	XYZ coords[3];
+	LocalFrame cs1;
+
+	BaseConformerCG(BaseRotamerCG* rot, LocalFrame& cs);
+	void copyValueFrom(BaseConformerCG* other);
+	void updateCoords(LocalFrame& cs);
+	double distanceTo(BaseConformerCG* other);
+	virtual ~BaseConformerCG();
 };
 
 } /* namespace NSPforcefield */

@@ -188,10 +188,123 @@ int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int se
 		}
 	}
 
-	if(minD < 1.2)
+	if(minD < 1.5)
 		return minIndex;
 	else
 		return -1;
+}
+
+double BasePairLib::distanceToClusterCenter(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
+
+	if(typeA > 3)
+		typeA = typeA - 4;
+
+	if(typeB > 3)
+		typeB = typeB - 4;
+
+	if(typeA < 0 || typeA > 3) {
+		cout << "invalid base type: " << typeA << endl;
+		return -1;
+	}
+
+	if(typeB < 0 || typeB > 3) {
+		cout << "invalid base type: " << typeB << endl;
+		return -1;
+	}
+
+	double minD = 999.9;
+	int minIndex = -1;
+	int pairType = typeA*4+typeB;
+	double d;
+
+	if(sep == 1) { //neighbor base pair
+		int pairNum = nbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+	else { //non-neighbor base pair
+		int pairNum = nnbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nnbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+	return minD;
+}
+
+double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
+
+	if(typeA > 3)
+		typeA = typeA - 4;
+
+	if(typeB > 3)
+		typeB = typeB - 4;
+
+	if(typeA < 0 || typeA > 3) {
+		cout << "invalid base type: " << typeA << endl;
+		return -1;
+	}
+
+	if(typeB < 0 || typeB > 3) {
+		cout << "invalid base type: " << typeB << endl;
+		return -1;
+	}
+
+	double minD = 999.9;
+	int minIndex = -1;
+	int pairType = typeA*4+typeB;
+	double d;
+
+	if(sep == 1) { //neighbor base pair
+		int pairNum = nbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+	else { //non-neighbor base pair
+		int pairNum = nnbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nnbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+
+	double ene = 0.0;
+
+
+
+	if(sep == 1) {
+		double e = this->nbEnegy[typeA*4+typeB][minIndex];
+		double p = this->nbProportion[typeA*4+typeB][minIndex];
+		if(p < 0.001) p = 0.001;
+		if(p > 0.3) p = 0.3;
+		ene = e*0.25 - (log(p)+6.0)*0.4;
+		if(ene > -0.01)
+			ene = -0.01;
+	}
+	else if(minD < 1.5) {
+		ene = (this->nnbEnegy[typeA*4+typeB][minIndex]-2.0)*0.25;
+	}
+
+	if(ene > 0)
+		ene = 0;
+
+	return ene;
 }
 
 double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
@@ -209,12 +322,9 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	int typeA = baseA->baseTypeInt;
 	int typeB = baseB->baseTypeInt;
 
-	if(sep == 1 && pairType >= 0){
-		ene = nbEnegy[typeA*4+typeB][pairType];
-	}
-	else if(sep == 2 && pairType >= 0){
-		ene = nnbEnegy[typeA*4+typeB][pairType];
-	}
+	ene = getEnergy(dm, typeA, typeB, sep);
+	if(sep == 1)
+		return ene;
 
 	int hbondNum = 0;
 	PolarAtom* o2A = new PolarAtom(baseA, "O2'");
@@ -243,7 +353,7 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 			paListB.push_back(new PolarAtom(baseB, a->getName()));
 	}
 
-	double hbondEne = -7.0;
+	double hbondEne = -7.0*0.25;
 
 	if(o2A->hbondedTo(o2B)) ene += hbondEne;
 
@@ -251,7 +361,6 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 		if(o2B->hbondedTo(paListA[i])) ene += hbondEne;
 		if(op1B->hbondedTo(paListA[i])) ene += hbondEne;
 		if(op2B->hbondedTo(paListA[i])) ene += hbondEne;
-
 	}
 
 	for(int i=0;i<paListB.size();i++){
@@ -274,7 +383,21 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	}
 	*/
 
-	return ene/4.32;
+	delete o2A;
+	delete op1A;
+	delete op2A;
+	delete o2B;
+	delete op1B;
+	delete op2B;
+
+	for(int i=0;i<paListA.size();i++){
+		delete paListA[i];
+	}
+	for(int i=0;i<paListB.size();i++){
+		delete paListB[i];
+	}
+
+	return ene;
 }
 
 BasePairLib::~BasePairLib() {

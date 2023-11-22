@@ -262,7 +262,7 @@ BRFoldingTree::BRFoldingTree(const string& inputFile){
 
 	vector<string> spt;
 	vector<string> spt2;
-	vector<int> chainBreakPoints;
+	vector<int> chainBreakList;
 
 
 	int len = baseSeq.length();
@@ -355,7 +355,7 @@ BRFoldingTree::BRFoldingTree(const string& inputFile){
 			cout << "invalid chain break position: " << pos << endl;
 			exit(0);
 		}
-		chainBreakPoints.push_back(atoi(spt[i].c_str()));
+		chainBreakList.push_back(atoi(spt[i].c_str()));
 	}
 
 	splitString(bulge, " ", &spt);
@@ -462,9 +462,14 @@ BRFoldingTree::BRFoldingTree(const string& inputFile){
 
 		RiboseRotamer* rot;
 		if(!baseList[i]->backboneComplete())
-			rot = rotLib->riboseRotLib->getLowestEnergyRotamer(baseList[i]->baseTypeInt);
-		else
-			rot = new RiboseRotamer(baseList[i]);
+		{
+			rot = new RiboseRotamer();
+			rot->copyValueFrom(rotLib->riboseRotLib->getLowestEnergyRotamer(baseList[i]->baseTypeInt));
+		}
+		else {
+			rot = new RiboseRotamer();
+			rot->copyValueFrom(rotLib->riboseRotLib->getNearestRotamer(baseList[i]));
+		}
 
 		this->initRotList[i] = rot;
 		this->nodes[i] = new BRNode(baseList[i], rotLib);
@@ -472,13 +477,17 @@ BRFoldingTree::BRFoldingTree(const string& inputFile){
 		nodes[i]->riboseConfTmp->updateRotamer(rot);
 	}
 
+	for(int i=0;i<seqLen;i++){
+		chainBreakPoints[i] = false;
+	}
 
 	for(int i=0;i<seqLen-1;i++){
 		connectToDownstream[i] = true;
 	}
 	connectToDownstream[seqLen-1] = false;
-	for(int i=0;i<chainBreakPoints.size();i++){
-		connectToDownstream[chainBreakPoints[i]] = false;
+	for(int i=0;i<chainBreakList.size();i++){
+		connectToDownstream[chainBreakList[i]] = false;
+		chainBreakPoints[chainBreakList[i]] = true;
 	}
 	for(int i=0;i<seqLen;i++){
 		nodes[i]->connectToNeighbor = connectToDownstream[i];
@@ -829,7 +838,7 @@ BRFoldingTree::BRFoldingTree(const string& inputFile, RnaEnergyTable* et){
 
 	vector<string> spt;
 	vector<string> spt2;
-	vector<int> chainBreakPoints;
+	vector<int> chainBreakList;
 
 
 	int len = baseSeq.length();
@@ -922,7 +931,7 @@ BRFoldingTree::BRFoldingTree(const string& inputFile, RnaEnergyTable* et){
 			cout << "invalid chain break position: " << pos << endl;
 			exit(0);
 		}
-		chainBreakPoints.push_back(atoi(spt[i].c_str()));
+		chainBreakList.push_back(atoi(spt[i].c_str()));
 	}
 
 	splitString(bulge, " ", &spt);
@@ -1034,8 +1043,10 @@ BRFoldingTree::BRFoldingTree(const string& inputFile, RnaEnergyTable* et){
 			rot = new RiboseRotamer();
 			rot->copyValueFrom(rotLib->riboseRotLib->getLowestEnergyRotamer(baseList[i]->baseTypeInt));
 		}
-		else
-			rot = new RiboseRotamer(baseList[i]);
+		else {
+			rot = new RiboseRotamer();
+			rot->copyValueFrom(rotLib->riboseRotLib->getNearestRotamer(baseList[i]));
+		}
 
 		this->initRotList[i] = rot;
 		this->nodes[i] = new BRNode(baseList[i], rotLib);
@@ -1045,13 +1056,19 @@ BRFoldingTree::BRFoldingTree(const string& inputFile, RnaEnergyTable* et){
 		nodes[i]->phoConfTmp->updateLocalFrame(nodes[i]->riboseConfTmp->cs2);
 	}
 
+	for(int i=0;i<seqLen;i++){
+		chainBreakPoints[i] = false;
+	}
+
 	for(int i=0;i<seqLen-1;i++){
 		connectToDownstream[i] = true;
 	}
 	connectToDownstream[seqLen-1] = false;
-	for(int i=0;i<chainBreakPoints.size();i++){
-		connectToDownstream[chainBreakPoints[i]] = false;
+	for(int i=0;i<chainBreakList.size();i++){
+		connectToDownstream[chainBreakList[i]] = false;
+		chainBreakPoints[chainBreakList[i]] = true;
 	}
+
 	for(int i=0;i<seqLen;i++){
 		nodes[i]->connectToNeighbor = connectToDownstream[i];
 	}

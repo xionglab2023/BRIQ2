@@ -34,7 +34,7 @@ public:
 	double rnaKAng;
 
 	double wtPho;
-	//double wtRibose;
+	double wtRibose;
 
 	double rnaDihedImpD1D2Shift[6];
 	double rnaDihedImpD4D5Shift[6];
@@ -44,14 +44,11 @@ public:
 
 	double wtRiboseOxy[16];
 
-
-
 	double wtBp1;
 	double wtBp2;
-	double wtBp3;
 
-
-
+	double wtO4O2C2Nb;
+	double wtO4O2C2Nnb;
 
 	double wtClash;
 	double lamdaClash;

@@ -13,7 +13,8 @@ namespace NSPforcefield {
 		delete this->pb;
 		delete this->roET;
 		delete this->hbET;
-		delete this->para;
+		if(deleteTag)
+			delete this->para;
 
 	}
 

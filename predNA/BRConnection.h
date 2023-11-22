@@ -48,8 +48,10 @@ public:
 
 	vector<int> ctBaseGroupA;
 	vector<int> ctBaseGroupB;
+
 	vector<int> ctRiboseGroupA;
 	vector<int> ctRiboseGroupB;
+
 	vector<int> ctPhoGroupA;
 	vector<int> ctPhoGroupB;
 	vector<int> ctPhoGroupC;

@@ -24,7 +24,6 @@ void MCRun::optimizeFromInit(const string& keyFile, const string& outFilePrefix,
 	bool verbose = false;
 
 
-
 	vector<BRConnection*> flexConnectList = ft->flexibleConnectionList;
 	vector<BRNode*> flexNodes = ft->flexibleNodes;
 	int fc = flexConnectList.size();
@@ -433,7 +432,7 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 		BRConnection* ct = ft->flexibleConnectionList[i];
 		if(ct->ctType == "wc" || ct->ctType == "wcNb" || ct->ctType == "revWcNb")
 		{
-			stepNum += 400;
+			stepNum += 500;
 			ctChooseIndex.push_back(i);
 		}
 		else if(ct->ctType == "nwc" || ct->ctType == "nwcNb") {
@@ -443,7 +442,7 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 			}
 		}
 		else {
-			stepNum += 4000;
+			stepNum += 10000;
 			for(int k=0;k<10;k++){
 				ctChooseIndex.push_back(i);
 			}
@@ -515,11 +514,9 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 
 	RiboseRotamer* rotMut;
 	F2Fragment* frag;
-	F3Fragment* f3Frag;
 
 	int outFreq = ft->et->para->outFreq;
 	int modelID = 1;
-
 
 	ft->updateEnergies();
 	double curEne = ft->totalEnergy(1.0, 1.0, 1.0, verbose);
@@ -527,14 +524,12 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 
 	double lastEne = curEne;
 
-
 	double ctRate = ft->et->para->connectWTFactor;
 	double clashIncreaseRate = ft->et->para->clashWTFactor;
 
 	clashWT = ft->et->para->initClashWT;
 	connectWT = ft->et->para->initConnectWT;
 	breakCTWT = 0.6*ft->et->para->initConnectWT;
-
 
 	T0 = ft->et->para->T0;
 	double anneal = ft->et->para->anneal;
@@ -555,6 +550,190 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 			connectWT = connectWT*ctRate;
 		if(breakCTWT < 1.0)
 			breakCTWT = breakCTWT*ctRate;
+
+		if(clashWT > 1.0) clashWT = 1.0;
+		if(connectWT > 1.0) connectWT = 1.0;
+		if(breakCTWT > 1.0) breakCTWT = 1.0;
+
+
+		int acNum = 0;
+		int ac1 = 0;
+		int ac2 = 0;
+		int ac3 = 0;
+		int ac4 = 0;
+		int ac5 = 0;
+		int ac6 = 0;
+		int ac7 = 0;
+		int indexX;
+		double phoMutE;
+
+
+		for(int k=0;k<stepNum;k++){
+
+			if(k % outFreq == 0 && printTraj)
+			{
+				BRTreeInfo* x = ft->getTreeInfo();
+				x->printPDB(of, modelID);
+				modelID++;
+				delete x;
+			}
+
+			randIndex = rand()%fcn;
+
+
+			if(randIndex < fc){
+
+				ct = ft->flexibleConnectionList[ctChooseIndex[rand()%ctChooseNum]];
+				randType = rand()%10;
+				if(randType < 4) {
+					if(ct->f2Lib == NULL) continue;
+					if(ct->ctType == "loopNb" && rand()%3 != 0 && ft->et->para->loopRiboConnectMove){
+						CsMove cm = ct->fatherNode->riboseConf->rot->mv12 + ft->fragLib->ribLib->getRandomMove() + ct->childNode->riboseConf->rot->mv31;
+						ft->updateCtChildTmpCs(ct, cm, false);
+						mutE = ft->ctMutEnergy(ct, breakCTWT, connectWT, clashWT, false);
+
+					}
+					else {
+						frag = ct->f2Lib->getRandomFrag();
+						ft->updateF2ChildTmpCs(ct, frag, false);
+						mutE = ft->f2MutEnergy( ct, breakCTWT, connectWT, clashWT,false);
+					}
+
+					if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
+						curEne += mutE.first;
+						ft->acceptF2ChildTmpCs(ct, verbose);
+						acNum ++;
+						ac1 ++;
+
+					}
+					else {
+						ft->clearF2ChildTmpCs(ct, verbose);
+
+					}
+
+				}
+				else if(randType < 6) {
+
+					if(ct->f2Lib == NULL) continue;
+					frag = ct->f2Lib->getRandomFragLevel2(ct->f2Frag->level1ID);
+					ft->updateF2ChildTmpCs(ct, frag, false);
+					mutE = ft->f2MutEnergy(ct, breakCTWT,connectWT,clashWT,false);
+
+					if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
+						curEne += mutE.first;
+						ft->acceptF2ChildTmpCs(ct, verbose);
+						acNum ++;
+						ac2 ++;
+					}
+					else {
+						ft->clearF2ChildTmpCs(ct, verbose);
+					}
+				}
+				else if(randType < 8) {
+
+					if(ct->ctType == "nwc" || ct->ctType == "wc" || ct->ctType == "bulge13" || ct->ctType == "AG" || ct->ctType == "GA") continue;
+					if(!ft->et->para->ctRandMove) continue;
+					mvMut = mvLib.getRandomMove2(ct->cm);
+					ft->updateCtChildTmpCs(ct, mvMut, verbose);
+					mutE = ft->ctMutEnergy(ct,breakCTWT,connectWT,clashWT, verbose);
+					if(mutE.second < 0){
+						curEne += mutE.first;
+						ft->acceptCtChildTmpCs(ct, verbose);
+						acNum ++;
+						ac3 ++;
+					}
+					else {
+						ft->clearCtChildTmpCs(ct, verbose);
+					}
+				}
+
+			}
+			else {
+				randType = rand()%10;
+				if(randType < 1 && freeNodeNum > 0){
+					if(!ft->et->para->singleBaseMove) continue;
+					node = ft->nodes[ft->freeNodeIDs[rand()%freeNodeNum]];
+					mvMut = mvLib.getRandomMove2();
+					ft->updateSingleBaseCoordTmp(node, mvMut, false);
+					mutE = ft->singleBaseMutEnergy(node,breakCTWT,connectWT,clashWT,  verbose);
+
+					if(mutE.second < 0){
+						curEne += mutE.first;
+						ft->acceptSingleBaseCoordTmp(node, verbose);
+						acNum ++;
+						ac5 ++;
+					}
+					else {
+						ft->clearSingleBaseCoordTmp(node, verbose);
+					}
+				}
+				else if(randType < 3 && freeNodeNum > 0){
+					if(!ft->et->para->reverseRotMove) continue;
+					node = ft->nodes[ft->freeNodeIDs[rand()%freeNodeNum]];
+					rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
+					ft->updateReverseRiboseRotamerTmp(node, rotMut, verbose);
+					mutE = ft->singleBaseMutEnergy(node,breakCTWT,connectWT,clashWT, verbose);
+
+					if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
+						curEne += mutE.first;
+						ft->acceptReverseRiboseRotamerTmp(node, verbose);
+						acNum ++;
+						ac6 ++;
+					}
+					else {
+						ft->clearReverseRiboseRotamerTmp(node, verbose);
+					}
+				}
+				else if(rfn > 0){
+					node = ft->riboFlexibleNodes[rand()%rfn];
+					rotMut = ft->rotLib->riboseRotLib->getRandomRotamer(node->baseType);
+
+					ft->updateRiboseRotamerTmp(node, rotMut, verbose);
+					mutE = ft->riboseRotamerMutEnergy(node,breakCTWT,connectWT,clashWT, verbose);
+
+					if(mutE.second < 0 || rand()*exp(mutE.second/T) < RAND_MAX){
+						curEne += mutE.first;
+						ft->acceptRiboseRotamerTmp(node, verbose);
+						acNum ++;
+						ac7 ++;
+					}
+					else {
+						ft->clearRiboseRotamerTmp(node, verbose);
+					}
+				}
+			}
+		}
+		BRTreeInfo* x = ft->getTreeInfo();
+		printf("T=%9.5f Ene: %7.3f TotEne: %7.3f ac1: %5d ac2: %5d ac3: %5d ac4: %5d ac5: %5d ac6: %5d ac7: %5d rmsd: %6.3f\n",T,curEne,ft->totalEnergy(1.0, 1.0, 1.0, verbose), ac1, ac2, ac3, ac4, ac5, ac6, ac7, x->rmsd(init));
+		delete x;
+	}
+
+	while(connectWT < 0.999 && clashWT < 0.999) {
+		if(clashWT < 1.0)
+			clashWT = clashWT*1.1;
+		if(connectWT < 1.0)
+			connectWT = connectWT*1.1;
+		if(breakCTWT < 1.0)
+			breakCTWT = breakCTWT*1.1;
+
+		if(clashWT > 1.0) clashWT = 1.0;
+		if(connectWT > 1.0) connectWT = 1.0;
+		if(breakCTWT > 1.0) breakCTWT = 1.0;
+		double T = 0.1;
+
+		shift = shift - ft->et->para->dShift;
+		if(shift < 0) shift = 0;
+		ft->updateEnergies();
+
+		curEne = ft->totalEnergy(1.0, 1.0, 1.0, verbose);
+
+		if(clashWT < 1.0)
+			clashWT = clashWT*clashIncreaseRate;
+		if(connectWT < 1.0)
+			connectWT = connectWT*ctRate;
+		if(breakCTWT < 1.0)
+			breakCTWT = breakCTWT*ctRate;
+
 		if(clashWT > 1.0) clashWT = 1.0;
 		if(connectWT > 1.0) connectWT = 1.0;
 		if(breakCTWT > 1.0) breakCTWT = 1.0;
@@ -709,12 +888,12 @@ void MCRun::simpleMC(const string& outPDB, bool printTraj){
 		BRTreeInfo* x = ft->getTreeInfo();
 		printf("T=%9.5f Ene: %7.3f TotEne: %7.3f ac1: %5d ac2: %5d ac3: %5d ac4: %5d ac5: %5d ac6: %5d ac7: %5d rmsd: %6.3f\n",T,curEne,ft->totalEnergy(1.0, 1.0, 1.0, verbose), ac1, ac2, ac3, ac4, ac5, ac6, ac7, x->rmsd(init));
 		delete x;
+
 	}
 
 	connectWT = 1.0;
 	clashWT = 1.0;
 	breakCTWT = 1.0;
-
 
 
 	for(double T=0.1;T>0.01;T=T*0.9){

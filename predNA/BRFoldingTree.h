@@ -145,6 +145,7 @@ public:
 	void buildNeighbor();
 	void buildBulged13();
 	void buildFrom2(BRNode* node);
+
 	void findMidPoint(){
 		for(int i=0;i<seqLen;i++){
 			loopRevPoints[i] = false;
@@ -579,6 +580,15 @@ inline double getRiboseRiboseEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEn
 			}
 
 		}
+
+		double dO4O2C2AB = nodeA->riboseConf->coords[4].distance((nodeB->riboseConf->coords[7] + nodeB->riboseConf->coords[1])*0.5);
+		double dO4O2C2BA = nodeB->riboseConf->coords[4].distance((nodeA->riboseConf->coords[7] + nodeA->riboseConf->coords[1])*0.5);
+
+		if(dO4O2C2AB < 5.0)
+			hbondEnergy += et->hbET->getO4O2C2Energy(dO4O2C2AB, sep);
+		if(dO4O2C2BA < 5.0)
+			hbondEnergy += et->hbET->getO4O2C2Energy(dO4O2C2BA, sep);
+
 		nA = nodeA->riboseConf->rot->atomNum;
 		nB = nodeB->riboseConf->rot->atomNum;
 		for(i=0;i<nA;i++){
@@ -616,6 +626,14 @@ inline double getRiboseRiboseEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, Rn
 		{
 			hbondEnergy = et->hbET->getEnergy(O2UniqueID, nodeA->riboseConfTmp->o2Polar, O2UniqueID, nodeB->riboseConfTmp->o2Polar);
 		}
+
+		double dO4O2C2AB = nodeA->riboseConfTmp->coords[4].distance((nodeB->riboseConfTmp->coords[7] + nodeB->riboseConfTmp->coords[1])*0.5);
+		double dO4O2C2BA = nodeB->riboseConfTmp->coords[4].distance((nodeA->riboseConfTmp->coords[7] + nodeA->riboseConfTmp->coords[1])*0.5);
+
+		if(dO4O2C2AB < 5.0)
+			hbondEnergy += et->hbET->getO4O2C2Energy(dO4O2C2AB, sep);
+		if(dO4O2C2BA < 5.0)
+			hbondEnergy += et->hbET->getO4O2C2Energy(dO4O2C2BA, sep);
 
 		nA = nodeA->riboseConfTmp->rot->atomNum;
 		nB = nodeB->riboseConfTmp->rot->atomNum;
@@ -684,10 +702,8 @@ inline double getRibosePhoEnergyTmp(BRNode* nodeA, BRNode* nodeB, int sep, RnaEn
 				clashEnergy += et->acET->getRibosePhoEnergy(i,j,dd, sep);
 		}
 	}
-
 	return clashEnergy + hbondEnergy;
 }
-
 
 inline double getPhoPhoEnergy(BRNode* nodeA, BRNode* nodeB, int sep, RnaEnergyTable* et, bool verbose){
 

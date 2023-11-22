@@ -60,15 +60,15 @@ public:
 class BasePair6DEnergyTable {
 public:
 
-	map<int, double> n1KeysEnergy[36000]; //16*2250, distacne 50 bins, dihedral 45 bins, sphere 2000*2000
-	map<int, double> n2KeysEnergy[36000];
-	map<int, double> n3KeysEnergy[36000];
+	map<int, double> nbKeysEnergy[36000]; //16*2250, distacne 50 bins, dihedral 45 bins, sphere 2000*2000
+//	map<int, double> n2KeysEnergy[36000];
+	map<int, double> nnbKeysEnergy[36000];
 
 	CsMoveTo6DKey cm2Key;
 	map<int,double>::iterator it;
 
 
-	double wt1, wt2, wt3;
+	double wtNb, wtNnb;
 
 	BasePair6DEnergyTable(ForceFieldPara* para);
 
@@ -96,38 +96,22 @@ public:
 				exit(0);
 			}
 			if(sep == 1){
-				it = n1KeysEnergy[d2Index].find(index[4]);
-				if(it != n1KeysEnergy[d2Index].end()){
-					ene[i] = wt1*it->second;
-				}
-				else
-					ene[i] = 0.0;
-
-				//set the energy of neighbor pair UU, UC, CC to half value
-				if(typeA%2==1 && typeB%2==1)
-					ene[i] = ene[i]*0.5;
-			}
-			else if(sep == 2){
-				it = n2KeysEnergy[d2Index].find(index[4]);
-				if(it != n2KeysEnergy[d2Index].end()){
-					ene[i] = wt2*it->second;
-				}
-				else
-					ene[i] = 0.0;
-			}
-			else if(sep == 3){
-				it = n3KeysEnergy[d2Index].find(index[4]);
-				if(it != n3KeysEnergy[d2Index].end()){
-					ene[i] = wt3*it->second;
+				it = nbKeysEnergy[d2Index].find(index[4]);
+				if(it != nbKeysEnergy[d2Index].end()){
+					ene[i] = wtNb*it->second;
 				}
 				else
 					ene[i] = 0.0;
 			}
 			else {
-				cout << "sep must equal to 1 or 2 or 3 " << endl;
-				cout << "sep == " << sep << endl;
-				exit(0);
+				it = nnbKeysEnergy[d2Index].find(index[4]);
+				if(it != nnbKeysEnergy[d2Index].end()){
+					ene[i] = wtNnb*it->second;
+				}
+				else
+					ene[i] = 0.0;
 			}
+
 		}
 
 		double e = weights[0]*ene[0]+weights[1]*ene[1]+weights[2]*ene[2]+weights[3]*ene[3];
@@ -160,37 +144,21 @@ public:
 					exit(0);
 				}
 				if(sep == 1){
-					it = n1KeysEnergy[d2Index].find(index[4+j]);
-					if(it != n1KeysEnergy[d2Index].end()){
-						ene[i*9+j] = wt1*it->second;
+					it = nbKeysEnergy[d2Index].find(index[4+j]);
+					if(it != nbKeysEnergy[d2Index].end()){
+						ene[i*9+j] = wtNb*it->second;
 					}
 					else
 						ene[i*9+j] = 0.0;
+				}
 
-					//set the energy of neighbor pair UU, UC, CC to half value
-					if(typeA%2==1 && typeB%2==1)
-						ene[i*9+j] = ene[i*9+j]*0.5;
-				}
-				else if(sep == 2){
-					it = n2KeysEnergy[d2Index].find(index[4+j]);
-					if(it != n2KeysEnergy[d2Index].end()){
-						ene[i*9+j] = wt2*it->second;
-					}
-					else
-						ene[i*9+j] = 0.0;
-				}
-				else if(sep == 3){
-					it = n3KeysEnergy[d2Index].find(index[4+j]);
-					if(it != n3KeysEnergy[d2Index].end()){
-						ene[i*9+j] = wt3*it->second;
-					}
-					else
-						ene[i*9+j] = 0.0;
-				}
 				else {
-					cout << "sep must equal to 1 or 2 or 3 " << endl;
-					cout << "sep == " << sep << endl;
-					exit(0);
+					it = nnbKeysEnergy[d2Index].find(index[4+j]);
+					if(it != nnbKeysEnergy[d2Index].end()){
+						ene[i*9+j] = wtNnb*it->second;
+					}
+					else
+						ene[i*9+j] = 0.0;
 				}
 			}
 		}
@@ -218,37 +186,22 @@ public:
 		int mapIndex = pairType*2250 + p.first;
 
 		if(sep == 1){
-			it = n1KeysEnergy[mapIndex].find(p.second);
-			if(it != n1KeysEnergy[mapIndex].end()){
+			it = nbKeysEnergy[mapIndex].find(p.second);
+			if(it != nbKeysEnergy[mapIndex].end()){
 				//printf("indexA: %8d indexB: %8d\n", mapIndex, p.second);
-				return wt1*it->second;
+				return wtNb*it->second;
 			}
 			else
 				return 0.0;
 		}
-		else if(sep == 2){
-			it = n2KeysEnergy[mapIndex].find(p.second);
-			if(it != n2KeysEnergy[mapIndex].end()){
-				//printf("indexA: %8d indexB: %8d\n", mapIndex, p.second);
-				return wt2*it->second;
-			}
-			else
-				return 0;
-		}
-		else if(sep == 3){
-			it = n3KeysEnergy[mapIndex].find(p.second);
-			if(it != n3KeysEnergy[mapIndex].end()){
-				//printf("indexA: %8d indexB: %8d\n", mapIndex, p.second);
-				return wt3*it->second;
-			}
-			else
-				return 0;
-		}
 		else {
-
-			cout << "sep must equal to 1 or 2 or 3 " << endl;
-			cout << "sep == " << sep << endl;
-			exit(0);
+			it = nnbKeysEnergy[mapIndex].find(p.second);
+			if(it != nnbKeysEnergy[mapIndex].end()){
+				//printf("indexA: %8d indexB: %8d\n", mapIndex, p.second);
+				return wtNnb*it->second;
+			}
+			else
+				return 0;
 		}
 
 	}

@@ -60,7 +60,6 @@ public:
 
 	BackboneModelingTemplate(const string& inputPDB, ForceFieldPara* para);
 
-
 	double buildPho(int seqID, bool verbose); //updated method, improper dependent dihedral energy
 
 	//double phoEnergy3(int seqID); //pho energy is backbone dependent
@@ -356,6 +355,16 @@ public:
 				}
 
 			}
+
+			double dO4O2C2AB = nodeA->riboseConf->coords[4].distance((nodeB->riboseConf->coords[7] + nodeB->riboseConf->coords[1])*0.5);
+			double dO4O2C2BA = nodeB->riboseConf->coords[4].distance((nodeA->riboseConf->coords[7] + nodeA->riboseConf->coords[1])*0.5);
+
+			if(dO4O2C2AB < 5.0)
+				hbondEnergy += et->hbET->getO4O2C2Energy(dO4O2C2AB, sep);
+			if(dO4O2C2BA < 5.0)
+				hbondEnergy += et->hbET->getO4O2C2Energy(dO4O2C2BA, sep);
+
+
 			nA = nodeA->riboseConf->rot->atomNum;
 			nB = nodeB->riboseConf->rot->atomNum;
 			for(i=0;i<nA;i++){
@@ -393,6 +402,15 @@ public:
 			{
 				hbondEnergy = et->hbET->getEnergy(O2UniqueID, nodeA->riboseConfTmp->o2Polar, O2UniqueID, nodeB->riboseConfTmp->o2Polar);
 			}
+
+			double dO4O2C2AB = nodeA->riboseConfTmp->coords[4].distance((nodeB->riboseConfTmp->coords[7] + nodeB->riboseConfTmp->coords[1])*0.5);
+			double dO4O2C2BA = nodeB->riboseConfTmp->coords[4].distance((nodeA->riboseConfTmp->coords[7] + nodeA->riboseConfTmp->coords[1])*0.5);
+
+			if(dO4O2C2AB < 5.0)
+				hbondEnergy += et->hbET->getO4O2C2Energy(dO4O2C2AB, sep);
+			if(dO4O2C2BA < 5.0)
+				hbondEnergy += et->hbET->getO4O2C2Energy(dO4O2C2BA, sep);
+
 
 			nA = nodeA->riboseConfTmp->rot->atomNum;
 			nB = nodeB->riboseConfTmp->rot->atomNum;

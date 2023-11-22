@@ -22,7 +22,7 @@ ForceFieldPara::ForceFieldPara() {
 	this->rnaKBond = 7.0;
 
 	this->wtPho = 0.7;
-	//this->wtRibose = 1.0;
+	this->wtRibose = 1.0;
 
 	for(int i=0;i<6;i++){
 		rnaDihedImpD1D2Shift[i] = 0.0;
@@ -46,10 +46,12 @@ ForceFieldPara::ForceFieldPara() {
 	}
 
 
-	this->wtBp1 = 0.4;
-	this->wtBp2 = 0.8;
-	this->wtBp3 = 1.0;
+	this->wtBp1 = 1.0;
+	this->wtBp2 = 1.0;
 //	this->bbClash = 0.4;
+
+	this->wtO4O2C2Nb = 0.7;
+	this->wtO4O2C2Nnb = 0.7;
 
 	this->wtClash = 1.0;
 
@@ -61,8 +63,8 @@ ForceFieldPara::ForceFieldPara() {
 
 	this->lamdaClash = 2.8;
 
-	this->initConnectWT = 0.1;
-	this->initClashWT = 0.05;
+	this->initConnectWT = 0.4;
+	this->initClashWT = 0.002;
 
 	this->initShift = 0.6;
 	this->dShift = 0.02;
@@ -94,7 +96,7 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	this->rnaKBond = 7.0;
 
 	this->wtPho = 0.7;
-	//this->wtRibose = 1.0;
+	this->wtRibose = 1.0;
 
 	for(int i=0;i<6;i++){
 		rnaDihedImpD1D2Shift[i] = 0.0;
@@ -117,10 +119,11 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	}
 
 
-	this->wtBp1 = 0.4;
-	this->wtBp2 = 0.8;
-	this->wtBp3 = 1.0;
-//	this->bbClash = 0.4;
+	this->wtBp1 = 1.0;
+	this->wtBp2 = 1.0;
+
+	this->wtO4O2C2Nb = 0.7;
+	this->wtO4O2C2Nnb = 0.7;
 
 	this->wtClash = 1.0;
 
@@ -132,8 +135,8 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 
 	this->lamdaClash = 2.8;
 
-	this->initConnectWT = 0.1;
-	this->initClashWT = 0.05;
+	this->initConnectWT = 0.4;
+	this->initClashWT = 0.002;
 
 	this->initShift = 0.6;
 	this->dShift = 0.02;
