@@ -567,7 +567,7 @@ array<XYZ,4> RNABase::getFourPseudoAtomCoords(){
 	return list;
 }
 
-int RNABase::printPDBFormat(ofstream& out, int startAtomID) const{
+int RNABase::printPDBFormat(ostream& out, int startAtomID) const{
     char c = this->baseID.at(baseID.length()-1);
     char s[100];
     vector<Atom*>::const_iterator it;
@@ -595,6 +595,11 @@ int RNABase::printPDBFormat(ofstream& out, int startAtomID) const{
         }
     }
     return atomID;
+}
+
+string RNABase::print() {
+	string ret = chainID + "_" + baseType + baseID;
+	return ret;
 }
 
 RNABase::~RNABase() {
@@ -1010,7 +1015,7 @@ RNAChain::RNAChain(RNAChain&& other) noexcept {
 	this->baseMap = move(other.baseMap);
 }
 
-int RNAChain::printPDBFormat(ofstream& out, int startAtomID) const{
+int RNAChain::printPDBFormat(ostream& out, int startAtomID) const{
 	for(int i=0;i<baseList.size();i++) {
 		startAtomID = baseList[i]->printPDBFormat(out, startAtomID);
 	}
@@ -1422,7 +1427,7 @@ void RNAPDB::readCIF(const string& cifFile){
 
 
 
-void RNAPDB::printPDBFormat(ofstream& out) const{
+void RNAPDB::printPDBFormat(ostream& out) const{
     int startID = 1;
     for(unsigned int i=0;i<this->chains.size();i++)
     {

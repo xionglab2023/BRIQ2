@@ -18,7 +18,7 @@
 
 #ifndef BRIQXMODULE_BRIQXMODULE_H_
 #define BRIQXMODULE_BRIQXMODULE_H_
-// #define DEBUG
+#define DEBUG
 
 #define BASEDISTMAX 4.0
 #define LDIFF_RATIO_TOLERATE 0.5
@@ -111,6 +111,7 @@ namespace NSPbm {
                 // 指针引用的RNAChain 对象由 new 在堆区创建，不用delete不会自动释放
                 // 我们不打算改动 RNAChain 对象，但不保证调用类的操作不会修改 RNAchain 对象
                 // 实际上我们也不打算改动指针指向， 但 vector 内置操作要求元素可写，因此不能设为常量指针
+            vector<RNAChain*> strands;  /** uncontinious chains from the motif view */
             vector<RNABase*> baseList;  /**  Vector of RNABase pointers, size = Nb */
                 // 指针引用的RNABase 对象由 new 在堆区创建，不用delete不会自动释放
                 // RNABase 对象在计算DM时会被修改
@@ -140,7 +141,7 @@ namespace NSPbm {
 
             /**
              * @brief Number of strands within the motif, note one chain may contain multiple strands due to motif 
-             * fragmentation.
+             * fragmentation. nStrand = strands.size()
             */
             int nStrand;
 
@@ -252,6 +253,10 @@ namespace NSPbm {
 
             const vector<RNAChain*>& getChains() const {
                 return chains;
+            }
+
+            const vector<RNAChain*>& getStrands() const {
+                return strands;
             }
 
             const vector<RNABase*>& getBaseList() const {
@@ -398,7 +403,16 @@ namespace NSPbm {
              *
              * @param out: Output stream.
              */
-            void printPDBFormat(ofstream& out) const;
+            void printPDBFormat(ostream& out) const;
+
+            #ifdef DEBUG
+            /**
+             * @brief Print PairEneMap to @p out in human-friendly format
+             * 
+             * @param out: Outpuit stream.
+            */
+            void printPairEneMap(ostream& out) const;
+            #endif
 
             /**
              * @brief  Delete all allocated memory that referenced by pointers within the BriqxModule object.

@@ -270,7 +270,8 @@ public:
 		return false;
 	}
 
-	int printPDBFormat(ofstream& out, int startAtomID) const;
+	int printPDBFormat(ostream& out, int startAtomID) const;
+	string print();
 	virtual ~RNABase();
 };
 
@@ -394,7 +395,7 @@ public:
 		s[baseList.size()] = '\0';
 		return string(s);
 	}
-	int printPDBFormat(ofstream& out, int startAtomID) const;
+	int printPDBFormat(ostream& out, int startAtomID) const;
 
 };
 
@@ -468,7 +469,7 @@ public:
 		}
 		return list;
 	}
-	void printPDBFormat(ofstream& out) const;
+	void printPDBFormat(ostream& out) const;
 	virtual ~RNAPDB();
 };
 

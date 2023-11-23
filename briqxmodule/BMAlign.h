@@ -86,7 +86,7 @@ namespace NSPbm
                 return Bcog;
             }
 
-            int writeAlignment(ofstream& out, double& score, double& normedSc, bool onA = true) const;
+            int writeAlignment(ostream& out, double& score, double& normedSc, bool onA = true) const;
 
             virtual ~BMAlign();
     };
@@ -110,7 +110,7 @@ namespace NSPbm
 
     // 模板类的实现和声明不能分离，否则连接时会出现undefined reference 错误
     template<IsValid T>
-    int BMAlign<T>::writeAlignment(ofstream& out, double& score, double& normedSc, bool onA) const {
+    int BMAlign<T>::writeAlignment(ostream& out, double& score, double& normedSc, bool onA) const {
         int lav = alignVec.size();
         if(onA) {
             map<RNABase*, RNABase*> a2bMap;

@@ -69,6 +69,10 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
 
     BriqxModule BMa(BMaPDB, bpl, atl, BMaName, BMaSel);
     BriqxModule BMb(BMbPDB, bpl, atl, BMbName, BMbSel);
+    #ifdef DEBUG
+    BMa.printPairEneMap(cout);
+    BMb.printPairEneMap(cout);  
+    #endif
 
     if(BMa.getNStrand() != BMb.getNStrand()) {
         string outstr = "[Result] nStrand Unmatch: " +\
@@ -86,6 +90,10 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
     BMa.calcDDMMatrix(BMb, DDMMatrix);
 
     BMScore scer(BMa, BMb, DDMMatrix);
+    #ifdef DEBUG
+        scer.printBasePairWeight(cout);
+    #endif
+    double idealSc = scer.idealScore();
 
     vector<pair<array<BasePair*, 2>, double> > sortedDDM{};
 
@@ -127,7 +135,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         if(curSc-nextSc < iterStopAt) {
             #ifdef DEBUG
                 itCount++;
-                cout << "[DEBUG][Info] IniBP: " << i << ", Iteration " << itCount << endl;
+                cout << "[DEBUG][Info] IniBPP: " << i << ", Iteration " << itCount << endl;
             #endif // DEBUG
             lastSc = curSc;
             curSc = nextSc;
@@ -141,7 +149,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         while(curSc-nextSc < iterStopAt) {
             #ifdef DEBUG
                 itCount++;
-                cout << "[DEBUG][Info] IniBP: " << i << ", Iteration " << itCount << endl;
+                cout << "[DEBUG][Info] IniBPP: " << i << ", Iteration " << itCount << endl;
             #endif // DEBUG
             lastSc = curSc;
             curSc = nextSc;
@@ -156,10 +164,51 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
             if(lastAlign) delete lastAlign;
         }
         delete nextAlign;
+        #ifdef DEBUG
+            cout << "[DEBUG][Info] Final alignment starting from BPP " << i << ": " << (p1->first)[0]->print() << " To " <<
+                    (p1->first)[1]->print() << endl;
+            double nSc = curSc/idealSc;
+            string outAlnPath = outPath + "/" + BMb.getBMname() + "_to_" + BMa.getBMname() +\
+                "_by_" + (p1->first)[0]->print() + '-' + (p1->first)[1]->print() + ".aln";
+            ofstream dbg_output;
+            dbg_output.open(outAlnPath, ios::out);
+            if (! dbg_output.is_open())
+            {
+                throw "[Error] Fail to open file " + outAlnPath;
+            }
+            if(curAlign) {
+                curAlign->writeAlignment(dbg_output, curSc, nSc, true);
+            } else {
+                iniAlign->writeAlignment(dbg_output, curSc, nSc, true);
+            }
+            dbg_output.close();
+
+            // Writing intermediate aligned conformation
+            string outPDBPath = outPath + "/" + BMb.getBMname() + "_to_" + BMa.getBMname() +\
+                "_by_" + (p1->first)[0]->print() + '-' + (p1->first)[1]->print() + ".pdb";
+            cout<<"[DEBUG][Info] Write transformed "<<BMb.getBMname()<<" to " << outPDBPath <<endl;
+            dbg_output.open(outPDBPath, ios::out);
+            if (! dbg_output.is_open())
+            {
+                throw "[Error] Fail to open file " + outPDBPath;
+            }
+            BriqxModule* BMdbg;
+            if(curAlign) {
+                BMdbg = new BriqxModule(BMb, curAlign->getRotTrans(), curAlign->getAcog(), curAlign->getBcog(),
+                bpl, atl, "", true);
+            } else {
+                BMdbg = new BriqxModule(BMb, iniAlign->getRotTrans(), iniAlign->getAcog(), iniAlign->getBcog(),
+                bpl, atl, "", true);
+            }
+            BMdbg->printPDBFormat(dbg_output);
+            dbg_output.close();
+            BMdbg->deepClear();
+            delete BMdbg;
+        #endif
         if(curSc > bestScore) {
             bestScore = curSc;
             #ifdef DEBUG
-                outstr = "[DEBUG][Info] Refreshing, best score now from iniBP " + to_string(i) + " with value " +\
+                outstr = "[DEBUG][Info] Refreshing, best score now from iniBPP " + to_string(i) + " with value " +\
                     to_string(bestScore) + "\n";
                 cout << outstr;
             #endif //DEBUG
@@ -191,9 +240,8 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
     }
     score = bestScore;
     alignVec = bestAlign? bestAlign->getAlignVec(): bestAlignBP->getAlignVec();
-    double idealSc = scer.idealScore();
     normedSc = score/idealSc;
-
+ 
     cout<<"[Result] "<< BMaName <<"-"<<BMbName<<" Base-Base alignment completed" <<endl;
     cout<<"[Result] Alignment score:" << to_string(score) << endl;
     cout<<"[Result] Normed score:" << to_string(normedSc) << endl;
@@ -202,7 +250,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         filesystem::path pthAln(outfileAln);
         auto pAStem = pthAln.stem();
         auto pAExt = pthAln.extension();
-        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem.string()<<"_onA."<<pAExt.string()<<
+        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem.string()<<"_onA"<<pAExt.string()<<
             endl;
         ofstream output;
         string filePath = outPath+"/"+outfileAln+"_onA";

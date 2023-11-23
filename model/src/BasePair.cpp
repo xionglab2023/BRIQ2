@@ -110,7 +110,7 @@ double BasePair::distanceToWCPair(){
 }
 
 string BasePair::print() {
-	string ret = baseA->baseType + baseA->baseID + "-" + baseB->baseType + baseB->baseID;
+	string ret = baseA->print() + "-" + baseB->print();
 	return ret;
 }
 

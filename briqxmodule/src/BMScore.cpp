@@ -36,18 +36,92 @@ namespace NSPbm
         const vector<BasePair*>& bpa = BM1.getBasePairList();
         const vector<BasePair*>& rbpa = BM1.getRevBasePairList();
         const map<BasePair*, double>& bpEnea = BM1.getBasePairEneMap();
+        // reweight terminal BasePairs
+        vector<RNABase*> termBaseVec;
+        const auto& stda = BM1.getStrands();
+        int lsa = stda.size();
+        for(int i=0; i<lsa; i++) {
+            const auto curBaseList = stda[i]->getBaseList();
+            int stdLen = stda[i]->getChainLength();
+            if(stdLen > 6) {
+                termBaseVec.emplace_back(curBaseList[0]);
+                termBaseVec.emplace_back(curBaseList[1]);
+                termBaseVec.emplace_back(curBaseList[stdLen-1]);
+                termBaseVec.emplace_back(curBaseList[stdLen-2]);
+            } else if(stdLen > 4) {
+                termBaseVec.emplace_back(curBaseList[0]);
+                termBaseVec.emplace_back(curBaseList[stdLen-1]);
+            }
+        }
+        set<BasePair*> termBpSet;
+        int ltbv = termBaseVec.size();
+        const auto& bb2bpMapa = BM1.getBb2bpMap();
+        for(int i=0; i<ltbv; i++) {
+            for(int j=i+1; j<ltbv; j++) {
+                array<RNABase*, 2> key = array<RNABase*, 2>{termBaseVec[i], termBaseVec[j]};
+                array<RNABase*, 2> rkey = array<RNABase*, 2>{termBaseVec[j], termBaseVec[i]};
+                if(bb2bpMapa.count(key) != 0) {
+                    termBpSet.insert(bb2bpMapa.at(key));
+                    termBpSet.insert(bb2bpMapa.at(rkey));
+                }
+            }
+        }
+        //reweight terminal basepairs done
+        double termFactor = 1;
         int lbpa = bpa.size();
         for(int i=0;i<lbpa;i++) {
-            bp2wMapa.emplace(bpa[i], getWeight(bpEnea.at(bpa[i])));
-            bp2wMapa.emplace(rbpa[i], getWeight(bpEnea.at(rbpa[i])));
+            if(termBpSet.count(bpa[i]) != 0) {
+                termFactor = 0.5;
+            } else {
+                termFactor = 1;
+            }
+            bp2wMapa.emplace(bpa[i], termFactor*getWeight(bpEnea.at(bpa[i])));
+            bp2wMapa.emplace(rbpa[i], termFactor*getWeight(bpEnea.at(rbpa[i])));
         }
+
         const vector<BasePair*>& bpb = BM2.getBasePairList();
         const vector<BasePair*>& rbpb = BM2.getRevBasePairList();
         const map<BasePair*, double>& bpEneb = BM2.getBasePairEneMap();
+        // reweight terminal BasePairs
+        termBaseVec.clear();
+        const auto& stdb = BM2.getStrands();
+        int lsb = stdb.size();
+        for(int i=0; i<lsb; i++) {
+            const auto curBaseList = stdb[i]->getBaseList();
+            int stdLen = stdb[i]->getChainLength();
+            if(stdLen > 6) {
+                termBaseVec.emplace_back(curBaseList[0]);
+                termBaseVec.emplace_back(curBaseList[1]);
+                termBaseVec.emplace_back(curBaseList[stdLen-1]);
+                termBaseVec.emplace_back(curBaseList[stdLen-2]);
+            } else if(stdLen > 4) {
+                termBaseVec.emplace_back(curBaseList[0]);
+                termBaseVec.emplace_back(curBaseList[stdLen-1]);
+            }
+        }
+        termBpSet.clear();
+        ltbv = termBaseVec.size();
+        const auto& bb2bpMapb = BM2.getBb2bpMap();
+        for(int i=0; i<ltbv; i++) {
+            for(int j=i+1; j<ltbv; j++) {
+                array<RNABase*, 2> key = array<RNABase*, 2>{termBaseVec[i], termBaseVec[j]};
+                array<RNABase*, 2> rkey = array<RNABase*, 2>{termBaseVec[j], termBaseVec[i]};
+                if(bb2bpMapb.count(key) != 0) {
+                    termBpSet.insert(bb2bpMapb.at(key));
+                    termBpSet.insert(bb2bpMapb.at(rkey));
+                }
+            }
+        }
+        //reweight terminal basepairs done
         int lbpb = bpb.size();
         for(int i=0;i<lbpb;i++) {
-            bp2wMapb.emplace(bpb[i], getWeight(bpEneb.at(bpb[i])));
-            bp2wMapb.emplace(rbpb[i], getWeight(bpEneb.at(rbpb[i])));
+            if(termBpSet.count(bpb[i]) != 0) {
+                termFactor = 0.5;
+            } else {
+                termFactor = 1;
+            }
+            bp2wMapb.emplace(bpb[i], termFactor*getWeight(bpEneb.at(bpb[i])));
+            bp2wMapb.emplace(rbpb[i], termFactor*getWeight(bpEneb.at(rbpb[i])));
         }
     }
 
@@ -88,14 +162,14 @@ namespace NSPbm
                 }
                 if(bb2bpMapB.contains(arrBbB) && bb2bpMapA.contains(arrBbA)){
                     out->emplace_back(array<BasePair*,2>{bb2bpMapA.at(arrBbA), bb2bpMapB.at(arrBbB)});
-                } else {
-                    # ifdef DEBUG
-                    string outstr = "[DEBUG][Warning] " + BMa->getBMname() + ":" + bA1->baseType + bA1->baseID + "-" \
-                                     + bA2->baseType + bA2->baseID + " or " + \
-                                     BMb->getBMname() + ":" + bB1->baseType + bB1->baseID + "-" \
-                                     + bB2->baseType + bB2->baseID + " BasePair not qualified" + "\n";
-                    cout << outstr;
-                    #endif
+                // } else {
+                    // #ifdef DEBUG
+                    // string outstr = "[DEBUG][Warning] " + BMa->getBMname() + ":" + bA1->baseType + bA1->baseID + "-" \
+                                    //  + bA2->baseType + bA2->baseID + " or " + \
+                                    //  BMb->getBMname() + ":" + bB1->baseType + bB1->baseID + "-" \
+                                    //  + bB2->baseType + bB2->baseID + " BasePair not qualified" + "\n";
+                    // cout << outstr;
+                    // #endif
                 }
             }
         }
@@ -167,6 +241,31 @@ namespace NSPbm
         double score=0;
         return score;
     }
+
+    #ifdef DEBUG
+    void BMScore::printBasePairWeight(ostream& out) {
+        out<<"[DEBUG][Info] Weight for BasePairs of "<<BMa->getBMname()<<":"<<endl;
+        auto& bpList = BMa->getBasePairList();
+        auto& rbpList = BMa->getRevBasePairList();
+        int lbp = bpList.size();
+        for(int i=0; i<lbp;i++) {
+            auto* curBP = bpList[i];
+            auto* currBP = rbpList[i];
+            out << curBP->print() << ":  " << bp2wMapa.at(curBP) <<endl;
+            out << currBP->print() << ":  " << bp2wMapa.at(currBP) <<endl;
+        }
+        out<<"[DEBUG][Info] Weight for BasePairs of "<<BMb->getBMname()<<":"<<endl;
+        auto& bpList2 = BMb->getBasePairList();
+        auto& rbpList2 = BMb->getRevBasePairList();
+        lbp = bpList2.size();
+        for(int i=0; i<lbp;i++) {
+            auto* curBP = bpList2[i];
+            auto* currBP = rbpList2[i];
+            out << curBP->print() << ":  " << bp2wMapb.at(curBP) <<endl;
+            out << currBP->print() << ":  " << bp2wMapb.at(currBP) <<endl;
+        }
+    }
+    #endif
 
     BMScore::~BMScore(){
 

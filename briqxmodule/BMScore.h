@@ -126,6 +126,15 @@ namespace NSPbm
                 // return (wa+wb)*0.5*(exp(-ddm*ddm/3.92));  // round 14
                 // return (wa+wb)*0.5*(exp(-ddm*ddm/1.62));  // round 15
             }
+            
+            #ifdef DEBUG
+            /**
+             * @brief Print bp2wMapa and bp2wMapb to @param out in human-friendly form
+             * 
+             * @param out: Output stream
+            */
+            void printBasePairWeight(ostream& out);
+            #endif
 
             virtual ~BMScore();
     };
@@ -136,15 +145,21 @@ namespace NSPbm
         int lav = alignVec->size();
         double tot = 0;
         for(int i=0;i<lav;i++) {
+            double curBppSc = bppScore(
+                bp2wMapa.at((*alignVec)[i][0]), bp2wMapb.at((*alignVec)[i][1]), DDMMap->at((*alignVec)[i]));
             #ifdef DEBUG
-            string outstr = "[DEBUG] weight a: " + to_string(bp2wMapa.at((*alignVec)[i][0])) + "\n";
+            string outstr = "[DEBUG][Info][score] weight " + (*alignVec)[i][0]->print() + ": " + \
+                to_string(bp2wMapa.at((*alignVec)[i][0])) + "\n";
             cout << outstr;
-            outstr = "[DEBUG] weight b: " + to_string(bp2wMapb.at((*alignVec)[i][1])) + "\n";
+            outstr = "[DEBUG][Info][score] weight " + (*alignVec)[i][1]->print() + ": " + \
+                to_string(bp2wMapb.at((*alignVec)[i][1])) + "\n";
             cout << outstr;
-            outstr = "[DEBUG] weight DDM: " + to_string(DDMMap->at((*alignVec)[i])) + "\n";
+            outstr = "[DEBUG][Info][score] DDM: " + to_string(DDMMap->at((*alignVec)[i])) + "\n";
+            cout << outstr;
+            outstr = "[DEBUG][Info][score] bppScore: " + to_string(curBppSc) + "\n";
             cout << outstr;
             #endif
-            tot += bppScore(bp2wMapa.at((*alignVec)[i][0]), bp2wMapb.at((*alignVec)[i][1]), DDMMap->at((*alignVec)[i]));
+            tot += curBppSc;
         }
         delete alignVec;
         return tot;

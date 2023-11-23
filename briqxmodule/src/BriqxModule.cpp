@@ -244,19 +244,19 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
         } // if isResInd
     } // if bms empty
     int lb = this->baseList.size();
-    vector<RNAChain*> Strands;
+    strands.clear();
     RNAChain* curStrand = new RNAChain();
-    Strands.emplace_back(curStrand);
+    strands.emplace_back(curStrand);
     curStrand->addBase(baseList[0]);
     for(int i=0;i<lb-1;i++) {
         if(baseList[i]->connectToNeighbor(baseList[i+1])) {
             curStrand->addBase(baseList[i+1]);
         } else {
-            int ls = Strands.size();
+            int ls = strands.size();
             bool isNewStrand = true;
             for(int j=0;j<ls;j++) {
-                if(Strands[j]->getBaseList().back()->connectToNeighbor(baseList[i+1])) {
-                    curStrand = Strands[j];
+                if(strands[j]->getBaseList().back()->connectToNeighbor(baseList[i+1])) { // 假设各chain内部的residue有序
+                    curStrand = strands[j];
                     curStrand->addBase(baseList[i+1]);
                     isNewStrand = false;
                     break;
@@ -264,15 +264,12 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
             }
             if(isNewStrand) {
                 curStrand = new RNAChain;
-                Strands.emplace_back(curStrand);
+                strands.emplace_back(curStrand);
                 curStrand->addBase(baseList[i+1]);
             }
         }
     }
-    nStrand = Strands.size();
-    for(int i=0;i<nStrand;i++) {
-        delete Strands[i];
-    }
+    nStrand = strands.size();
     
     if(beLazy) return;
     
@@ -314,19 +311,19 @@ BriqxModule::BriqxModule(const vector<RNAChain*>& chains, const vector<RNABase*>
         this->baseList.emplace_back(baseList[i]);
     }
 
-    vector<RNAChain*> Strands;
+    strands.clear();
     RNAChain* curStrand = new RNAChain();
-    Strands.emplace_back(curStrand);
+    strands.emplace_back(curStrand);
     curStrand->addBase(baseList[0]);
     for(int i=0;i<lb-1;i++) {
         if(baseList[i]->connectToNeighbor(baseList[i+1])) {
             curStrand->addBase(baseList[i+1]);
         } else {
-            int ls = Strands.size();
+            int ls = strands.size();
             bool isNewStrand = true;
             for(int j=0;j<ls;j++) {
-                if(Strands[j]->getBaseList().back()->connectToNeighbor(baseList[i+1])) {
-                    curStrand = Strands[j];
+                if(strands[j]->getBaseList().back()->connectToNeighbor(baseList[i+1])) {
+                    curStrand = strands[j];
                     curStrand->addBase(baseList[i+1]);
                     isNewStrand = false;
                     break;
@@ -334,15 +331,12 @@ BriqxModule::BriqxModule(const vector<RNAChain*>& chains, const vector<RNABase*>
             }
             if(isNewStrand) {
                 curStrand = new RNAChain;
-                Strands.emplace_back(curStrand);
+                strands.emplace_back(curStrand);
                 curStrand->addBase(baseList[i+1]);
             }
         }
     }
-    nStrand = Strands.size();
-    for(int i=0;i<nStrand;i++) {
-        delete Strands[i];
-    }
+    nStrand = strands.size();
 
     if(beLazy) return;
 
@@ -380,7 +374,6 @@ BriqxModule::BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ&
     } else {
         BMname = name;
     }
-    nStrand = bm0.nStrand;
     string lastChainID = "@";
     RNAChain* curChain;
     int lb = bm0.baseList.size();
@@ -413,6 +406,33 @@ BriqxModule::BriqxModule(const BriqxModule& bm0, const TransForm& tf, const XYZ&
         baseList.emplace_back(newBase);
         curChain->addBase(newBase);
     }
+
+    strands.clear();
+    RNAChain* curStrand = new RNAChain();
+    strands.emplace_back(curStrand);
+    curStrand->addBase(baseList[0]);
+    for(int i=0;i<lb-1;i++) {
+        if(baseList[i]->connectToNeighbor(baseList[i+1])) {
+            curStrand->addBase(baseList[i+1]);
+        } else {
+            int ls = strands.size();
+            bool isNewStrand = true;
+            for(int j=0;j<ls;j++) {
+                if(strands[j]->getBaseList().back()->connectToNeighbor(baseList[i+1])) {
+                    curStrand = strands[j];
+                    curStrand->addBase(baseList[i+1]);
+                    isNewStrand = false;
+                    break;
+                }
+            }
+            if(isNewStrand) {
+                curStrand = new RNAChain;
+                strands.emplace_back(curStrand);
+                curStrand->addBase(baseList[i+1]);
+            }
+        }
+    }
+    nStrand = strands.size();
 
     if(beLazy) return;
 
@@ -666,10 +686,11 @@ int BriqxModule::alignBasesByCoord(const BriqxModule& other, vector<array<RNABas
         for(int j=0;j<lb2;j++) {
             double dist = utils::meanDist<array<XYZ,4> >(aPos[i], bPos[j], 10, 1000);
             #ifdef DEBUG
-            string outstr = "[DEBUG][Info] Distance between " + this->BMname + "_"+this->baseList[i]->baseType + \
-                this->baseList[i]->baseID + " and " + other.BMname + "_"+other.baseList[j]->baseType + \
-                other.baseList[j]->baseID + ": " + to_string(dist) + "\n";
-            cout << outstr;
+            if(dist < 1000) {
+                string outstr = "[DEBUG][Info][AlignBase] Distance between " + this->BMname + "_"+this->baseList[i]->print() \
+                + " and " + other.BMname + "_" + other.baseList[j]->print() + ": " + to_string(dist) + "\n";
+                cout << outstr;
+            }
             #endif
             if(dist < distMax) {
                 abmdVec.emplace_back(
@@ -701,7 +722,7 @@ int BriqxModule::alignBasesByCoord(const BriqxModule& other, vector<array<RNABas
     return EXIT_SUCCESS;
 }
 
-void BriqxModule::printPDBFormat(ofstream& out) const {
+void BriqxModule::printPDBFormat(ostream& out) const {
     int startID = 1;
     int lc = chains.size();
     for(unsigned int i=0;i<lc;i++)
@@ -716,6 +737,19 @@ void BriqxModule::printPDBFormat(ofstream& out) const {
         }
     }
 }
+
+#ifdef DEBUG
+void BriqxModule::printPairEneMap(ostream & out) const {
+    out<<"[DEBUG][Info] Energy for BasePairs of "<<BMname<<":"<<endl;
+    int lbp = basePairList.size();
+    for(int i=0; i<lbp;i++) {
+        auto* curBP = basePairList[i];
+        auto* currBP = revBasePairList[i];
+        out << curBP->print() << ":  " << PairEneMap.at(curBP) <<endl;
+        out << currBP->print() << ":  " << PairEneMap.at(currBP) <<endl;
+    }
+}
+#endif
 
 void BriqxModule::deepClear() {
     int lb = baseList.size();
@@ -738,6 +772,9 @@ void BriqxModule::deepClear() {
     int lc = chains.size();
     for(int i=0;i<lc;i++) {
         delete chains[i];
+    }
+    for(int i=0;i<nStrand;i++) {
+        delete strands[i];
     }
 }
 
