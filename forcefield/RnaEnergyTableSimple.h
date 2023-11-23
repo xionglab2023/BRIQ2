@@ -13,11 +13,13 @@
 #include "model/BaseDistanceMatrix.h"
 #include "dataio/datapaths.h"
 #include "forcefield/XPara.h"
+#include "forcefield/PO3Builder.h"
 #include "forcefield/AtomicClashEnergy.h"
 #include "forcefield/BasePair6DEnergyTable.h"
 #include "forcefield/RiboseOxygenEnergyTable.h"
 #include "forcefield/ForceFieldPara.h"
 #include "RnaAtomicEnergyTable.h"
+#include "forcefield/HbondEnergy.h"
 
 namespace NSPforcefield {
 
@@ -28,15 +30,20 @@ using namespace NSPmodel;
 class RnaEnergyTableSimple{
 public:
 
+	PO3Builder* pb;
 	AtomicClashEnergy* acET;
 	RiboseOxygenEnergyTable* roET;
-	XPara para;
+	HbondEnergy* hbET;
+	ForceFieldPara* para;
 
 
-	RnaEnergyTableSimple(){
-		ForceFieldPara* ffp = new ForceFieldPara();
-		acET = new AtomicClashEnergy(ffp);
-		roET = new RiboseOxygenEnergyTable();
+	RnaEnergyTableSimple(ForceFieldPara* para){
+
+		this->para = para;
+		pb = new PO3Builder(para);
+		acET = new AtomicClashEnergy(para);
+		roET = new RiboseOxygenEnergyTable(para);
+		hbET = new HbondEnergy(para);
 	}
 
 

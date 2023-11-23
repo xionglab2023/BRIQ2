@@ -13,7 +13,9 @@ namespace NSPforcefield {
 		delete this->pb;
 		delete this->roET;
 		delete this->hbET;
-		delete this->ffp;
+		if(deleteTag)
+			delete this->para;
+
 	}
 
 } /* namespace NSPtest */

@@ -34,6 +34,7 @@ void checkInputFile(const string& inputFile){
 	string baseSec = input.getValue("sec");
 	string nwcSec = input.getValue("nwc");
 
+
 	if(pdbFile == ""){
 		cout << "invalid inputFile: initial pdb required" << endl;
 		exit(0);
@@ -72,29 +73,41 @@ void checkInputFile(const string& inputFile){
 	}
 }
 
+
 void printHelp(){
 	cout << "Usage: BRiQ_Predict $INPUT_FILE $OUTPUT_PDB $RANDOM_SEED" << endl;
 }
 
+
 int main(int argc, char** argv){
 
 	//Usage: briq_Predict $INPUT_FILE $OUTPUT_PDB
+	/*
 	if(argc != 4 || argv[1] == "-h")
 	{
 		printHelp();
 		exit(0);
 	}
+	*/
 
 	string inputFile = string(argv[1]);
 	string outputPDB = string(argv[2]);
 	int randseed = atoi(argv[3]);
+
+
+	//double wtClash = atof(argv[4]);
+	//double wtConnect = atof(argv[5]);
 
 	srand(randseed);
 
 	checkInputFile(inputFile);
 
 	cout << "init energy table:" << endl;
-	RnaEnergyTable* et = new RnaEnergyTable();
+	ForceFieldPara* para = new ForceFieldPara();
+	//para->initClashWT = wtClash;
+	//para->initConnectWT = wtConnect;
+
+	RnaEnergyTable* et = new RnaEnergyTable(para);
 
 	cout << "init folding tree" << endl;
 	BRFoldingTree* ft = new BRFoldingTree(inputFile, et);
@@ -102,15 +115,17 @@ int main(int argc, char** argv){
 	cout << "print connection" << endl;
 	ft->printConnections();
 
+
 	cout << "get tree info" << endl;
 	BRTreeInfo* info = ft->getTreeInfo();
 	cout << "run mc: " << endl;
 
 	MCRun mc(ft);
 	mc.simpleMC(outputPDB, false);
-
+	mc.ft->printDetailEnergy();
 	delete et;
 	delete ft;
+
 
 }
 

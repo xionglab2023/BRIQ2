@@ -18,7 +18,7 @@
 
 #ifndef BRIQXMODULE_BRIQXMODULE_H_
 #define BRIQXMODULE_BRIQXMODULE_H_
-#define DEBUG
+// #define DEBUG
 
 #define BASEDISTMAX 4.0
 #define LDIFF_RATIO_TOLERATE 0.5
@@ -140,7 +140,7 @@ namespace NSPbm {
             map<BasePair*, double>  PairEneMap;
 
             /**
-             * @brief Number of strands within the motif, note one chain may contain multiple strands due to motif 
+             * @brief Number of strands within the motif, note one chain may contain multiple strands due to motif
              * fragmentation. nStrand = strands.size()
             */
             int nStrand;
@@ -408,7 +408,7 @@ namespace NSPbm {
             #ifdef DEBUG
             /**
              * @brief Print PairEneMap to @p out in human-friendly format
-             * 
+             *
              * @param out: Outpuit stream.
             */
             void printPairEneMap(ostream& out) const;

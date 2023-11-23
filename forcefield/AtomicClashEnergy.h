@@ -36,14 +36,11 @@ public:
 	/*
 	 * pre-calculated clash energy, d0 ranges from 2 angstrom to 4 angstrom, d*d ranges from 0 to 25 angstrom^2
 	 */
-	double clashEnergyTable[200][2500];
+	double clashEnergyTableNb[200][2500];
+	double clashEnergyTableNnb[200][2500];
 
 	/*
 	 * Clash energy is only calculated between atoms separated by more than five chemical bonds.
-	 */
-
-	/*
-	 * We need to define how to calculate the bond distance between two atoms
 	 */
 
 	/*
@@ -98,34 +95,43 @@ public:
 		return e;
 	}
 
-	double getBaseBaseEnergy(int baseTypeA, int atomTypeA, int baseTypeB, int atomTypeB, double dd){
+	double getBaseBaseEnergy(int baseTypeA, int atomTypeA, int baseTypeB, int atomTypeB, double dd, int sep){
 		if(dd >= 16.00) return 0;
 		int uniqueIDA = baseAtomUniqueID[baseTypeA][atomTypeA];
 		int uniqueIDB = baseAtomUniqueID[baseTypeB][atomTypeB];
 		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) return 0.0;
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
-		return this->clashEnergyTable[(int)(d0*100-200)][(int)(dd*100)];
+		if(abs(sep) == 1)
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+		else
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
 	}
 
-	double getBaseRiboseEnergy(int baseTypeA, int atomTypeA, int riboseAtomTypeB, double dd){
+	double getBaseRiboseEnergy(int baseTypeA, int atomTypeA, int riboseAtomTypeB, double dd, int sep){
 		if(dd >= 16.00) return 0;
 		int uniqueIDA = baseAtomUniqueID[baseTypeA][atomTypeA];
 		int uniqueIDB = riboseUniqueID[riboseAtomTypeB];
 		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) return 0.0;
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
-		return this->clashEnergyTable[(int)(d0*100-200)][(int)(dd*100)];
+		if(abs(sep) == 1)
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+		else
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
 	}
 
-	double getBasePhoEnergy(int baseTypeA, int atomTypeA, int phoAtomTypeB, double dd){
+	double getBasePhoEnergy(int baseTypeA, int atomTypeA, int phoAtomTypeB, double dd, int sep){
 		if(dd >= 16.00) return 0;
 		int uniqueIDA = baseAtomUniqueID[baseTypeA][atomTypeA];
 		int uniqueIDB = phosphateUniqueID[phoAtomTypeB];
 		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) return 0.0;
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
-		return this->clashEnergyTable[(int)(d0*100-200)][(int)(dd*100)];
+		if(abs(sep) == 1)
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+		else
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
 	}
 
 	double getRiboseRiboseEnergy(int riboseTypeA, int riboseTypeB, double dd, int sep){
@@ -134,17 +140,19 @@ public:
 		 * if |sep| > 1, sep = 2
 		 * We don't calculate the clash energy between O3' of ribose i and C5' of ribose i+1
 		 */
-		if(sep == 1 && riboseTypeA == 6 && riboseTypeB == 7) return 0.0;
-		if(sep == -1 && riboseTypeA == 7 && riboseTypeB == 6) return 0.0;
+		if(sep == 1 && riboseTypeA == 5 && riboseTypeB == 6) return 0.0;
+		if(sep == -1 && riboseTypeA == 6 && riboseTypeB == 5) return 0.0;
 		if(dd >= 16.00) return 0;
 		int uniqueIDA = riboseUniqueID[riboseTypeA];
 		int uniqueIDB = riboseUniqueID[riboseTypeB];
 		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) return 0.0;
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
-		return this->clashEnergyTable[(int)(d0*100-200)][(int)(dd*100)];
+		if(abs(sep) == 1)
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+		else
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
 	}
-
 
 	double getRibosePhoEnergy(int riboseTypeA, int phoTypeB, double dd, int sep){
 		if(sep == -1) return 0.0;
@@ -154,7 +162,10 @@ public:
 		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) return 0.0;
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
-		return this->clashEnergyTable[(int)(d0*100-200)][(int)(dd*100)];
+		if(abs(sep) == 1)
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+		else
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
 	}
 
 	double getPhoPhoEnergy(int phoTypeA, int phoTypeB, double dd, int sep){
@@ -164,7 +175,10 @@ public:
 		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) return 0.0;
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
-		return this->clashEnergyTable[(int)(d0*100-200)][(int)(dd*100)];
+		if(abs(sep) == 1)
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+		else
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
 	}
 
 

@@ -14,6 +14,7 @@
 #include "model/StructureModel.h"
 #include "predNA/BRFoldingTree.h"
 #include "predNA/MCRun.h"
+#include "forcefield/ForceFieldPara.h"
 
 using namespace NSPmodel;
 using namespace NSPforcefield;
@@ -30,7 +31,6 @@ int main(int argc, char** argv){
 	string inputFile = string(argv[1]);
 	string output = string(argv[2]);
 
-	RiboseRotamerLib* riboRotLib = new RiboseRotamerLib();
 	RotamerLib* rotLib = new RotamerLib();
 
 	NSPtools::InputParser input(inputFile);
@@ -197,10 +197,10 @@ int main(int argc, char** argv){
 
 	cout << "build po3" << endl;
 
-	XPara para;
-	RnaAtomicEnergyTable* at = new RnaAtomicEnergyTable(&para);
-	RiboseOxygenEnergyTable* rET = new RiboseOxygenEnergyTable();
-	PO3Builder* pb = new PO3Builder(&para);
+	ForceFieldPara* para = new ForceFieldPara();
+
+	RiboseOxygenEnergyTable* rET = new RiboseOxygenEnergyTable(para);
+	PO3Builder* pb = new PO3Builder(para);
 	for(int i=0;i<seqLen-1;i++){
 		BRNode* nodeA = nodeList[i];
 		BRNode* nodeB = nodeList[i+1];

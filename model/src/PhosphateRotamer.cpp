@@ -42,6 +42,7 @@ void PhosphateConformer::copyValueFrom(PhosphateConformer* other){
 }
 
 void PhosphateConformer::updateLocalFrameAndRotamer(LocalFrame& cs2, PhosphateRotamer* rot, double ene){
+
 	this->cs2 = cs2;
 	this->rot = rot;
 	for(int i=0;i<4;i++){
@@ -50,6 +51,7 @@ void PhosphateConformer::updateLocalFrameAndRotamer(LocalFrame& cs2, PhosphateRo
 	op1Polar = cs2 + rot->cmOP1;
 	op2Polar = cs2 + rot->cmOP2;
 	this->ene = ene;
+
 }
 
 void PhosphateConformer::updateLocalFrame(LocalFrame& cs2){
@@ -68,6 +70,15 @@ void PhosphateConformer::updateRotamer(PhosphateRotamer* rot){
 	}
 	op1Polar = cs2 + rot->cmOP1;
 	op2Polar = cs2 + rot->cmOP2;
+}
+
+double PhosphateConformer::distanceTo(PhosphateConformer* other){
+	double dd = 0.0;
+
+	for(int i=0;i<4;i++){
+		dd += squareDistance(coords[i], other->coords[i]);
+	}
+	return sqrt(dd/4);
 }
 
 PhosphateConformer::~PhosphateConformer(){

@@ -22,7 +22,7 @@ using namespace std;
 int main(int argc, char** argv){
 
 	if(argc !=  3 || argv[1] == "-h"){
-		cout << "Usage: BRiQ_initPDB $SEQUENCE $OUTPDBFILE" << endl;
+		cout << "Usage: briq_initPDB $SEQUENCE $OUTPDBFILE" << endl;
 		exit(0);
 	}
 	RotamerLib* rotLib = new RotamerLib();
@@ -59,6 +59,8 @@ int main(int argc, char** argv){
 		}
 	}
 
+	cout << "a" << endl;
+
 	int len = typeList.size();
 	bool connectToNeighbor[len];
 	int baseTypeSeq[len];
@@ -72,6 +74,8 @@ int main(int argc, char** argv){
 			id++;
 		}
 	}
+
+	cout << "b" << endl;
 
 	id = 0;
 	for(int i=1;i<seq.length();i++){
@@ -87,21 +91,21 @@ int main(int argc, char** argv){
 	}
 	connectToNeighbor[len-1] = false;
 
+	cout << "c" << endl;
 
 	BRNode** nodeList = new BRNode*[len];
 	for(int i=0;i<len;i++){
 		BRNode* node = new BRNode(typeList[i], i, rotLib);
 		node->baseConf->updateCoords(csList[i]);
 		node->baseConfTmp->updateCoords(csList[i]);
-		node->riboseConfTmp->updateLocalFrame(csList[i]);
-		node->riboseConf->updateRotamer(rotLib->riboseRotLib->rotLib[2][163]);
-		node->riboseConfTmp->updateRotamer(rotLib->riboseRotLib->rotLib[2][163]);
+		node->riboseConf->updateLocalFrameAndRotamer(csList[i], rotLib->riboseRotLib->getLowestEnergyRotamer(0));
+		node->riboseConf->updateLocalFrame(csList[i]);
+		node->riboseConfTmp->copyValueFrom(node->riboseConf);
 		nodeList[i] = node;
 	}
 
-	XPara para;
-
-	PO3Builder* pb = new PO3Builder(&para);
+	ForceFieldPara* para = new ForceFieldPara();
+	PO3Builder* pb = new PO3Builder(para);
 	for(int i=0;i<len-1;i++){
 
 		BRNode* nodeA = nodeList[i];
@@ -110,9 +114,12 @@ int main(int argc, char** argv){
 		pb->buildPhosphate(nodeA->riboseConf, nodeB->riboseConf, nodeA->phoConf);
 	}
 
+	cout << "e " << endl;
+
 	BRTreeInfo* info = new BRTreeInfo(len, baseTypeSeq, connectToNeighbor, nodeList, 0.0, rotLib);
 	info->printPDB(outpdb);
 
+	cout << "f " << endl;
 }
 
 

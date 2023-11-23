@@ -24,24 +24,189 @@ int main(int argc, char** argv){
 
 	string pdbFile = string(argv[1]);
 	//string paraFile = string(argv[2]);
-	string output = string(argv[2]);
+	string paraTag  = string(argv[2]);
+	string output = string(argv[3]);
+	//string paraFile = string(argv[3]);
 
-	cout << "start: " << endl;
+	ofstream out;
+	out.open(output, ios::out);
 
 
-	cout << "init bm" << endl;
-	BackboneModelingTemplate bm(pdbFile);
+	RNAPDB* pdb = new RNAPDB(pdbFile);
+	int len = pdb->getBaseList().size();
 
-	cout << "runMC" << endl;
-	//bm.printEnergyDetail();
-	//bm.debug();
-	bm.runMC();
+	if(paraTag == "init") {
+		ForceFieldPara* para = new ForceFieldPara();
+		BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+		BRTreeInfo* bi = bm->toTreeInfo();
+		bi->printPDB(output+".pdb");
+	}
+	else if(paraTag == "sd") {
+		ForceFieldPara* para = new ForceFieldPara();
+		BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+		double rms = bm->runMC();
+		BRTreeInfo* bi = bm->toTreeInfo();
+		bi->printPDB(output+".pdb");
+		out << "0.0 " << rms << " " << len << endl;
+	}
+	if(paraTag == "clashNb") {
+		for(double p=1.0;p<5.0;p=p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->clashLamdaNb = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "clashNnb") {
+		for(double p=1.0;p<5.0;p=p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->clashLamdaNnb = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "ang") {
+		for(double p=0.01;p<0.4;p+=0.01){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaKAng = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "bond") {
+		for(double p=1.0;p<20;p+=1.0){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaKBond = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "dihed") {
+		for(double p=-2.0;p<2.1;p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaDihedImpD1D2Shift[0] = p;
+			para->rnaDihedImpD1D2Shift[3] = p;
+			para->rnaDihedImpD4D5Shift[0] = p;
+			para->rnaDihedImpD4D5Shift[3] = p;
+			para->rnaDihedD2D3D4Shift[0] = p;
+			para->rnaDihedD2D3D4Shift[3] = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "dihed1") {
 
-	bm.printEnergyDetail();
+		for(double p=-2.0;p<2.1;p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaDihedImpD1D2Shift[0] = p;
+			para->rnaDihedImpD1D2Shift[3] = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "dihed2") {
+		for(double p=-2.0;p<2.1;p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaDihedImpD4D5Shift[0] = p;
+			para->rnaDihedImpD4D5Shift[3] = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "dihed3") {
+		for(double p=-2.0;p<2.1;p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaDihedD2D3D4Shift[0] = p;
+			para->rnaDihedD2D3D4Shift[3] = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "rot") {
+		for(double p=0.1;p<2.01;p+=0.1) {
+			ForceFieldPara* para = new ForceFieldPara();
+			//para->wtRibose = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "rot1") {
+		for(double p=-2.0;p<2.01;p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaRiboseRotamerShift[0] += p;
+			para->rnaRiboseRotamerShift[1] += p;
 
-	//bm.printDiheds(output);
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "rot2") {
+		for(double p=-2.0;p<2.01;p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaRiboseRotamerShift[4] += p;
+			para->rnaRiboseRotamerShift[5] += p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "rot3") {
+		for(double p=-2.0;p<2.01;p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaRiboseRotamerShift[8] += p;
+			para->rnaRiboseRotamerShift[9] += p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "rot4") {
+		for(double p=-2.0;p<2.01;p+=0.2){
+			ForceFieldPara* para = new ForceFieldPara();
+			para->rnaRiboseRotamerShift[12] += p;
+			para->rnaRiboseRotamerShift[13] += p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	else if(paraTag == "pho"){
+		for(double p=0.1;p<1.51;p+=0.1) {
+			ForceFieldPara* para = new ForceFieldPara();
+			para->wtPho = p;
+			BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+			double rms = bm->runMC();
+			out << p << " " << rms << " " << len << endl;
+			delete bm;
+		}
+	}
+	out.close();
 
-	BRTreeInfo* info = bm.toTreeInfo();
-	info->printPDB(output);
+
+
+
 }
 

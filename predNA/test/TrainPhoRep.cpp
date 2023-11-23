@@ -95,7 +95,7 @@ int main(int argc, char** argv){
 
 	cout << "init energy table:" << endl;
 	RnaEnergyTable* et = new RnaEnergyTable();
-	et->para.phoRep = lamda;
+	//et->para.phoRep = lamda;
 
 	double t0 = 1.0;
 	double kStep = 1.5;

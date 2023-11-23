@@ -69,10 +69,10 @@ vector<Atom*> BRNode::toAtomList(AtomLib& atLib) {
     names->push_back("C3'");
     names->push_back("C4'");
     names->push_back("O4'");
-    if(riboseConf->hasO2)
-    	names->push_back("O2'");
     names->push_back("O3'");
     names->push_back("C5'");
+    if(riboseConf->hasO2)
+    	names->push_back("O2'");
 
     int n = 7;
     if(riboseConf->hasO2)
@@ -132,10 +132,11 @@ vector<Atom*> BRNode::toTmpAtomList(AtomLib& atLib) {
     names->push_back("C3'");
     names->push_back("C4'");
     names->push_back("O4'");
-    if(riboseConf->hasO2)
-    	names->push_back("O2'");
     names->push_back("O3'");
     names->push_back("C5'");
+    if(riboseConf->hasO2)
+    	names->push_back("O2'");
+
 
     int n = 7;
     if(riboseConf->hasO2)

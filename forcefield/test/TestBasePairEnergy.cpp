@@ -5,8 +5,6 @@
  *      Author: nuc
  */
 
-
-
 #include "geometry/localframe.h"
 #include "geometry/TransMatrix.h"
 #include "model/BaseDistanceMatrix.h"
@@ -20,7 +18,6 @@
 #include "model/StructureModel.h"
 #include "forcefield/AtomicClashEnergy.h"
 #include "forcefield/HbondEnergy.h"
-
 #include "model/BasePairLib.h"
 
 using namespace NSPmodel;
@@ -97,11 +94,9 @@ int main(int argc, char** argv){
 			if(sep > 3) sep = 3;
 			nodeB = nodeList[j];
 
-
 			double ePair = bpLib->getPairEnergy(baseList[i], baseList[j]);
-
 			double eBB = getBaseBaseEnergy(nodeA, nodeB, sep, et, false);
-			double eBBClash = baseBaseClash(nodeA, nodeB, sep, et, 0.0, false);
+			double eBBClash = baseBaseClash(nodeA, nodeB, sep, et, false);
 			double eBR = getBaseRiboseEnergy(nodeA, nodeB, sep, et, false);
 			eBR += getBaseRiboseEnergy(nodeB, nodeA, -sep, et, false);
 			double eBP = getBasePhoEnergy(nodeA, nodeB, sep, et, false);
@@ -116,7 +111,7 @@ int main(int argc, char** argv){
 			if(abs(ePair) > 0.1 || abs(eTot) > 0.1)
 			{
 				//printf("BB: %8.3f BR: %8.3f BP: %8.3f RR: %8.3f RP: %8.3f PP: %8.3f\n", eBB, eBR, eBP, eRR, eRP, ePP);
-				printf("baseA: %3s baseB: %3s idA: %2d idB: %2d ePair: %8.3f eTot: %8.3f\n", baseList[i]->baseID.c_str(), baseList[j]->baseID.c_str(),i, j, ePair, eTot);
+				printf("baseA: %3s baseB: %3s idA: %2d idB: %2d ePair: %8.3f eBB: %8.3f eTot: %8.3f\n", baseList[i]->baseID.c_str(), baseList[j]->baseID.c_str(),i, j, ePair, eBB, eTot);
 			}
 		}
 	}

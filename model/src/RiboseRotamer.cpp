@@ -11,7 +11,6 @@ namespace NSPmodel {
 
 RiboseRotamer::RiboseRotamer(RNABase* base) {
 	vector<string> nameList;
-
 	if(base->baseTypeInt < 4) {
 		nameList.push_back("C1'"); //0
 		nameList.push_back("C2'"); //1
@@ -162,6 +161,37 @@ RiboseRotamer::RiboseRotamer(const string& line) {
 	this->chi = dihedral(a,b,c,d);
 }
 
+RiboseRotamerCG::RiboseRotamerCG(RNABase* base){
+
+	RiboseRotamer rot(base);
+	this->resType = rot.resType;
+	this->rotType = rot.rotType;
+	this->rotTypeLv1 = rot.rotTypeLv1;
+
+	this->localCoords[0] = rot.localCoords[0];
+	this->localCoords[5] = rot.localCoords[5];
+	this->localCoords[6] = rot.localCoords[6];
+
+	this->energy = rot.energy;
+}
+
+RiboseRotamerCG::RiboseRotamerCG(const string& line){
+	RiboseRotamer rot(line);
+	this->resType = rot.resType;
+	this->rotType = rot.rotType;
+	this->rotTypeLv1 = rot.rotTypeLv1;
+
+	this->localCoords[0] = rot.localCoords[0];
+	this->localCoords[5] = rot.localCoords[5];
+	this->localCoords[6] = rot.localCoords[6];
+
+	this->energy = rot.energy;
+}
+
+RiboseRotamerCG::~RiboseRotamerCG(){
+
+}
+
 RiboseConformer::RiboseConformer(){
 	this->hasO2 = false;
 	this->rot = NULL;
@@ -172,6 +202,11 @@ RiboseConformer::RiboseConformer(RiboseRotamer* rot, LocalFrame& cs1){
 	this->cs1 = cs1;
 	this->cs2 = cs1 + rot->mv12;
 	this->cs3 = cs1 + rot->mv13;
+
+	for(int i=0;i<rot->atomNum;i++){
+		this->coords[i] = local2global(cs1, rot->localCoords[i]);
+	}
+
 	if(rot->resType < 4)
 		hasO2 = true;
 	else
@@ -183,6 +218,8 @@ RiboseConformer::RiboseConformer(RiboseRotamer* rot, LocalFrame& cs1){
 }
 
 void RiboseConformer::copyValueFrom(RiboseConformer* other){
+
+
 	this->rot = other->rot;
 	for(int i=0;i<8;i++){
 		this->coords[i] = other->coords[i];
@@ -196,6 +233,7 @@ void RiboseConformer::copyValueFrom(RiboseConformer* other){
 }
 
 void RiboseConformer::updateLocalFrame(LocalFrame& cs1){
+
 	this->cs1 = cs1;
 	this->cs2 = cs1 + rot->mv12;
 	this->cs3 = cs1 + rot->mv13;
@@ -207,9 +245,11 @@ void RiboseConformer::updateLocalFrame(LocalFrame& cs1){
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 void RiboseConformer::updateRotamer(RiboseRotamer* rot){
+
 	this->rot = rot;
 	//cs1 fixed
 	this->cs2 = cs1 + rot->mv12;
@@ -227,9 +267,11 @@ void RiboseConformer::updateRotamer(RiboseRotamer* rot){
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 void RiboseConformer::updateRotamerCs2Fixed(RiboseRotamer* rot){
+
 	this->rot = rot;
 	//cs2 fixed
 	this->cs1 = cs2 + rot->mv21;
@@ -247,9 +289,11 @@ void RiboseConformer::updateRotamerCs2Fixed(RiboseRotamer* rot){
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 void RiboseConformer::updateRotamerCs3Fixed(RiboseRotamer* rot){
+
 	this->rot = rot;
 	//cs3 fixed
 	this->cs1 = cs3 + rot->mv31;
@@ -267,9 +311,11 @@ void RiboseConformer::updateRotamerCs3Fixed(RiboseRotamer* rot){
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 void RiboseConformer::updateLocalFrameAndRotamer(LocalFrame& cs1, RiboseRotamer* rot){
+
 	this->rot = rot;
 	this->cs1 = cs1;
 	this->cs2 = cs1 + rot->mv12;
@@ -287,15 +333,82 @@ void RiboseConformer::updateLocalFrameAndRotamer(LocalFrame& cs1, RiboseRotamer*
 	if(hasO2){
 		this->o2Polar = cs1 + rot->mv1O2;
 	}
+
 }
 
 
+double RiboseConformer::distanceTo(RiboseConformer* other){
+	double dd = 0.0;
+	if(this->rot->atomNum != other->rot->atomNum)
+		return 99.99;
+	for(int i=0;i<rot->atomNum;i++){
+		dd += squareDistance(coords[i], other->coords[i]);
+	}
+	return sqrt(dd/rot->atomNum);
+}
+
+RiboseConformerCG::RiboseConformerCG(){
+	this->rot = NULL;
+}
+
+RiboseConformerCG::RiboseConformerCG(RiboseRotamerCG* rot, LocalFrame& cs1){
+	this->rot = rot;
+	this->cs1 = cs1;
+
+	for(int i=0;i<3;i++){
+		this->coords[i] = local2global(cs1, rot->localCoords[i]);
+	}
+}
+
+void RiboseConformerCG::copyValueFrom(RiboseConformerCG* other) {
+	this->rot = other->rot;
+	for(int i=0;i<3;i++){
+		this->coords[i] = other->coords[i];
+	}
+	cs1 = other->cs1;
+}
+
+void RiboseConformerCG::updateLocalFrame(LocalFrame& cs1) {
+
+	this->cs1 = cs1;
+	for(int i=0;i<3;i++){
+		coords[i] = local2global(cs1, rot->localCoords[i]);
+	}
+}
+
+void RiboseConformerCG::updateRotamer(RiboseRotamerCG* rot){
+
+	for(int i=0;i<3;i++){
+		coords[i] = local2global(cs1, rot->localCoords[i]);
+	}
+}
+
+void RiboseConformerCG::updateLocalFrameAndRotamer(LocalFrame& cs1, RiboseRotamerCG* rot) {
+
+	this->cs1 = cs1;
+	for(int i=0;i<3;i++){
+		coords[i] = local2global(cs1, rot->localCoords[i]);
+	}
+}
+
+double RiboseConformerCG::distanceTo(RiboseConformerCG* other) {
+	double dd = 0.0;
+
+	for(int i=0;i<3;i++){
+		dd += squareDistance(coords[i], other->coords[i]);
+	}
+	return sqrt(dd/3.0);
+}
 
 RiboseRotamer::~RiboseRotamer() {
 	// TODO Auto-generated destructor stub
 }
 
 RiboseConformer::~RiboseConformer(){
+
+}
+
+RiboseConformerCG::~RiboseConformerCG(){
 
 }
 

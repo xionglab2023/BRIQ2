@@ -34,6 +34,7 @@ file(GLOB_RECURSE BR_SRC
     geometry/src/*.cpp
     math/src/*.cpp
     model/src/*.cpp
+    motif/src/*.cpp
     para/src/*.cpp
     protein/src/*.cpp
     predNA/src/*.cpp
@@ -48,3 +49,4 @@ add_subdirectory (model/test)
 add_subdirectory (forcefield/test)
 add_subdirectory (protein/test)
 add_subdirectory (predNA/test)
+add_subdirectory (motif/test)

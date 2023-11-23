@@ -9,6 +9,7 @@
 #include "model/BaseDistanceMatrix.h"
 #include "model/BasePairComposition.h"
 #include "model/RiboseRotamerLib.h"
+#include "forcefield/XPara.h"
 #include "model/AtomLib.h"
 #include "predNA/BRNode.h"
 #include <time.h>
@@ -98,7 +99,7 @@ int main(int argc, char** argv){
 					for(int l=0;l<nB;l++){
 						dd = squareDistance(nodeA->baseConf->coords[k], nodeB->baseConf->coords[l]);
 						if(dd < 16.0) {
-							clashEnergy = acET->getBaseBaseEnergy(nodeA->baseType, k, nodeB->baseType, l, dd);
+							clashEnergy = acET->getBaseBaseEnergy(nodeA->baseType, k, nodeB->baseType, l, dd, sep);
 							if(abs(clashEnergy) > 0.1){
 								printf("baseA: %3s %c baseB: %3s %c atomA: %3s atomB: %3s distance: %5.3f energy: %7.3f\n", baseList[i]->baseID.c_str(), baseList[i]->baseType, baseList[j]->baseID.c_str(), baseList[j]->baseType, nameA->at(k).c_str(), nameB->at(l).c_str(), sqrt(dd), clashEnergy);
 							}
@@ -110,7 +111,7 @@ int main(int argc, char** argv){
 	}
 
 
-	HbondEnergy* hbET = new HbondEnergy();
+	HbondEnergy* hbET = new HbondEnergy(ffp);
 	cout << "calculate hbond energy" << endl;
 
 	for(int i=0;i<nodeList.size();i++){

@@ -11,6 +11,8 @@
 #include "motif/RGNode.h"
 #include "motif/RGEdge.h"
 #include "model/StructureModel.h"
+#include "model/AssignRNASS.h"
+#include "model/BasePairLib.h"
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
@@ -29,6 +31,7 @@ public:
 	bool* choosen;
 	int B;
 	int F;
+	double score;
 	int* fragIndex;
 
 
@@ -50,6 +53,7 @@ public:
 			this->connectToDownstream[i] = connectToDownstream[i];
 			this->choosen[i] = choosen[i];
 		}
+		this->score = 0.0;
 	}
 
 	SubRNAGraph(vector<int> idList, int seqLen, bool* connectToDownstream, bool* choosen){
@@ -74,6 +78,11 @@ public:
 			this->connectToDownstream[i] = connectToDownstream[i];
 			this->choosen[i] = choosen[i];
 		}
+		this->score = 0.0;
+	}
+
+	void setScore(double s){
+		this->score = s;
 	}
 
 	SubRNAGraph* copy(){
@@ -120,6 +129,21 @@ public:
 		}
 	}
 
+	string toString(){
+		char xx[200];
+		sprintf(xx, "B=%-2d F=%d Score=%7.3f\n", this->B, this->F, this->score);
+
+		char yy[seqLen+1];
+		for(int i=0;i<seqLen;i++){
+			if(fragIndex[i] == -1)
+				yy[i] = '.';
+			else
+				yy[i] = 'A'+fragIndex[i];
+		}
+		yy[seqLen] = '\0';
+		return string(xx)+string(yy);
+	}
+
 	void printFragmentString(){
 		for(int i=0;i<seqLen;i++){
 			if(fragIndex[i] == -1)
@@ -163,7 +187,7 @@ public:
 			delete sg1;
 
 		SubRNAGraph* sg2 = removeSingleAndDoubleGap();
-		if(sg1->getGraphLength() != sg2->getGraphLength())
+		if(getGraphLength() != sg2->getGraphLength())
 		{
 			varList.push_back(sg2);
 			SubRNAGraph* sg21 = sg2->removeSingleBase();
@@ -198,7 +222,7 @@ public:
 			delete sg3;
 
 		SubRNAGraph* sg4 = removeSingleAndDoubleBase();
-		if(sg3->getGraphLength() != sg4->getGraphLength()){
+		if(getGraphLength() != sg4->getGraphLength()){
 			varList.push_back(sg4);
 			SubRNAGraph* sg41 = sg4->removeGap();
 			if(sg41->getGraphLength() != sg4->getGraphLength())
@@ -307,82 +331,36 @@ public:
 	int beginIndex;
 	int length; //helix length
 
-	int simpleHelixBegin;
-	int simpleHelixLen;
+	bool isSimpleHelix;
 
-	double* interactionsOutsideHelix; //helix length
 	vector<int> contactBaseList;
 
 	HelixGraph(int beginIndex, int len){
 		this->beginIndex = beginIndex;
 		this->length = len;
-		this->interactionsOutsideHelix = new double[len];
-		this->simpleHelixBegin = 0;
-		this->simpleHelixLen = 0;
+		this->isSimpleHelix = true;
 	}
 
-	bool isIndependantHelix(){
-		double e1 = 0;
-		for(int i=1;i<length-1;i++){
-			e1 += interactionsOutsideHelix[i];
-		}
-
-		if(e1 > -0.5){
-			this->simpleHelixBegin = beginIndex + 1;
-			this->simpleHelixLen = length-2;
+	bool updateSimpleHelixInfo(){
+		if(contactBaseList.size() == 0) {
+			this->isSimpleHelix = true;
 			return true;
 		}
-		else {
-			int currentLen = 0;
-			int currentBegin = 0;
-			bool inSimpleHelix = false;
-			for(int i=1;i<length-1;i++){
-				if(!inSimpleHelix && interactionsOutsideHelix[i] > -0.3){
-					currentLen = 1;
-					currentBegin = beginIndex + i;
-					inSimpleHelix = true;
-				}
-				else if(inSimpleHelix && interactionsOutsideHelix[i] > -0.3){
-					currentLen++;
-				}
-				else if(inSimpleHelix){
-					if(currentLen > simpleHelixLen){
-						simpleHelixLen = currentLen;
-						simpleHelixBegin = currentBegin;
-						inSimpleHelix = false;
-					}
-					else{
-						inSimpleHelix = false;
-					}
-				}
-			}
-			if(inSimpleHelix && interactionsOutsideHelix[length-2] > -0.3){
-				if(currentLen > simpleHelixLen){
-					simpleHelixLen = currentLen;
-					simpleHelixBegin = currentBegin;
-				}
-			}
+		else
+		{
+			this->isSimpleHelix = false;
 			return false;
 		}
 	}
 
-
-
 	void printInfo(){
-		isIndependantHelix();
-		cout << "helix begin at: " <<  beginIndex << " length: " << length << endl;
-		cout << "simple helix begin at: " << simpleHelixBegin << " length " << simpleHelixLen << endl;
 		for(int i=0;i<length;i++){
-			printf("%-4d %8.3f\n", beginIndex+i, interactionsOutsideHelix[i]);
+			printf("%-4d\n", beginIndex+i);
 		}
 
 		for(int i=0;i<contactBaseList.size();i++){
 			cout << contactBaseList[i] << endl;
 		}
-		if(isIndependantHelix())
-			cout << "independant" << endl;
-		else
-			cout << "contact to other region" << endl;
 	}
 
 	virtual ~HelixGraph();
@@ -394,17 +372,30 @@ public:
 	string seq;
 	string ss;
 	RGNode** allNodes;
+
+	//RNA chain connection
 	bool* connectToDownstream;
+
+	//Watson-Crick pair
 	int* pairingIndex;
+
 	bool* inHelix;
 
-	bool* choosen;
+	//
+	bool* abandoned;
 
-	double* contactEnergyOfNonNeighbor;
-	double* allEnergy;
 
-	vector<RGEdge*> egList;
+	double* contactEnergyOfNonNeighbor; // length n, summation of base pair energy on each node
+	double* contactEnergyOutsideHelix;
+	double* allEnergy; //length n*n
+	double edgeEnergyCutoff;
+
+	//initial edge list
+	vector<RGEdge*> initialEgList;
+
+	//base pair index to edge index
 	map<int, int> baseIndexToEgIndex;
+
 
 	vector<HelixGraph*> helixList;
 
@@ -415,14 +406,31 @@ public:
 
 	vector<SubRNAGraph*> subGraphs;
 
-	RNAGraph(const string& ssFile, const string& eneFile);
+	RNAGraph(const string& pdbFile);
 
-	void splitHelix(int i);
+	void updateInitialEdge();
+
+	/*
+	 * parameter i: nodeID
+	 */
+	void splitHelixEdges(int i);
+
+
+	/*
+	 * parameter i: nodeID
+	 */
 	void removeEdgeOnNode(int i);
-	void addEdge();
 
+	/*
+	 * parameter i: nodeIDA
+	 * parameter j: nodeIDB
+	 */
 	void removeEdge(int i, int j);
+
+
 	void findHelix();
+
+	void helixTerminalLoop();
 
 	void initialAssign(int nodeID, int graphID);
 	void assign(int nodeID, int graphID, double eneCutoff);
@@ -477,12 +485,8 @@ public:
 		}
 	}
 
-
-
-	void processLoop();
-
-	void processHelix();
-
+	void meltLoop();
+	void meltHelix();
 	void generateInitialClusters();
 	void printInitialCluster(int id);
 

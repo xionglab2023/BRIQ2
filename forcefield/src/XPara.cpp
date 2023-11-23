@@ -14,7 +14,7 @@ XPara::XPara(){
 	this->wtBp1 = 0.4;
 	this->wtBp2 = 0.8;
 	this->wtBp3 = 1.0;
-	this->wtBaseOxygen = 1.2;
+
 	this->wtPho = 0.7;
 	this->wtRotamer = 0.7;
 	this->kAng = 0.1;
@@ -69,7 +69,7 @@ XPara::XPara(const string& paraFile) {
 	this->wtBp1 = 0.4;
 	this->wtBp2 = 0.8;
 	this->wtBp3 = 1.0;
-	this->wtBaseOxygen = 1.2;
+
 	this->wtPho = 0.7;
 	this->wtRotamer = 0.7;
 	this->kAng = 0.1;
@@ -124,8 +124,6 @@ XPara::XPara(const string& paraFile) {
 			this->wtRotamer = atof(spt[1].c_str());
 		else if(spt[0] == "pho")
 			this->wtPho = atof(spt[1].c_str());
-		else if(spt[0] == "oxy")
-			this->wtBaseOxygen = atof(spt[1].c_str());
 		else if(spt[0] == "bond")
 			this->kBond = atof(spt[1].c_str());
 		else if(spt[0] == "ang")

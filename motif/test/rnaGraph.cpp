@@ -16,23 +16,39 @@ using namespace std;
 
 int main(int argc, char** argv){
 
-	string ssFile = string(argv[1]);
-	string eneFile = string(argv[2]);
+	string pdbFile = string(argv[1]);
+	string outFile = string(argv[2]);
+
+	ofstream out;
+	out.open(outFile.c_str(), ios::out);
+
 
 	srand(time(0));
 
-	RNAGraph* rg = new RNAGraph(ssFile, eneFile);
-	rg->addEdge();
-	rg->findHelix();
-	rg->processHelix();
-	rg->processLoop();
-	rg->generateInitialClusters();
-	vector<SubRNAGraph*> sgList = rg->findAllGraphs();
-	for(int i=0;i<sgList.size();i++){
-		sgList[i]->updateInfo();
-		printf("B=%-2d F=%d Score=%7.3f\n", sgList[i]->B, sgList[i]->F, rg->getGraphScore(sgList[i]));
-		sgList[i]->printFragmentString();
+	set<string> results;
+
+	for(int k=0;k<10;k++) {
+		RNAGraph* rg = new RNAGraph(pdbFile);
+		rg->updateInitialEdge();
+		rg->findHelix();
+		rg->meltHelix();
+		rg->meltLoop();
+		rg->generateInitialClusters();
+		vector<SubRNAGraph*> sgList = rg->findAllGraphs();
+		for(int i=0;i<sgList.size();i++){
+			results.insert(sgList[i]->toString());
+		}
+		delete rg;
 	}
-	delete rg;
+
+
+	set<string>::iterator it;
+
+	for(it = results.begin();it!= results.end();++it){
+		out << *it << endl;
+	}
+	out.close();
+
+
 }
 

@@ -14,7 +14,7 @@
 #include "model/BaseRotamerLib.h"
 #include "model/RiboseRotamerLib.h"
 #include "model/PhosphateRotamerLib.h"
-
+#include "forcefield/ForceFieldPara.h"
 
 namespace NSPmodel {
 
@@ -32,6 +32,17 @@ public:
 		AtomLib* atLib = new AtomLib();
 		this->baseRotLib = new BaseRotamerLib(atLib);
 		this->riboseRotLib = new RiboseRotamerLib();
+		this->phoRotLib = new PhosphateRotamerLib();
+
+		this->bbRotLib = NULL;
+		this->scRotLib = NULL;
+		this->pepRotLib = NULL;
+	}
+
+	RotamerLib(ForceFieldPara* para){
+		AtomLib* atLib = new AtomLib();
+		this->baseRotLib = new BaseRotamerLib(atLib);
+		this->riboseRotLib = new RiboseRotamerLib(para);
 		this->phoRotLib = new PhosphateRotamerLib();
 
 		this->bbRotLib = NULL;

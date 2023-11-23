@@ -28,7 +28,7 @@ public:
 	double wtBp3;
 
 	double wtRotamer;
-	double wtBaseOxygen;
+	//double wtBaseOxygen;
 	double kBond;
 	double kAng;
 	double wtDihed;

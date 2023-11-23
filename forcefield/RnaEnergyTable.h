@@ -34,29 +34,39 @@ public:
 	AtomicClashEnergy* acET;
 	PO3Builder* pb;
 	RiboseOxygenEnergyTable* roET;
-	XPara para;
 	HbondEnergy* hbET;
-	ForceFieldPara* ffp;
-
+	ForceFieldPara* para;
+	bool deleteTag;
 
 	RnaEnergyTable(){
-
-		this->ffp = new ForceFieldPara();
-		bpET = new BasePair6DEnergyTable(&para);
-		acET = new AtomicClashEnergy(ffp);
-		roET = new RiboseOxygenEnergyTable();
-		pb = new PO3Builder(&para);
-		hbET = new HbondEnergy();
+		this->para = new ForceFieldPara();
+		deleteTag = true;
+		bpET = new BasePair6DEnergyTable(para);
+		acET = new AtomicClashEnergy(para);
+		roET = new RiboseOxygenEnergyTable(para);
+		pb = new PO3Builder(para);
+		hbET = new HbondEnergy(para);
 	}
 
 	RnaEnergyTable(const string& paraFile){
-		para = XPara(paraFile);
-		this->ffp = new ForceFieldPara();
-		bpET = new BasePair6DEnergyTable(&para);
-		acET = new AtomicClashEnergy(ffp);
-		roET = new RiboseOxygenEnergyTable();
-		pb = new PO3Builder(&para);
-		hbET = new HbondEnergy();
+
+		this->para = new ForceFieldPara();
+		deleteTag = true;
+		bpET = new BasePair6DEnergyTable(para);
+		acET = new AtomicClashEnergy(para);
+		roET = new RiboseOxygenEnergyTable(para);
+		pb = new PO3Builder(para);
+		hbET = new HbondEnergy(para);
+	}
+
+	RnaEnergyTable(ForceFieldPara* para){
+		this->para = para;
+		deleteTag = false;
+		bpET = new BasePair6DEnergyTable(para);
+		acET = new AtomicClashEnergy(para);
+		roET = new RiboseOxygenEnergyTable(para);
+		pb = new PO3Builder(para);
+		hbET = new HbondEnergy(para);
 	}
 
 	virtual ~RnaEnergyTable();

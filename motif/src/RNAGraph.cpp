@@ -17,65 +17,32 @@ SubRNAGraph::~SubRNAGraph(){
 }
 
 HelixGraph::~HelixGraph(){
-	//cout << "delete helix graph" << endl;
-	delete [] interactionsOutsideHelix;
 }
 
 
-RNAGraph::RNAGraph(const string& ssFile, const string& eneFile) {
+RNAGraph::RNAGraph(const string& pdbFile) {
 	// TODO Auto-generated constructor stub
-	ifstream file;
-	file.open(ssFile.c_str(), ios::in);
-	if(!file.is_open()){
-		cout << "can't open file "<< ssFile << endl;
-		exit(0);
-	}
-	string line;
-	getline(file, line);
-	if(line.length() < 5){
-		this->seqLen = 0;
-		this->seq = "";
-		this->ss = "";
-		return;
-	}
 
-	if(line.substr(0,3) != "seq"){
-		cout << "invalid file: " << endl;
-		cout << line << endl;
-		exit(0);
-	}
 
-	this->seq = line.substr(4, line.length()-4);
+	RNAPDB* pdb = new RNAPDB(pdbFile, "XXXX");
+	AtomLib* atLib = new AtomLib();
+	vector<RNABase*> baseList = pdb->getValidBaseList(atLib);
 
-	getline(file, line);
-	if(line.length() < 5){
-		this->seqLen = 0;
-		this->seq = "";
-		this->ss = "";
-		return;
-	}
-	if(line.substr(0,3) != "sec"){
-		cout << "invalid file: " << endl;
-		cout << line << endl;
-		exit(0);
-	}
+	AssignRNASS* as = new AssignRNASS(pdb, atLib);
+	BasePairLib* bpLib = new BasePairLib();
 
-	this->ss = line.substr(4, line.length()-4);
-	string ssString = this->ss;
+	this->seq = as->seq;
+	this->ss = as->ssSeq;
+	this->seqLen = seq.length();
 
-	vector<string> spt;
+	this->edgeEnergyCutoff = -0.5;
+
 	vector<int> chainBreaks;
-	getline(file,line);
-	if(getline(file, line)){
-		if(line.length() > 7 && line.substr(0,5) == "break"){
-			splitString(line, " ", &spt);
-			for(int i=1;i<spt.size();i++){
-				chainBreaks.push_back(atoi(spt[i].c_str()));
-			}
-		}
+	for(int i=0;i<baseList.size()-1;i++){
+		if(!baseList[i]->connectToNeighbor(baseList[i+1]))
+			chainBreaks.push_back(i);
 	}
 
-	file.close();
 
 	this->seqLen = seq.length();
 	if(seq.length() != ss.length()){
@@ -87,9 +54,10 @@ RNAGraph::RNAGraph(const string& ssFile, const string& eneFile) {
 	this->pairingIndex = new int[seqLen];
 	this->subGraphIndex = new int[seqLen];
 	this->contactEnergyOfNonNeighbor = new double[seqLen];
+	this->contactEnergyOutsideHelix = new double[seqLen];
 	this->allEnergy = new double[seqLen*seqLen];
 	this->inHelix = new bool[seqLen];
-	this->choosen = new bool[seqLen];
+	this->abandoned = new bool[seqLen];
 	this->initialGraphIndex = new int[seqLen];
 	this->initialClusterNumber = 0;
 
@@ -98,8 +66,9 @@ RNAGraph::RNAGraph(const string& ssFile, const string& eneFile) {
 		this->subGraphIndex[i] = 0;
 		this->initialGraphIndex[i] = -1;
 		this->contactEnergyOfNonNeighbor[i] = 0.0;
+		this->contactEnergyOutsideHelix[i] = 0.0;
 		this->inHelix[i] = false;
-		this->choosen[i] = false;
+		this->abandoned[i] = false;
 	}
 
 	int n1 = seqLen*seqLen;
@@ -112,184 +81,82 @@ RNAGraph::RNAGraph(const string& ssFile, const string& eneFile) {
 		this->connectToDownstream[chainBreaks[i]] = false;
 	}
 
-	for(int i=0;i<seqLen-1;i++){
-		if(connectToDownstream[i]){
-			this->allEnergy[i*seqLen+i+1] = -0.0;
-			this->allEnergy[(i+1)*seqLen+i] = -0.0;
-		}
-	}
-
 	for(int i=0;i<seqLen;i++){
-		pairingIndex[i] = -1;
+		pairingIndex[i] = as->pairIndex[i];
 	}
-	for(int i=0;i<seqLen;i++) {
-		char c = ss[i];
-		if(c == ')') {
-			int preIndex = -1;
-			for(int j=i-1;j>=0;j--) {
-				if(ss[j] == '(') {
-					preIndex = j;
-					break;
-				}
-			}
-			if(preIndex < 0) {
-				cerr << "invalid ssSeq: " << ss << endl;
-				exit(1);
-			}
-			ss[i] = '.';
-			ss[preIndex] = '.';
-			pairingIndex[i] = preIndex;
-			pairingIndex[preIndex] = i;
-		}
-		if(c == ']') {
-			int preIndex = -1;
-			for(int j=i-1;j>=0;j--) {
-				if(ss[j] == '[') {
-					preIndex = j;
-					break;
-				}
-			}
-			if(preIndex < 0) {
-				cerr << "invalid ssSeq: " << ss << endl;
-				exit(1);
-			}
-			ss[i] = '.';
-			ss[preIndex] = '.';
-			pairingIndex[i] = preIndex;
-			pairingIndex[preIndex] = i;
-		}
-		if(c == '}') {
-			int preIndex = -1;
-			for(int j=i-1;j>=0;j--) {
-				if(ss[j] == '{') {
-					preIndex = j;
-					break;
-				}
-			}
-			if(preIndex < 0) {
-				cerr << "invalid ssSeq: " << ss << endl;
-				exit(1);
-			}
-			ss[i] = '.';
-			ss[preIndex] = '.';
-			pairingIndex[i] = preIndex;
-			pairingIndex[preIndex] = i;
-		}
-		if(c == '>') {
-			int preIndex = -1;
-			for(int j=i-1;j>=0;j--) {
-				if(ss[j] == '<') {
-					preIndex = j;
-					break;
-				}
-			}
-			if(preIndex < 0) {
-				cerr << "invalid ssSeq: " << ss << endl;
-				exit(1);
-			}
-			ss[i] = '.';
-			ss[preIndex] = '.';
-			pairingIndex[i] = preIndex;
-			pairingIndex[preIndex] = i;
-		}
-	}
-
-	for(int i=0;i<seqLen;i++){
-		if(ss[i] != '.')
-		{
-			cerr << "invalid ssSeq: " << ss << endl;
-			exit(1);
-		}
-	}
-
-
-	this->ss = ssString;
 
 	for(int i=0;i<seqLen;i++){
 		this->allNodes[i] = new RGNode(i, seq[i]);
 	}
 
-	vector<string> rotLines;
-	vector<string> phoLines;
-	vector<string> pairLines;
-	file.open(eneFile.c_str(), ios::in);
-	if(!file.is_open()){
-		cout << "can't open file: " << eneFile << endl;
-		exit(0);
-	}
-	while(getline(file, line)){
-		if(line.length() < 5) continue;
-		if(line.substr(0, 3) == "rot")
-			rotLines.push_back(line);
-		else if(line.substr(0,3) == "pho")
-			phoLines.push_back(line);
-		else if(line.substr(0,4) == "pair")
-			pairLines.push_back(line);
-	}
+	double e;
+	for(int i=0;i<seqLen;i++){
+		for(int j=i+1;j<seqLen;j++){
+			e = bpLib->getPairEnergy(baseList[i], baseList[j]);
+			allEnergy[i*seqLen+j] = e;
+			allEnergy[j*seqLen+i] = e;
 
-	file.close();
-	if(rotLines.size() != seqLen){
-		cout << "eneFile and ssFile not consistent" << endl;
-		exit(0);
-	}
-
-	int idA, idB;
-	double bb, bo, bp, e;
-	for(int i=0;i<pairLines.size();i++){
-		splitString(pairLines[i], " ", &spt);
-		if(spt.size() < 5) continue;
-		idA = atoi(spt[1].c_str());
-		idB = atoi(spt[2].c_str());
-		bb = atof(spt[3].c_str());
-		bo = atof(spt[4].c_str());
-		bp = atof(spt[5].c_str());
-		e = bb + bo + bp;
-
-
-
-		if(idA < 0 || idA >= seqLen){
-			cout << "invalid line: " << pairLines[i] << endl;
-			exit(0);
-		}
-		if(idB < 0 || idB >= seqLen){
-			cout << "invalid line: " << pairLines[i] << endl;
-			exit(0);
-		}
-
-		/*
-		if(idB == idA+1 && connectToDownstream[idA] && pairingIndex[idA] >=0 && pairingIndex[idB] >=0 && pairingIndex[idA] == pairingIndex[idB]+1 && connectToDownstream[pairingIndex[idB]]){
-			//helix stacking pair
-			e = e*0.5;
-		}
-		*/
-
-		allEnergy[idA*seqLen+idB] += e;
-		allEnergy[idB*seqLen+idA] += e;
-		if(bb + bo + bp< 0){
-			int sep = idB - idA;
-			if(idB == idA+1 && !connectToDownstream[idA])
-				sep = 5;
-			if(idB == idA+2 && (!connectToDownstream[idA] || !connectToDownstream[idA+1]))
-				sep = 5;
+			int sep = j-i;
+			if(sep == 1 && !connectToDownstream[i]) sep = 5;
 
 			if(sep > 1){
-				contactEnergyOfNonNeighbor[idA] += 0.5*e;
-				contactEnergyOfNonNeighbor[idB] += 0.5*e;
+				contactEnergyOfNonNeighbor[i] += 0.5*e;
+				contactEnergyOfNonNeighbor[j] += 0.5*e;
 			}
 
-			if(e< -0.01) {
-				RGEdge* eg = new RGEdge(idA, idB, bb, bo,bp, sep);
-				if(idB == idA+1 && connectToDownstream[idA]) eg->isSequentialNeighbor = true;
-				if(pairingIndex[idA] == idB) eg->isWatsonCrickPair = true;
-				this->egList.push_back(eg);
+			if(sep == 1){
+				RGEdge* eg = new RGEdge(i, j, e, sep);
+				eg->isSequentialNeighbor = true;
+				this->initialEgList.push_back(eg);
 			}
+			else if(e< -1.00) {
+				RGEdge* eg = new RGEdge(i, j, e, sep);
+				if(pairingIndex[j] == i) eg->isWatsonCrickPair = true;
+				this->initialEgList.push_back(eg);
+			}
+		}
+	}
+
+	delete pdb;
+	delete atLib;
+	delete as;
+	delete bpLib;
+}
+
+
+void RNAGraph::updateInitialEdge(){
+	for(int i=0;i<initialEgList.size();i++){
+		RGEdge* eg = initialEgList[i];
+		allNodes[eg->indexA]->egSet.insert(i);
+		allNodes[eg->indexB]->egSet.insert(i);
+		baseIndexToEgIndex[eg->indexA*seqLen+eg->indexB] = i;
+		baseIndexToEgIndex[eg->indexB*seqLen+eg->indexA] = i;
+	}
+
+	map<int,int>::iterator it;
+	for(int i=0;i<seqLen-1;i++){
+		if(!connectToDownstream[i]) continue;
+		it = this->baseIndexToEgIndex.find(i*seqLen+i+1);
+		if(it == baseIndexToEgIndex.end()){
+			RGEdge* eg = new RGEdge(i);
+			int egIndex = initialEgList.size();
+			baseIndexToEgIndex[i*seqLen+i+1] = egIndex;
+			baseIndexToEgIndex[(i+1)*seqLen+i] = egIndex;
+
+			initialEgList.push_back(eg);
+			allNodes[i]->egSet.insert(egIndex);
+			allNodes[i+1]->egSet.insert(egIndex);
 		}
 	}
 }
 
+void RNAGraph::splitHelixEdges(int i){
 
-void RNAGraph::splitHelix(int i){
-
+	/*
+	 * WC pair between (i, pairingIndex[i])
+	 * WC pair between (i+1, pairingIndex[i+1])
+	 * remove edges between these four nodes
+	 */
 	if(i < 0 || i >= seqLen-1) return;
 	if(pairingIndex[i] < 0 || pairingIndex[i+1] < 0) return;
 	if(!connectToDownstream[i] || !connectToDownstream[pairingIndex[i+1]]) return;
@@ -305,39 +172,11 @@ void RNAGraph::removeEdgeOnNode(int i){
 	set<int>::iterator it;
 	for(it = allNodes[i]->egSet.begin();it != allNodes[i]->egSet.end();++it){
 		int egIndex = *it;
-		RGEdge* eg = egList[egIndex];
+		RGEdge* eg = initialEgList[egIndex];
 		allNodes[eg->indexA]->egSet.erase(egIndex);
 		allNodes[eg->indexB]->egSet.erase(egIndex);
 	}
 }
-
-void RNAGraph::addEdge(){
-	for(int i=0;i<egList.size();i++){
-		RGEdge* eg = egList[i];
-		allNodes[eg->indexA]->egSet.insert(i);
-		allNodes[eg->indexB]->egSet.insert(i);
-		baseIndexToEgIndex[eg->indexA*seqLen+eg->indexB] = i;
-		baseIndexToEgIndex[eg->indexB*seqLen+eg->indexA] = i;
-	}
-
-	map<int,int>::iterator it;
-	for(int i=0;i<seqLen-1;i++){
-		if(!connectToDownstream[i]) continue;
-		it = this->baseIndexToEgIndex.find(i*seqLen+i+1);
-		if(it == baseIndexToEgIndex.end()){
-			RGEdge* eg = new RGEdge(i);
-			int egIndex = egList.size();
-			baseIndexToEgIndex[i*seqLen+i+1] = egIndex;
-			baseIndexToEgIndex[(i+1)*seqLen+i] = egIndex;
-
-			egList.push_back(eg);
-			allNodes[i]->egSet.insert(egIndex);
-			allNodes[i+1]->egSet.insert(egIndex);
-		}
-	}
-}
-
-
 
 void RNAGraph::removeEdge(int i, int j){
 	map<int,int>::iterator it;
@@ -392,11 +231,11 @@ void RNAGraph::findHelix(){
 
 	for(int i=0;i<helixList.size();i++){
 		HelixGraph* hg = helixList[i];
-		if(hg->length < 3) continue;
 		int leftBegin = hg->beginIndex;
 		int leftEnd = leftBegin+hg->length-1;
 		int rightBegin = this->pairingIndex[leftEnd];
 		int rightEnd = this->pairingIndex[leftBegin];
+		//cout << "helix: " << leftBegin << " " << leftEnd << " " << rightBegin << " " << rightEnd << endl;
 
 		for(int i=leftBegin;i<=leftEnd;i++){
 			this->inHelix[i] = true;
@@ -404,9 +243,11 @@ void RNAGraph::findHelix(){
 		for(int i=rightBegin;i<=rightEnd;i++){
 			this->inHelix[i] = true;
 		}
-
 	}
 
+	/*
+	 * update contact base list of a helix
+	 */
 	set<int>::iterator it;
 	RGEdge* eg;
 	int idA, idB;
@@ -426,60 +267,78 @@ void RNAGraph::findHelix(){
 			contact[k] = false;
 		}
 
-		for(int k=0;k<hg->length;k++){
-			hg->interactionsOutsideHelix[k] = 0.0;
-		}
-
 		for(int j=leftBegin;j<=leftEnd;j++){
 			double e = 0;
 			int pairIndexJ = this->pairingIndex[j];
 
 			for(it=this->allNodes[j]->egSet.begin();it!=this->allNodes[j]->egSet.end();++it){
 				egIndex = *it;
-				eg = egList[egIndex];
+				eg = initialEgList[egIndex];
 				idA = eg->indexA;
 				idB = eg->indexB;
 
-				if(idA == j && (getSep(idB, j) < 3 || getSep(idB, pairIndexJ) < 3 || (idB >= leftBegin && idB <= leftEnd) || (idB >= rightBegin && idB <= rightEnd))) continue;
-				if(idB == j && (getSep(idA, j) < 3 || getSep(idA, pairIndexJ) < 3 || (idA >= leftBegin && idA <= leftEnd) || (idA >= rightBegin && idA <= rightEnd))) continue;
+				//if(idA == j && (getSep(idB, j) < 2 || getSep(idB, pairIndexJ) < 2 || (idB >= leftBegin && idB <= leftEnd) || (idB >= rightBegin && idB <= rightEnd))) continue;
+				//if(idB == j && (getSep(idA, j) < 2 || getSep(idA, pairIndexJ) < 2 || (idA >= leftBegin && idA <= leftEnd) || (idA >= rightBegin && idA <= rightEnd))) continue;
+
+				if(idA == j && ((idB >= leftBegin && idB <= leftEnd) || (idB >= rightBegin && idB <= rightEnd))) continue;
+				if(idB == j && ((idA >= leftBegin && idA <= leftEnd) || (idA >= rightBegin && idA <= rightEnd))) continue;
 
 
-				e += eg->eBB + eg->eBO;
-				if(eg->eBB + eg->eBO < -0.5){
+				e += eg->ene;
+				if(eg->ene < -0.5){
 					if(idA == j)
 						contact[idB] = true;
 					else
 						contact[idA] = true;
 				}
 			}
-			hg->interactionsOutsideHelix[j-leftBegin] += e;
+
+			this->contactEnergyOutsideHelix[j] += e;
+			this->contactEnergyOutsideHelix[pairIndexJ] += e;
 
 			e = 0;
 			for(it=this->allNodes[pairingIndex[j]]->egSet.begin();it!=this->allNodes[pairingIndex[j]]->egSet.end();++it){
 				egIndex = *it;
-				eg = egList[egIndex];
+				eg = initialEgList[egIndex];
 				idA = eg->indexA;
 				idB = eg->indexB;
 
-				if(idA == pairIndexJ && (getSep(idB, pairIndexJ) < 3 || getSep(idB, j) < 3 || (idB >= leftBegin && idB <= leftEnd) || (idB >= rightBegin && idB <= rightEnd))) continue;
-				if(idB == pairIndexJ && (getSep(idA, pairIndexJ) < 3 || getSep(idA, j) < 3 || (idA >= leftBegin && idA <= leftEnd) || (idA >= rightBegin && idA <= rightEnd))) continue;
+				//if(idA == pairIndexJ && (getSep(idB, pairIndexJ) < 3 || getSep(idB, j) < 3 || (idB >= leftBegin && idB <= leftEnd) || (idB >= rightBegin && idB <= rightEnd))) continue;
+				//if(idB == pairIndexJ && (getSep(idA, pairIndexJ) < 3 || getSep(idA, j) < 3 || (idA >= leftBegin && idA <= leftEnd) || (idA >= rightBegin && idA <= rightEnd))) continue;
 
-				e += eg->eBB + eg->eBO;
-				if(eg->eBB + eg->eBO < -0.5){
+				if(idA == pairIndexJ && ((idB >= leftBegin && idB <= leftEnd) || (idB >= rightBegin && idB <= rightEnd))) continue;
+				if(idB == pairIndexJ && ((idA >= leftBegin && idA <= leftEnd) || (idA >= rightBegin && idA <= rightEnd))) continue;
+
+				e += eg->ene;
+				if(eg->ene < -0.5){
 					if(idA == pairingIndex[j])
 						contact[idB] = true;
 					else
 						contact[idA] = true;
 				}
 			}
-			hg->interactionsOutsideHelix[j-leftBegin] += e;
-
+			this->contactEnergyOutsideHelix[j] += e;
+			this->contactEnergyOutsideHelix[pairIndexJ] += e;
 		}
+
 		for(int i=0;i<seqLen;i++){
 			if(contact[i]){
 				hg->contactBaseList.push_back(i);
 			}
 		}
+	}
+}
+
+void RNAGraph::helixTerminalLoop(){
+	for(int i=0;i<helixList.size();i++){
+		HelixGraph* hg = helixList[i];
+
+		int leftBegin = hg->beginIndex;
+		int leftEnd = hg->beginIndex + hg->length -1;
+		int rightBegin = pairingIndex[leftEnd];
+		int rightEnd = pairingIndex[leftBegin];
+
+
 	}
 }
 
@@ -491,10 +350,10 @@ void RNAGraph::initialAssign(int nodeID, int graphID){
 	int idA, idB;
 	for(it = allNodes[nodeID]->egSet.begin();it!= allNodes[nodeID]->egSet.end();++it){
 		int egIndex = *it;
-		if(egList[egIndex]->getEnergy() < -0.2)
+		if(initialEgList[egIndex]->getEnergy() < -1.0)
 		{
-			idA = egList[egIndex]->indexA;
-			idB = egList[egIndex]->indexB;
+			idA = initialEgList[egIndex]->indexA;
+			idB = initialEgList[egIndex]->indexB;
 			if(idA == nodeID){
 				initialAssign(idB, graphID);
 			}
@@ -502,22 +361,23 @@ void RNAGraph::initialAssign(int nodeID, int graphID){
 				initialAssign(idA, graphID);
 			}
 		}
-
 	}
 }
 
 void RNAGraph::assign(int nodeID, int graphID, double T){
 	if(subGraphIndex[nodeID] >= 0 || T <= 0)
 		return;
+
+	//cout << "assign node: " << nodeID << " " << "graph: " << graphID <<  " T: " << T << endl;
 	this->subGraphIndex[nodeID] = graphID;
 	set<int>::iterator it;
 	int idA, idB;
 	for(it = allNodes[nodeID]->egSet.begin();it!= allNodes[nodeID]->egSet.end();++it){
 		int egIndex = *it;
-		double p = 1/(1+exp((egList[egIndex]->getEnergy()+4*T)/T));
+		double p = 1/(1+exp((initialEgList[egIndex]->getEnergy()+4*T)/T));
 		if((double)rand()/RAND_MAX < p){
-			idA = egList[egIndex]->indexA;
-			idB = egList[egIndex]->indexB;
+			idA = initialEgList[egIndex]->indexA;
+			idB = initialEgList[egIndex]->indexB;
 			if(idA == nodeID){
 				assign(idB, graphID, T);
 			}
@@ -525,12 +385,14 @@ void RNAGraph::assign(int nodeID, int graphID, double T){
 				assign(idA, graphID, T);
 			}
 		}
-
 	}
 }
 
 void RNAGraph::updateSubGraph(double T, int initialClusterID){
 
+	/*
+	 * clear subGraph list
+	 */
 	for(int i=0;i<this->subGraphs.size();i++){
 		delete this->subGraphs[i];
 	}
@@ -539,9 +401,14 @@ void RNAGraph::updateSubGraph(double T, int initialClusterID){
 		this->subGraphIndex[i] = -1;
 	}
 
+	/*
+	 *
+	 */
 	int currentIndex = 0;
+
+
 	for(int i=0;i<seqLen;i++){
-		if(choosen[i]) continue;
+		if(abandoned[i]) continue;
 		if(initialGraphIndex[i] != initialClusterID) continue;
 		if(subGraphIndex[i] < 0){
 			assign(i, currentIndex, T);
@@ -561,7 +428,7 @@ void RNAGraph::updateSubGraph(double T, int initialClusterID){
 			}
 		}
 		if(idList.size() > 3){
-			SubRNAGraph* subRG1 = new SubRNAGraph(idList, seqLen, this->connectToDownstream, this->choosen);
+			SubRNAGraph* subRG1 = new SubRNAGraph(idList, seqLen, this->connectToDownstream, this->abandoned);
 
 			vector<SubRNAGraph*> varList = subRG1->generateAllVariant();
 
@@ -625,35 +492,51 @@ double RNAGraph::getGraphScore(SubRNAGraph* sg){
 				otherE += this->allEnergy[i*seqLen + j];
 		}
 	}
+	string s = "xx";
 
-	totalE += wcE*0.5 + nbE*0.7 + otherE;
+	totalE += wcE*0.33 + nbE*0.66 + otherE;
 
-	int B = 0;
+
+
+	vector<int> fragLengthList;
+	bool inGraphTag = false;
+	int currentFragLength = 0;
+
 	for(int i=0;i<seqLen;i++){
-		if(sg->inGraph[i]) B++;
-	}
 
-	double F = 0.0;
-	if(sg->inGraph[0])
-		F = 1.0;
+		if(sg->inGraph[i])
+			currentFragLength ++;
 
-	for(int i=0;i<seqLen-1;i++){
-		if(!sg->inGraph[i] && sg->inGraph[i+1])
-			F += 1.0;
-	}
 
-	int helixBaseNum = 0;
-	for(int i=0;i<seqLen;i++){
-		if(sg->inGraph[i] && pairingIndex[i] >=0 && sg->inGraph[pairingIndex[i]]){
-			helixBaseNum++;
+		if(!connectToDownstream[i]){
+			//close old fragment
+			if(currentFragLength > 0)
+				fragLengthList.push_back(currentFragLength);
+			currentFragLength = 0;
 		}
+		else if(inGraphTag && !sg->inGraph[i]){
+			//end of the fragment
+			if(currentFragLength > 0)
+				fragLengthList.push_back(currentFragLength);
+			currentFragLength = 0;
+		}
+
+		inGraphTag = sg->inGraph[i];
 	}
 
-	if(helixBaseNum == B)
-		return 99.9;
 
-	if(B < 4)
-		return 9.9;
+
+
+	double F = 1.0*fragLengthList.size();
+	int B = 0;
+	for(int i=0;i<fragLengthList.size();i++){
+		if(fragLengthList[i] < 5)
+			B += 5;
+		else
+			B += fragLengthList[i];
+	}
+
+
 
 	double ff = 2.0*F*F;
 
@@ -674,9 +557,9 @@ void RNAGraph::printConnect(){
 	for(int i=0;i<seqLen;i++){
 		for(it=allNodes[i]->egSet.begin();it!= allNodes[i]->egSet.end();++it){
 			int egIndex = *it;
-			RGEdge* eg = egList[egIndex];
+			RGEdge* eg = initialEgList[egIndex];
 			if(eg->indexA == i){
-				double e = eg->eBB + eg->eBO;
+				double e = eg->ene;
 				if(e < -0.5){
 					printf("edge: %3d %3d %8.3f\n", i, eg->indexB, e);
 				}
@@ -685,11 +568,11 @@ void RNAGraph::printConnect(){
 	}
 }
 
-void RNAGraph::processLoop(){
+void RNAGraph::meltLoop(){
 	int loopStart = 0;
 	int loopLength = 0;
 	bool inLoop = false;
-	double eneCutoff = -0.2;
+	double eneCutoff = -0.3;
 	int loopLengthCutoff = 3;
 	for(int i=0;i<seqLen;i++){
 
@@ -707,10 +590,9 @@ void RNAGraph::processLoop(){
 			if(loopLength >= loopLengthCutoff){
 				for(int k=loopStart;k<loopStart+loopLength;k++){
 					removeEdgeOnNode(k);
-					choosen[k] = true;
+					abandoned[k] = true;
 				}
 			}
-
 			inLoop = false;
 			loopLength = 0;
 		}
@@ -719,63 +601,34 @@ void RNAGraph::processLoop(){
 	if(inLoop && loopLength >= loopLengthCutoff){
 		for(int k=loopStart;k<loopStart+loopLength;k++){
 			removeEdgeOnNode(k);
-			choosen[k] = true;
+			abandoned[k] = true;
 		}
 	}
 }
 
-void RNAGraph::processHelix(){
+void RNAGraph::meltHelix(){
 
-	for(int i=0;i<this->helixList.size();i++){
-		HelixGraph* hg = helixList[i];
-
-		for(int j=hg->beginIndex;j<hg->beginIndex+hg->length-1;j++){
-			if(hg->interactionsOutsideHelix[j] > -0.1 || hg->interactionsOutsideHelix[j+1] > -0.1){
-				//cout << "split at" << j << endl;
-				splitHelix(j);
-			}
-		}
-
-		/*
-		for(int j=hg->beginIndex;j<hg->beginIndex+hg->length-1;j++){
-			if(hg->interactionsOutsideHelix[j] > -0.3 && hg->interactionsOutsideHelix[j+1] > -0.3){
-				splitHelix(j);
-			}
-		}
-		*/
-
-		if(hg->isIndependantHelix()){
-			int leftBegin = hg->simpleHelixBegin;
-			int leftEnd = hg->simpleHelixBegin+ hg->simpleHelixLen-1;
-			int rightBegin = pairingIndex[leftEnd];
-			int rightEnd = pairingIndex[leftBegin];
-
-			for(int j=leftBegin;j<=leftEnd;j++){
-				//cout << "remove node: " << j << endl;
-				removeEdgeOnNode(j);
-				this->choosen[j] = true;
-			}
-
-			for(int j=rightBegin;j<=rightEnd;j++){
-				//cout << "remove node: " << j << endl;
-				removeEdgeOnNode(j);
-				this->choosen[j] = true;
-			}
+	for(int i=0;i<this->seqLen;i++){
+		if(inHelix[i] && this->contactEnergyOutsideHelix[i] > -0.3) {
+			//cout << "remove node: " << i << endl;
+			removeEdgeOnNode(i);
+			this->abandoned[i] = true;
 		}
 	}
+
 }
 
 void RNAGraph::generateInitialClusters(){
 
 	for(int i=0;i<seqLen;i++){
 		this->initialGraphIndex[i] = -1;
-		if(choosen[i])
+		if(abandoned[i])
 			this->initialGraphIndex[i] = 9999999;
 	}
 
 	int currentIndex = 0;
 	for(int i=0;i<seqLen;i++){
-		if(choosen[i]) continue;
+		if(abandoned[i]) continue;
 		if(initialGraphIndex[i] >= 0) continue;
 		initialAssign(i, currentIndex);
 		currentIndex++;
@@ -818,32 +671,37 @@ SubRNAGraph* RNAGraph::findBestSubGraph(int initialClusterID){
 			}
 		}
 	}
-	//cout << "bestT: " << bestT  << " " << initialClusterID << endl;
-	return sg;
+
+	if(minE < -0.5)
+		return sg;
+	else
+	{
+		delete sg;
+		return NULL;
+	}
 }
 
 
 vector<SubRNAGraph*> RNAGraph::findAllGraphs(){
-
 	vector<SubRNAGraph*> sgList;
-
 	for(int i=0;i<this->initialClusterNumber;i++){
 		//printInitialCluster(i);
 		SubRNAGraph* sg = findBestSubGraph(i);
 		while(sg != NULL){
+			sg->setScore(getGraphScore(sg));
 			sgList.push_back(sg);
 			deleteSubGraph(sg);
+
 			sg = findBestSubGraph(i);
 		}
 	}
 	return sgList;
-
 }
 
 void RNAGraph::deleteSubGraph(SubRNAGraph* sg){
 	for(int i=0;i<seqLen;i++){
 		if(sg->inGraph[i]){
-			choosen[i] = true;
+			abandoned[i] = true;
 			removeEdgeOnNode(i);
 		}
 	}
@@ -862,10 +720,11 @@ RNAGraph::~RNAGraph() {
 	delete [] allEnergy;
 	delete [] inHelix;
 	delete [] contactEnergyOfNonNeighbor;
-	delete [] choosen;
+	delete [] contactEnergyOutsideHelix;
+	delete [] abandoned;
 
-	for(int i=0;i<this->egList.size();i++){
-		delete this->egList[i];
+	for(int i=0;i<this->initialEgList.size();i++){
+		delete this->initialEgList[i];
 	}
 	for(int i=0;i<this->helixList.size();i++){
 		delete this->helixList[i];

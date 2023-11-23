@@ -539,50 +539,40 @@ CsMoveTo6DKey::~CsMoveTo6DKey() {
 }
 
 
-BasePair6DEnergyTable::BasePair6DEnergyTable(XPara* para) {
+BasePair6DEnergyTable::BasePair6DEnergyTable(ForceFieldPara* para) {
 
-	this->wt1 = para->wtBp1;
-	this->wt2 = para->wtBp2;
-	this->wt3 = para->wtBp3;
+	this->wtNb = para->wtBp1;
+	this->wtNnb = para->wtBp2;
 
-	string path = NSPdataio::datapath() + "/rna/";
+	string path = NSPdataio::datapath();
 
-	int indexA, indexB;
+	int indexA, indexB, clusterID;
 	double ene;
 	ifstream file;
 	string augc = "AUGC";
 
-	string sp = para->spType;
-
 	for(int i=0;i<4;i++){
 		for(int j=0;j<4;j++){
 			string pairType = augc.substr(i,1) + augc.substr(j,1);
-			file.open(path + "split6D/n1Keys/" + sp + "/"+pairType+".ene");
+			file.open(path + "pairEne/nb/"+pairType+".ene");
+
 			if(!file.is_open()) {
-				cout << "can't open file " << path + "split6D/n1Keys/" + sp + "/" +pairType+".ene" << endl;
+				cout << "can't open file " << path + "pairEne/nb/" +pairType+".ene" << endl;
 			}
-			while(file >> indexA >> indexB >> ene){
-				this->n1KeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
+			while(file >> indexA >> indexB >> ene >> clusterID){
+				this->nbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
 			}
 			file.close();
 
-			file.open(path + "split6D/n2Keys/" + sp + "/"+pairType+".ene");
+			file.open(path + "pairEne/nnb/"+pairType+".ene");
 			if(!file.is_open()) {
-				cout << "can't open file " << path + "split6D/n2Keys/" + sp + "/"+pairType+".ene" << endl;
+				cout << "can't open file " << path + "pairEne/nnb/" +pairType+".ene" << endl;
 			}
-			while(file >> indexA >> indexB >> ene){
-				this->n2KeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
+			while(file >> indexA >> indexB >> ene >> clusterID){
+				this->nnbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
 			}
 			file.close();
 
-			file.open(path + "split6D/n3Keys/" + sp + "/" +pairType+".ene");
-			if(!file.is_open()) {
-				cout << "can't open file " << path + "split6D/n3Keys/" + sp + "/" +pairType+".ene" << endl;
-			}
-			while(file >> indexA >> indexB >> ene){
-				this->n3KeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
-			}
-			file.close();
 		}
 	}
 }

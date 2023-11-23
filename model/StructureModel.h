@@ -109,7 +109,6 @@ public:
 	char baseType;  // AUGCatgc
 	int baseTypeInt;  // 0-7, and -1
 	string chainID;
-	int atomNum;
 	bool hasAltConf;
 	LocalFrame coordSys;
 	bool hasLocalFrame;

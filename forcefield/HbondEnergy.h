@@ -13,7 +13,7 @@
 #include "geometry/localframe.h"
 #include "model/AtomLib.h"
 #include "dataio/datapaths.h"
-#include "forcefield/XPara.h"
+#include "forcefield/ForceFieldPara.h"
 #include "tools/StringTool.h"
 #include <time.h>
 #include <math.h>
@@ -96,10 +96,11 @@ public:
 	double spWt3[753848];
 
 	AtomLib* atLib;
+	ForceFieldPara* para;
 
-	HbondEnergy();
+	HbondEnergy(ForceFieldPara* para);
 	double getEnergy(int uniqueIDA, LocalFrame& csA, int uniqueIDB, LocalFrame& csB);
-
+	double getO4O2C2Energy(double distance, int sep);
 	virtual ~HbondEnergy();
 };
 

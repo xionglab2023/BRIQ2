@@ -195,10 +195,8 @@ int main(int argc, char** argv){
 
 	cout << "build po3" << endl;
 
-	XPara para;
-	RnaAtomicEnergyTable* at = new RnaAtomicEnergyTable(&para);
-	RiboseOxygenEnergyTable* rET = new RiboseOxygenEnergyTable();
-	PO3Builder* pb = new PO3Builder(&para);
+	ForceFieldPara* para = new ForceFieldPara();
+	PO3Builder* pb = new PO3Builder(para);
 	for(int i=0;i<seqLen-1;i++){
 		BRNode* nodeA = nodeList[i];
 		BRNode* nodeB = nodeList[i+1];
