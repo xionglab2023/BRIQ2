@@ -29,7 +29,7 @@
 #include <filesystem>
 
 #define DDMCUTOFF 0.7
-#define ITERSTOPAT -1e-6
+#define ITERSTOPAT -1e-12
 
 using namespace NSPtools;
 using namespace NSPbm;
@@ -212,12 +212,14 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
                     to_string(bestScore) + "\n";
                 cout << outstr;
             #endif //DEBUG
+            if(bestAlign) delete bestAlign;
+            if(bestAlignBP) delete bestAlignBP;
             if(curAlign) {
-                if(bestAlign) delete bestAlign;
                 bestAlign = curAlign;
+                bestAlignBP = nullptr;
             } else {
-                if(bestAlignBP) delete bestAlignBP;
                 bestAlignBP = iniAlign;
+                bestAlign = nullptr;
             }
         } else {
             delete iniAlign;
@@ -265,7 +267,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
             bestAlignBP->writeAlignment(output, score, normedSc, true);
         }
         output.close();
-        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem.string()<<"_onB."<<
+        cout<<"[Info] Write alignment on "<<BMaName<<" to " <<outPath<<"/"<<pAStem.string()<<"_onB"<<
             pAExt.string()<<endl;
         filePath = outPath+"/"+outfileAln+"_onB";
         output.open(filePath, ios::out);
