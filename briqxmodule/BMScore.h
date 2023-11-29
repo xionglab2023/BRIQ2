@@ -80,7 +80,7 @@ namespace NSPbm
              *
              * @return double
              */
-            double idealScore();
+            double idealScore(bool bmf = false);
             double idealScore2(); // scoring according to strands restricted to the length of the shorter strand
 
             /**

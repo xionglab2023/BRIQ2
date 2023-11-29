@@ -200,10 +200,41 @@ namespace NSPbm
         return utils::sortMapByValue<array<BasePair*,2>, double>(tmpMap, sortedScore, desc);
     }
 
-    double BMScore::idealScore() {
+    double BMScore::idealScore(bool bmf) {
         double score = 0;
         int lA = BMa->getBaseList().size();
         int lB = BMb->getBaseList().size();
+        if(bmf) {
+            if(lA == lB) {
+                // Ideally all matches are between forward basepairs
+                auto& bplA = BMa->getBasePairList();
+                int lbA = bplA.size();
+                for(int i=0;i<lbA;i++) {
+                    score += bp2wMapa.at(bplA[i]);
+                }
+                auto& bplB = BMb->getBasePairList();
+                int lbB = bplB.size();
+                for(int i=0;i<lbB;i++) {
+                    score += bp2wMapb.at(bplB[i]);
+                }
+                return score/2;
+            } else {
+                if(lA > lB) {
+                    auto& bplB = BMb->getBasePairList();
+                    int lbB = bplB.size();
+                    for(int i=0;i<lbB;i++) {
+                        score += bp2wMapb.at(bplB[i]);
+                    }
+                } else {
+                    auto& bplA = BMa->getBasePairList();
+                    int lbA = bplA.size();
+                    for(int i=0;i<lbA;i++) {
+                        score += bp2wMapa.at(bplA[i]);
+                    }
+                }
+                return score;
+            }
+        }
         if(lA == lB || lA -lB > lB* LDIFF_RATIO_TOLERATE || lB - lA > lA*LDIFF_RATIO_TOLERATE) {
             // Ideally all matches are between forward basepairs
             auto& bplA = BMa->getBasePairList();
@@ -242,7 +273,7 @@ namespace NSPbm
     }
 
     double BMScore::idealScore2() {
-        double score=0;
+        double score=1;
         return score;
     }
 
