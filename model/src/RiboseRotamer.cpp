@@ -169,8 +169,8 @@ RiboseRotamerCG::RiboseRotamerCG(RNABase* base){
 	this->rotTypeLv1 = rot.rotTypeLv1;
 
 	this->localCoords[0] = rot.localCoords[0];
-	this->localCoords[5] = rot.localCoords[5];
-	this->localCoords[6] = rot.localCoords[6];
+	this->localCoords[1] = rot.localCoords[5];
+	this->localCoords[2] = rot.localCoords[6];
 
 	this->energy = rot.energy;
 }
@@ -182,10 +182,22 @@ RiboseRotamerCG::RiboseRotamerCG(const string& line){
 	this->rotTypeLv1 = rot.rotTypeLv1;
 
 	this->localCoords[0] = rot.localCoords[0];
-	this->localCoords[5] = rot.localCoords[5];
-	this->localCoords[6] = rot.localCoords[6];
+	this->localCoords[1] = rot.localCoords[5];
+	this->localCoords[2] = rot.localCoords[6];
 
 	this->energy = rot.energy;
+}
+
+RiboseRotamerCG::RiboseRotamerCG(RiboseRotamer* riboRot){
+	this->resType = riboRot->resType;
+	this->rotType = riboRot->rotType;
+	this->rotTypeLv1 = riboRot->rotTypeLv1;
+
+	this->localCoords[0] = riboRot->localCoords[0];
+	this->localCoords[1] = riboRot->localCoords[5];
+	this->localCoords[2] = riboRot->localCoords[6];
+
+	this->energy = riboRot->energy;
 }
 
 RiboseRotamerCG::~RiboseRotamerCG(){

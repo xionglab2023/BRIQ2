@@ -44,6 +44,14 @@ public:
 	int uniqueIDs[3];
 
 	BaseRotamerCG(int baseType, AtomLib* atLib);
+
+	void printInfo(){
+		printf("%d \n", baseType);
+		printf("%7.3f %7.3f %7.3f\n", coordsLocal[0].x_,coordsLocal[0].y_, coordsLocal[0].z_);
+		printf("%7.3f %7.3f %7.3f\n", coordsLocal[1].x_,coordsLocal[1].y_, coordsLocal[1].z_);
+		printf("%7.3f %7.3f %7.3f\n", coordsLocal[2].x_,coordsLocal[2].y_, coordsLocal[2].z_);
+	}
+
 	virtual ~BaseRotamerCG();
 };
 

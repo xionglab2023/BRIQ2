@@ -36,8 +36,10 @@ BasePairLib::BasePairLib() {
 		this->nnbBasePairNum[i] = 0;
 		for(int j=0;j<200;j++){
 			this->nbEnegy[i][j] = 0.0;
+			this->nbEnergyWithOxy[i][j] = 0.0;
 			this->nbProportion[i][j] = 0.0;
 			this->nnbEnegy[i][j] = 0.0;
+			this->nnbEnergyWithOxy[i][j] = 0.0;
 			this->nnbProportion[i][j] = 0.0;
 		}
 	}
@@ -85,8 +87,9 @@ BasePairLib::BasePairLib() {
 		else
 			currentIndex++;
 		splitString(s, " ", &spt);
-		this->nbEnegy[typeA*4+typeB][currentIndex] = atof(spt[1].c_str());
-		this->nbProportion[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
+		this->nbEnegy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
+		this->nbProportion[typeA*4+typeB][currentIndex] = atof(spt[3].c_str());
+		this->nbEnergyWithOxy[typeA*4+typeB][currentIndex] = atof(spt[4].c_str());
 		lastType = currentType;
 	}
 	file.close();
@@ -136,8 +139,9 @@ BasePairLib::BasePairLib() {
 		else
 			currentIndex++;
 		splitString(s, " ", &spt);
-		this->nnbEnegy[typeA*4+typeB][currentIndex] = atof(spt[1].c_str());
-		this->nnbProportion[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
+		this->nnbEnegy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
+		this->nnbProportion[typeA*4+typeB][currentIndex] = atof(spt[3].c_str());
+		this->nnbEnergyWithOxy[typeA*4+typeB][currentIndex] = atof(spt[4].c_str());
 
 		lastType = currentType;
 	}
@@ -176,6 +180,21 @@ int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int se
 				minIndex = i;
 			}
 		}
+	}
+	else if(sep == -1){
+		int revPairType = typeB*4+typeA;
+		BaseDistanceMatrix revDM = dm.reverse();
+		int pairNum = nbBasePairNum[revPairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+	else if(sep == 0) {
+		return -1;
 	}
 	else { //non-neighbor base pair
 		int pairNum = nnbBasePairNum[pairType];
@@ -396,6 +415,67 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	for(int i=0;i<paListB.size();i++){
 		delete paListB[i];
 	}
+
+	return ene;
+}
+
+double BasePairLib::getEnergyWithOxy(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
+
+	if(typeA > 3)
+		typeA = typeA - 4;
+
+	if(typeB > 3)
+		typeB = typeB - 4;
+
+	if(typeA < 0 || typeA > 3) {
+		cout << "invalid base type: " << typeA << endl;
+		return -1;
+	}
+
+	if(typeB < 0 || typeB > 3) {
+		cout << "invalid base type: " << typeB << endl;
+		return -1;
+	}
+
+	double minD = 999.9;
+	int minIndex = -1;
+	int pairType = typeA*4+typeB;
+	double d;
+
+	if(sep == 1) { //neighbor base pair
+		int pairNum = nbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+	else { //non-neighbor base pair
+		int pairNum = nnbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nnbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+
+	double ene = 0.0;
+
+	if(sep == 1) {
+		double e = this->nbEnegy[typeA*4+typeB][minIndex];
+		ene = e*0.25;
+
+	}
+	else if(minD < 1.5) {
+		ene = this->nnbEnegy[typeA*4+typeB][minIndex]*0.25;
+	}
+
+	if(ene > 0)
+		ene = 0;
 
 	return ene;
 }

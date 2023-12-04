@@ -21,6 +21,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 add_library(briqx
 dataio/src/datapaths.cpp
 forcefield/src/AtomicClashEnergy.cpp
+forcefield/src/BasePair6DEnergyTableCG.cpp
 forcefield/src/BasePair6DEnergyTable.cpp
 forcefield/src/ForceFieldPara.cpp
 forcefield/src/HbondEnergy.cpp
@@ -90,6 +91,8 @@ model/test/TestBackboneRotamer.cpp
 model/test/TestBaseLib.cpp
 model/test/TestBasePairLib.cpp
 model/test/TestDM.cpp
+model/test/TestRiboseRotamer.cpp
+model/test/TestRotLib.cpp
 model/test/TestSSAndSasa.cpp
 motif/src/MotifAlign.cpp
 motif/src/RGEdge.cpp
@@ -111,10 +114,15 @@ predNA/src/BRConnection.cpp
 predNA/src/BRFoldingTree.cpp
 predNA/src/BRNode.cpp
 predNA/src/CsMoveTo6DKey.cpp
+predNA/src/EdgeInformation.cpp
 predNA/src/FragmentAssembling.cpp
 predNA/src/FragmentLibrary.cpp
 predNA/src/MCRun.cpp
 predNA/src/MoveMutator.cpp
+predNA/src/NuEnergyCalculator.cpp
+predNA/src/NuGraph.cpp
+predNA/src/NuMoveSet.cpp
+predNA/src/OrientationIndex.cpp
 predNA/src/ThreeBaseMoveLibrary.cpp
 predNA/test/AddBaseToTarget.cpp
 predNA/test/AssembleMultipleFragments.cpp
@@ -148,6 +156,7 @@ predNA/test/TestBackbone.cpp
 predNA/test/TestConnectionEnergy.cpp
 predNA/test/TestFoldTree.cpp
 predNA/test/TestFragment.cpp
+predNA/test/TestGraph.cpp
 predNA/test/TestKey.cpp
 predNA/test/TestMCSimPara.cpp
 predNA/test/TestMerge.cpp

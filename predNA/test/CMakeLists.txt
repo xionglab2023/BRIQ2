@@ -18,7 +18,6 @@ add_executable(rna_assemble AssembleTwoFragments.cpp)
 add_executable(rna_assemble_multiFragments AssembleMultipleFragments.cpp)
 add_executable(buildFoldingTree BuildFoldingTree.cpp)
 add_executable(trainPhoRep TrainPhoRep.cpp)
-
 add_executable(briq_InitPDB GenerateInitModel.cpp)
 add_executable(briq_Predict RunPredict.cpp)
 add_executable(briq_Refinement RunRefinement.cpp)
@@ -26,7 +25,10 @@ add_executable(briq_RefinementFast RunRefinementFast.cpp)
 add_executable(add_base AddBaseToTarget.cpp)
 add_executable(replaceMotif ReplaceMotif.cpp)
 add_executable(replaceFragment ReplaceFragment.cpp)
+add_executable(testGraph TestGraph.cpp)
 
+
+target_link_libraries (testGraph briqx)
 target_link_libraries (briq_RefinementFast briqx)
 target_link_libraries (replaceFragment briqx)
 target_link_libraries (replaceMotif briqx)

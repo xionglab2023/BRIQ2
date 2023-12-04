@@ -185,6 +185,7 @@ public:
 
 	RiboseRotamerCG(RNABase* base);
 	RiboseRotamerCG(const string& line);
+	RiboseRotamerCG(RiboseRotamer* riboRot);
 
 
 	RiboseRotamerCG& operator=(const RiboseRotamerCG& other){

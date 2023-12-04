@@ -101,16 +101,16 @@ public:
 
 		int type = base->baseTypeInt;
 		double minDist = 9999.9;
-		RiboseRotamer* rot = new RiboseRotamer(base);
+		RiboseRotamer rot(base);
+
 		RiboseRotamer* nearest;
 		for(int i=0;i<1500;i++){
-			double d = rotLib[type][i]->distanceTo(rot);
+			double d = rotLib[type][i]->distanceTo(&rot);
 			if(d < minDist){
 				minDist = d;
 				nearest = rotLib[type][i];
 			}
 		}
-		delete rot;
 		return nearest;
 	}
 

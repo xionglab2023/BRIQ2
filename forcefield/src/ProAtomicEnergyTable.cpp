@@ -1470,6 +1470,7 @@ double ProAtomicEnergyTable::getAtomEnergy(int atomIDA, const XYZ& tA, int atomI
 }
 
 double ProAtomicEnergyTable::getAtomEnergy(int atomIDA, const LocalFrame& csA, int atomIDB, const LocalFrame& csB, int sep, ProParameter* para){
+	return 0.0;
 	/*
 	double wdScale = 1.0;
 	double range = 7.5;
@@ -1512,6 +1513,7 @@ double ProAtomicEnergyTable::getAtomEnergy(int atomIDA, const LocalFrame& csA, i
 }
 
 double ProAtomicEnergyTable::getAtomEnergyDesign(int atomIDA, const LocalFrame& csA, int atomIDB, const LocalFrame& csB, int sep, float sai, DesignPara* para){
+	return 0.0;
 	/*
 	double wdScale = 1.0;
 	double range = para->vdwRange;
@@ -1582,6 +1584,7 @@ double ProAtomicEnergyTable::getAtomEnergyDesign(int atomIDA, const LocalFrame& 
 }
 
 double ProAtomicEnergyTable::getAtomEnergyABACUS(int atomIDA, const LocalFrame& csA, int atomIDB, const LocalFrame& csB, int sep, float sai, DesignPara* para) {
+	return 0.0;
 	/*
 	double wdScale = 1.0; //connect rescale * seperation rescale
 	double range = para->vdwRange;
@@ -1663,6 +1666,7 @@ double ProAtomicEnergyTable::getAtomEnergyABACUS(int atomIDA, const LocalFrame& 
 
 
 double ProAtomicEnergyTable::printDetailEnergyABACUS(int atomIDA, const LocalFrame& csA, int atomIDB, const LocalFrame& csB, int sep, float sai, DesignPara* para) {
+	return 0.0;
 	/*
 	double wdScale = 1.0; //connect rescale * seperation rescale
 	double range = para->vdwRange;
