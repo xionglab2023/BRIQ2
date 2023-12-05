@@ -185,25 +185,9 @@ namespace NSPmodel {
 
 	}
 
+
 	BaseRotamerCG::BaseRotamerCG(int baseType, AtomLib* atLib){
-		vector<string> baseTypes;
-
-		baseTypes.push_back("A");
-		baseTypes.push_back("U");
-		baseTypes.push_back("G");
-		baseTypes.push_back("C");
-		baseTypes.push_back("DA");
-		baseTypes.push_back("DT");
-		baseTypes.push_back("DG");
-		baseTypes.push_back("DC");
-
-		vector<string>* scNames = atLib->baseScAtomNames[baseType];
 		this->baseType = baseType;
-
-		for(int i=0;i<scNames->size();i++){
-			string name = baseTypes[baseType]+"-"+scNames->at(i);
-			uniqueIDs[i] = atLib->uniqueNameToID(name);
-		}
 
 		LocalFrame cs0;
 
@@ -312,6 +296,7 @@ namespace NSPmodel {
 	BaseConformer::~BaseConformer(){
 
 	}
+
 
 	BaseConformerCG::BaseConformerCG(BaseRotamerCG* rot, LocalFrame& cs){
 

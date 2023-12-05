@@ -31,7 +31,7 @@ int main(int argc, char** argv){
 	AtomLib* atLib = new AtomLib();
 
 	string listFile = "/public/home/pengx/pdbLib/rna/list_R2.7";
-	string outFile = "/public/home/pengx/briqx/basePair/basePairEnergyWithOxyHbond/bp.ene";
+	string outFile = "/public/home/pengx/briqx/basePair/basePairEnergyWithOxyHbond/bp.ene2";
 
 	ofstream out;
 	out.open(outFile.c_str(), ios::out);

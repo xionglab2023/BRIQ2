@@ -61,7 +61,6 @@ class BasePair6DEnergyTable {
 public:
 
 	map<int, double> nbKeysEnergy[36000]; //16*2250, distacne 50 bins, dihedral 45 bins, sphere 2000*2000
-//	map<int, double> n2KeysEnergy[36000];
 	map<int, double> nnbKeysEnergy[36000];
 
 	CsMoveTo6DKey cm2Key;
