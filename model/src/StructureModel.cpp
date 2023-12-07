@@ -3,6 +3,7 @@
  *
  */
 
+#include <array>
 #include "model/StructureModel.h"
 
 namespace NSPmodel {
@@ -78,6 +79,13 @@ Atom::Atom(string name, const XYZ& coord){
 	this->alt = ' ';
 }
 
+Atom::Atom(const Atom& other) {
+	this->name = other.name;
+	this->coord = other.coord;
+	this->type = other.type;
+	this->resType = other.resType;
+	this->alt = other.alt;
+}
 
 Atom& Atom::operator=(const Atom& other)
 {
@@ -141,6 +149,11 @@ XYZ& Atom::getCoord()
 }
 
 void Atom::setCoord(const XYZ& coord)
+{
+	this->coord = coord;
+}
+
+void Atom::setCoord(const XYZ&& coord)
 {
 	this->coord = coord;
 }
@@ -429,6 +442,54 @@ RNABase::RNABase(const string& baseID, const string& chainID, char baseType){
 	this->altLoc = '-';
 }
 
+RNABase::RNABase(const RNABase& other) {
+	this->baseID = other.baseID;
+	this->chainID = other.chainID;
+	this->baseType = other.baseType;
+	this->baseTypeInt = other.baseTypeInt;
+	this->baseSeqID = other.baseSeqID;
+	this->hasLocalFrame = other.hasLocalFrame;
+	this->hasAltConf = other.hasAltConf;
+	this->altLoc = other.altLoc;
+
+	int la = other.atomList.size();
+	map<Atom*, Atom*> old2newAtMap;
+	for(int i=0; i<la; i++) {
+		this->atomList.emplace_back(new Atom{*other.atomList[i]});
+		old2newAtMap.emplace(other.atomList[i], this->atomList[i]);
+	}
+
+	la = other.backboneAtoms.size();
+	for(int i=0; i<la; i++) {
+		this->backboneAtoms.emplace_back(old2newAtMap.at(other.backboneAtoms[i]));
+	}
+
+	la = other.sidechainAtoms.size();
+	for(int i=0; i<la; i++) {
+		this->sidechainAtoms.emplace_back(old2newAtMap.at(other.sidechainAtoms[i]));
+	}
+
+	for(auto & iter : other.atomMap) {
+		this->atomMap.emplace(iter.first, old2newAtMap.at(iter.second));
+	}
+}
+
+RNABase::RNABase(RNABase&& other) noexcept {  // noexcept 意味着不会调用 new，delete 和 IO
+	this->baseID = move(other.baseID);  // string 具有移动构造函数
+	this->chainID = move(other.chainID);  // string
+	this->baseType = other.baseType;
+	this->baseTypeInt = other.baseTypeInt;
+	this->baseSeqID = other.baseSeqID;
+	this->hasLocalFrame = other.hasLocalFrame;
+	this->hasAltConf = other.hasAltConf;
+	this->altLoc = other.altLoc;
+	this->coordSys = move(other.coordSys);  // coordSys 会调用拷贝构造?
+	this->atomList = move(other.atomList);  // vector  具有移动构造函数
+	this->backboneAtoms = move(other.backboneAtoms);  // vector 移动构造
+	this->sidechainAtoms = move(other.sidechainAtoms);  // vector 移动构造
+	this->atomMap = move(other.atomMap);  // map 移动构造
+}
+
 void RNABase::addAtom(Atom* a) {
 	this->atomList.push_back(a);
 	string atomName = a->name;
@@ -481,8 +542,8 @@ bool RNABase::sidechainComplete(AtomLib* atLib) const{
 	return true;
 }
 
-vector<XYZ> RNABase::getFourPseudoAtomCoords(){
-	vector<XYZ> list;
+array<XYZ,4> RNABase::getFourPseudoAtomCoords(){
+	array<XYZ,4> list;
 	if(!hasLocalFrame)
 		updateCoordSystem();
 	if(!hasLocalFrame) {
@@ -495,14 +556,14 @@ vector<XYZ> RNABase::getFourPseudoAtomCoords(){
 	XYZ b(-0.789 , -0.329 , -1.273);
 	XYZ c(4.520 , -3.006 ,  1.586);
 	XYZ d(6.018 ,  1.903 , -1.638);
-	list.push_back(local2global(coordSys, a));
-	list.push_back(local2global(coordSys, b));
-	list.push_back(local2global(coordSys, c));
-	list.push_back(local2global(coordSys, d));
+	get<0>(list) = local2global(coordSys, a);
+	get<1>(list) = local2global(coordSys, b);
+	get<2>(list) = local2global(coordSys, c);
+	get<3>(list) = local2global(coordSys, d);
 	return list;
 }
 
-int RNABase::printPDBFormat(ofstream& out, int startAtomID) const{
+int RNABase::printPDBFormat(ostream& out, int startAtomID) const{
     char c = this->baseID.at(baseID.length()-1);
     char s[100];
     vector<Atom*>::const_iterator it;
@@ -530,6 +591,11 @@ int RNABase::printPDBFormat(ofstream& out, int startAtomID) const{
         }
     }
     return atomID;
+}
+
+string RNABase::print() {
+	string ret = chainID + "_" + baseType + baseID;
+	return ret;
 }
 
 RNABase::~RNABase() {
@@ -954,7 +1020,32 @@ RNAChain::RNAChain(const string& pdbID, const string& chainID) {
 	this->chainLen = 0;
 }
 
-int RNAChain::printPDBFormat(ofstream& out, int startAtomID) const{
+RNAChain::RNAChain(const RNAChain& other) {
+	this->pdbID = other.pdbID;
+	this->chainID = other.chainID;
+	this->chainLen = other.chainLen;
+
+	int lb = other.baseList.size();
+	map<RNABase*, RNABase*> old2newBsMap;
+	for(int i=0; i<lb; i++) {
+		this->baseList.emplace_back(new RNABase{*other.baseList[i]});
+		old2newBsMap.emplace(other.baseList[i], this->baseList[i]);
+	}
+
+	for(auto & iter : other.baseMap) {
+		this->baseMap.emplace(iter.first, old2newBsMap.at(iter.second));
+	}
+}
+
+RNAChain::RNAChain(RNAChain&& other) noexcept {
+	this->pdbID = move(other.pdbID);
+	this->chainID = move(other.chainID);
+	this->chainLen = other.chainLen;
+	this->baseList = move(other.baseList);
+	this->baseMap = move(other.baseMap);
+}
+
+int RNAChain::printPDBFormat(ostream& out, int startAtomID) const{
 	for(int i=0;i<baseList.size();i++) {
 		startAtomID = baseList[i]->printPDBFormat(out, startAtomID);
 	}
@@ -1366,7 +1457,7 @@ void RNAPDB::readCIF(const string& cifFile){
 
 
 
-void RNAPDB::printPDBFormat(ofstream& out) const{
+void RNAPDB::printPDBFormat(ostream& out) const{
     int startID = 1;
     for(unsigned int i=0;i<this->chains.size();i++)
     {

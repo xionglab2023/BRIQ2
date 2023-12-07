@@ -13,6 +13,7 @@ BasePair::BasePair(RNABase* baseA, RNABase* baseB, AtomLib* atLib) {
 	if(!baseA->sidechainComplete(atLib) || !baseB->sidechainComplete(atLib))
 	{
 		cout << "sidechain not complete" << endl;
+		this->type = "Incomplete";
 		return;
 	}
 
@@ -106,6 +107,11 @@ double BasePair::distanceToWCPair(){
 		BaseDistanceMatrix dm0("G C  3.7980  6.9500  9.2390  4.6079  7.1241 12.2823 13.0212  8.3017  8.7787 12.5239 10.7388  5.6006  3.8695  7.9905  6.0148  3.5253");
 		return dm.distanceTo(dm0);
 	}
+}
+
+string BasePair::print() {
+	string ret = baseA->print() + "-" + baseB->print();
+	return ret;
 }
 
 BasePair::~BasePair() {
