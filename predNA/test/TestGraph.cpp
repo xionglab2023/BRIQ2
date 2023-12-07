@@ -64,11 +64,9 @@ int main(int argc, char** argv){
 			cout << "move set" << endl;
 			edge->initNativeMoveSet();
 			edgeList.push_back(edge);
-
 		}
 	}
 	*/
-
 
 	cout << "init graph" << endl;
 	NuGraph* graph = new NuGraph(inputFile);
@@ -81,10 +79,30 @@ int main(int argc, char** argv){
 	cout << "tree: " << endl;
 	tree->printEdges();
 
+	cout << "adde node info" << endl;
+
+	tree->updateNodeInfo();
+
+	for(int i=0;i<graph->seqLen;i++){
+		graph->allNodes[i]->printNodeInfo();
+	}
+
+
+	cout << "edgeInfo: " << endl;
+	tree->updateEdgeInfo();
+	for(int i=0;i<tree->geList.size();i++){
+		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
+		tree->geList[i]->printPartition();
+	}
+
+	cout << "update sampling info" << endl;
+	tree->updateSamplingInfo();
+
+	cout << "run MC" << endl;
+	tree->runAtomicMC();
+
 	clock_t end1 = clock();
 	cout << "time1: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
-
-
 
 }
 

@@ -207,7 +207,9 @@ int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int se
 		}
 	}
 
-	if(minD < 1.5)
+	if(abs(sep) == 1)
+		return minIndex;
+	else if(minD < 1.5)
 		return minIndex;
 	else
 		return -1;

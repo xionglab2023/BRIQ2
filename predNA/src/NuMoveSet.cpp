@@ -124,6 +124,10 @@ void MixedNuPairCluster::updateEdgeInformation(EdgeInformation* ei){
 	}
 
 	double pAdd = 0;
+	for(int i=0;i<10000;i++){
+		randPool[i] = 0;
+	}
+
 	for(int i=0;i<clusterIDList.size();i++){
 		int start = (int)(pAdd*10000);
 		pAdd += clusterPList[i]/psum;
