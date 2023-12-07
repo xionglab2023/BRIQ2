@@ -55,3 +55,5 @@ target_link_libraries (briq_InitPDB briqx)
 target_link_libraries (rnaScoring briqx)
 target_link_libraries (ctToRMS briqx)
 
+install(TARGETS testGraph
+    RUNTIME DESTINATION bin)

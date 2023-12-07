@@ -68,6 +68,7 @@ int main(int argc, char** argv){
 	}
 	*/
 
+
 	cout << "init graph" << endl;
 	NuGraph* graph = new NuGraph(inputFile);
 	graph->initRandWeight();
@@ -86,6 +87,8 @@ int main(int argc, char** argv){
 	for(int i=0;i<graph->seqLen;i++){
 		graph->allNodes[i]->printNodeInfo();
 	}
+
+
 
 
 	cout << "edgeInfo: " << endl;

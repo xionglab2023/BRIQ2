@@ -57,8 +57,8 @@ inline double nuBaseBaseEnergy(BaseConformer* baseConfA, BaseConformer* baseConf
 			bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
 		}
 	}
-	return clashEnergy;
-	//return bpEnergy+clashEnergy;
+	//return clashEnergy;
+	return bpEnergy+clashEnergy;
 }
 
 inline double nuBaseRiboseEnergy(BaseConformer* baseConf, RiboseConformer* riboseConf, int sep, RnaEnergyTable* et){

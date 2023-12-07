@@ -337,6 +337,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		e += eImpD4D5[impIndexB*32400 + ((int)(xdihed4*0.5))*180 + (int)(xdihed5*0.5)] + para->rnaDihedImpD4D5Shift[regionIndexB];
 		e += eD2D4D3[((int)(dihed2*0.166666666))*10800 + ((int)(xdihed4*0.166666666))*180 + (int)(xdihed3*0.5)] + para->rnaDihedD2D3D4Shift[regionIndexC];
 
+
+		if(e < minE){
+			minE = e;
+		}
+
+		if(abs(e) > 999999.9){
+			printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
+		}
 		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[dihed1][dihed2], minE*para->wtPho);
 		return;
 	}
@@ -437,6 +445,10 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			bestDihed2 = dihed2;
 			bestIndex1 = i;
 			minE = e;
+		}
+
+		if(abs(e) > 999999.9){
+			printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
 		}
 	}
 
@@ -540,6 +552,10 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			bestDihed2 = dihed2;
 			minE = e;
 		}
+
+		if(abs(e) > 999999.9){
+			printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
+		}
 	}
 
 	double libErr;
@@ -641,6 +657,10 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 					bestDihed2 = dihed2;
 					minE = e;
 				}
+
+				if(abs(e) > 999999.9){
+					printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
+				}
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
@@ -740,6 +760,10 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 					bestDihed1 = dihed1;
 					bestDihed2 = dihed2;
 					minE = e;
+				}
+
+				if(abs(e) > 999999.9){
+					printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
 				}
 			}
 		}

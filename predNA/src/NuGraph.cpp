@@ -482,7 +482,7 @@ double NuNode::rotMutEnergy(){
 
 	for(i=0;i<connectionBreakPoints.size();i++){
 		j = connectionBreakPoints[i];
-		mutE += graph->allNodes[j]->eneTmp - graph->allNodes[j]->ene;
+		mutE += graph->allNodes[j]->phoConfTmp->ene - graph->allNodes[j]->phoConf->ene;
 	}
 
 	/*
@@ -1165,6 +1165,7 @@ double NuEdge::mutEnergy(){
 			if(nB->connectToNeighbor) {
 				mutE += eA->pairEneTmp[2] - eA->pairEne[2];
 				mutE += eA->pairEneTmp[5] - eA->pairEne[5];
+
 			}
 		}
 	}
@@ -1182,6 +1183,8 @@ double NuEdge::mutEnergy(){
 			if(nB->connectToNeighbor) {
 				mutE += eA->pairEneTmp[2] - eA->pairEne[2];
 				mutE += eA->pairEneTmp[5] - eA->pairEne[5];
+
+
 			}
 		}
 	}
@@ -1214,6 +1217,7 @@ double NuEdge::mutEnergy(){
 			if(nB->connectToNeighbor) {
 				mutE += eA->pairEneTmp[2] - eA->pairEne[2];
 				mutE += eA->pairEneTmp[5] - eA->pairEne[5];
+
 			}
 
 		}
@@ -1228,6 +1232,7 @@ double NuEdge::mutEnergy(){
 			nB = phoGroupB[j];
 			eA = graph->allEdges[nA->seqID*graph->seqLen+nB->seqID];
 			mutE += eA->pairEneTmp[8] - eA->pairEne[8];
+
 		}
 	}
 	/*
@@ -1250,6 +1255,7 @@ double NuEdge::mutEnergy(){
 			nB = phoGroupC[j];
 			eA = graph->allEdges[nA->seqID*graph->seqLen+nB->seqID];
 			mutE += eA->pairEneTmp[8] - eA->pairEne[8];
+
 		}
 	}
 
@@ -1263,8 +1269,10 @@ double NuEdge::mutEnergy(){
 
 			eA = graph->allEdges[nA->seqID*graph->seqLen+nB->seqID];
 			mutE += eA->pairEneTmp[8] - eA->pairEne[8];
+
 		}
 	}
+
 	return mutE;
 }
 
@@ -2060,7 +2068,6 @@ void NuTree::printEdges(){
 
 void NuTree::runAtomicMC(){
 
-	cout << "runMC" << endl;
 	int stepNum = 10;
 
 	double T0 = 5.0;
@@ -2079,14 +2086,6 @@ void NuTree::runAtomicMC(){
 	CsMove randMove;
 
 	int len = graph->seqLen;
-
-	cout << "init check" << endl;
-	graph->checkEnergy();
-
-
-	cout << "init energy" << endl;
-	graph->printEnergy();
-
 
 	for(T=T0;T>T1;T=T*anneal){
 
@@ -2111,25 +2110,15 @@ void NuTree::runAtomicMC(){
 
 				double mutE2 = graph->totalEnergyTmp() - graph->totalEnergy();
 
-				cout << "rot mut, pos " << randPos << " mutE: " << mutE << " " << mutE2 << endl;
-
-				graph->checkEnergy();
-
-
-				string tag = "AC";
 
 				if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
 					randNode->acceptRotMutation();
 					curEne += mutE;
 					nAc++;
-					tag = "AC";
 				}
 				else {
-					tag = "RJ";
 					randNode->clearRotMutation();
 				}
-				cout << "rot mut, pos " << randPos << " mutE: " << mutE << " " << tag << endl;
-				graph->checkEnergy();
 
 			}
 			else {
@@ -2142,24 +2131,14 @@ void NuTree::runAtomicMC(){
 				mutE = randEdge->mutEnergy();
 				double mutE2 = graph->totalEnergyTmp() - graph->totalEnergy();
 
-				string tag = "AC";
-
-				cout << "cm mut, idA " << randEdge->indexA << " idB " << randEdge->indexB  << " mutE: " << mutE  << "mutE2: " << mutE2 << endl;
-				graph->checkEnergy();
-
 				if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
 					randEdge->acceptMutation();
 					curEne += mutE;
 					eAc++;
-					tag = "AC";
 				}
 				else {
 					randEdge->clearMutation();
-					tag = "RJ";
 				}
-				cout << "cm mut, idA " << randEdge->indexA << " idB " << randEdge->indexB  << " mutE: " << mutE << " " << tag << endl;
-				graph->checkEnergy();
-
 			}
 		}
 
