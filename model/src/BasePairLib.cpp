@@ -1,7 +1,7 @@
 /*
  * BasePairLib.cpp
  *
- *  Created on: 2023Äê8ÔÂ7ÈÕ
+ *  Created on: 2023ï¿½ï¿½8ï¿½ï¿½7ï¿½ï¿½
  *      Author: nuc
  */
 
