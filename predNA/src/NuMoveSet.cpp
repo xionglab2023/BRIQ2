@@ -145,13 +145,32 @@ void MixedNuPairCluster::updateEdgeInformation(EdgeInformation* ei){
 }
 
 CsMove MixedNuPairCluster::getRandomMove(){
+
+	if(fixedNativeCM){
+		return natCM;
+	}
+
 	int cluster = randPool[rand()%10000];
+
 	if(sep == 1)
 		return moveLib->nbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
 	else if(sep == -1)
 		return moveLib->revNbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
 	else
 		return moveLib->nnbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
+
+}
+
+void MixedNuPairCluster::printMoveSetInfo(){
+	set<int> clusterSet;
+	for(int i=0;i<10000;i++){
+		clusterSet.insert(randPool[i]);
+	}
+	set<int>::iterator it;
+	for(it=clusterSet.begin();it!=clusterSet.end();it++){
+		cout << *it << " ";
+	}
+	cout << endl;
 
 }
 

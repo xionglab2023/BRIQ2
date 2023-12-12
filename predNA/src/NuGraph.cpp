@@ -702,6 +702,69 @@ double NuNode::mutEnergyCG(){
 	return mutE;
 }
 
+vector<Atom*> NuNode::toAtomList(AtomLib* atLib){
+	vector<Atom*> list;
+	vector<string>* names = atLib->getRnaSidechainAtoms(this->baseType);
+	vector<XYZ> tList;
+	for(int i=0;i<baseConf->rot->atomNum;i++){
+		tList.push_back(baseConf->coords[i]);
+	}
+    vector<Atom*> atomList;
+
+
+    for(int i=0;i<tList.size();i++){
+    	atomList.push_back(new Atom(names->at(i), tList[i]));
+    }
+
+    atomList.push_back(new Atom("C1'", riboseConf->coords[0]));
+    atomList.push_back(new Atom("C2'", riboseConf->coords[1]));
+    atomList.push_back(new Atom("C3'", riboseConf->coords[2]));
+    atomList.push_back(new Atom("C4'", riboseConf->coords[3]));
+    atomList.push_back(new Atom("O4'", riboseConf->coords[4]));
+    atomList.push_back(new Atom("O3'", riboseConf->coords[5]));
+    atomList.push_back(new Atom("C5'", riboseConf->coords[6]));
+    if(this->baseType < 4) {
+    	atomList.push_back(new Atom("O2'", riboseConf->coords[7]));
+    }
+
+    return atomList;
+}
+
+vector<Atom*> NuNode::toAtomListWithPho(AtomLib* atLib){
+	vector<Atom*> list;
+	vector<string>* names = atLib->getRnaSidechainAtoms(this->baseType);
+	vector<XYZ> tList;
+	for(int i=0;i<baseConf->rot->atomNum;i++){
+		tList.push_back(baseConf->coords[i]);
+	}
+    vector<Atom*> atomList;
+
+
+    for(int i=0;i<tList.size();i++){
+    	atomList.push_back(new Atom(names->at(i), tList[i]));
+    }
+
+    atomList.push_back(new Atom("C1'", riboseConf->coords[0]));
+    atomList.push_back(new Atom("C2'", riboseConf->coords[1]));
+    atomList.push_back(new Atom("C3'", riboseConf->coords[2]));
+    atomList.push_back(new Atom("C4'", riboseConf->coords[3]));
+    atomList.push_back(new Atom("O4'", riboseConf->coords[4]));
+    atomList.push_back(new Atom("O3'", riboseConf->coords[5]));
+    atomList.push_back(new Atom("C5'", riboseConf->coords[6]));
+    if(this->baseType < 4) {
+    	atomList.push_back(new Atom("O2'", riboseConf->coords[7]));
+    }
+
+    if(connectToNeighbor) {
+        atomList.push_back(new Atom("P", phoConf->coords[0]));
+        atomList.push_back(new Atom("O5'", phoConf->coords[1]));
+        atomList.push_back(new Atom("OP1", phoConf->coords[2]));
+        atomList.push_back(new Atom("OP2", phoConf->coords[3]));
+    }
+
+    return atomList;
+}
+
 NuEdge::NuEdge(NuNode* nodeA, NuNode* nodeB, NuGraph* graph){
 	this->graph = graph;
 	this->indexA = nodeA->seqID;
@@ -888,7 +951,11 @@ void NuEdge::updateEdgeInfo(NuTree* tree){
 	int sepR = -sep;
 	if(abs(sepR) > 1) sepR = 2;
 
-	pairEne[0] = nuBaseBaseEnergy(nodeA->baseConf, nodeB->baseConf, sep, graph->et);
+	if(nodeA->seqID < nodeB->seqID)
+		pairEne[0] = nuBaseBaseEnergy(nodeA->baseConf, nodeB->baseConf, sep, graph->et);
+	else
+		pairEne[0] = nuBaseBaseEnergy(nodeB->baseConf, nodeA->baseConf, sepR, graph->et);
+
 	pairEne[1] = nuBaseRiboseEnergy(nodeA->baseConf, nodeB->riboseConf, sep, graph->et);
 	pairEne[2] = nuBasePhoEnergy(nodeA->baseConf, nodeB->phoConf, sep, graph->et);
 
@@ -900,7 +967,11 @@ void NuEdge::updateEdgeInfo(NuTree* tree){
 	pairEne[8] = nuPhoPhoEnergy(nodeA->phoConf, nodeB->phoConf, sep, graph->et);
 
 
-	eneCG[0] = nuBaseBaseEnergyCG(nodeA->baseConfCG, nodeB->baseConfCG, sep, graph->et);
+	if(nodeA->seqID < nodeB->seqID)
+		eneCG[0] = nuBaseBaseEnergyCG(nodeA->baseConfCG, nodeB->baseConfCG, sep, graph->et);
+	else
+		eneCG[0] = nuBaseBaseEnergyCG(nodeB->baseConfCG, nodeA->baseConfCG, sepR, graph->et);
+
 	eneCG[1] = nuBaseRiboseEnergyCG(nodeA->baseConfCG, nodeB->riboseConfCG, sep, graph->et);
 	eneCG[2] = nuBaseRiboseEnergyCG(nodeB->baseConfCG, nodeA->riboseConfCG, sepR, graph->et);
 	eneCG[3] = nuRiboseRiboseEnergyCG(nodeA->riboseConfCG, nodeB->riboseConfCG, sep, graph->et);
@@ -949,10 +1020,18 @@ void NuEdge::updateCsMove(CsMove& cm){
 			eA = graph->allEdges[nA->seqID*graph->seqLen+nB->seqID];
 			eB = graph->allEdges[nB->seqID*graph->seqLen+nA->seqID];
 
-			eA->pairEneTmp[0] = nuBaseBaseEnergy(nA->baseConfTmp, nB->baseConfTmp, sep, graph->et);
+			if(nA->seqID < nB->seqID)
+				eA->pairEneTmp[0] = nuBaseBaseEnergy(nA->baseConfTmp, nB->baseConfTmp, sep, graph->et);
+			else
+				eA->pairEneTmp[0] = nuBaseBaseEnergy(nB->baseConfTmp, nA->baseConfTmp, sepR, graph->et);
+
 			eA->pairEneTmp[1] = nuBaseRiboseEnergy(nA->baseConfTmp, nB->riboseConfTmp, sep, graph->et);
 			eA->pairEneTmp[3] = nuBaseRiboseEnergy(nB->baseConfTmp, nA->riboseConfTmp, sepR, graph->et);
-			eA->pairEneTmp[4] = nuRiboseRiboseEnergy(nA->riboseConfTmp, nB->riboseConfTmp, sep, graph->et);
+
+			if(nA->seqID < nB->seqID)
+				eA->pairEneTmp[4] = nuRiboseRiboseEnergy(nA->riboseConfTmp, nB->riboseConfTmp, sep, graph->et);
+			else
+				eA->pairEneTmp[4] = nuRiboseRiboseEnergy(nB->riboseConfTmp, nA->riboseConfTmp, sepR, graph->et);
 
 			eB->pairEneTmp[0] = eA->pairEneTmp[0];
 			eB->pairEneTmp[1] = eA->pairEneTmp[3];
@@ -1061,7 +1140,12 @@ void NuEdge::updateCsMove(CsMove& cm){
 			sepR = graph->sepTable[nB->seqID*graph->seqLen+nA->seqID];
 			eA = graph->allEdges[nA->seqID*graph->seqLen+nB->seqID];
 			eB = graph->allEdges[nB->seqID*graph->seqLen+nA->seqID];
-			eA->pairEneTmp[8] = nuPhoPhoEnergy(nA->phoConfTmp, nB->phoConfTmp, sep, graph->et);
+
+			if(nA->seqID < nB->seqID)
+				eA->pairEneTmp[8] = nuPhoPhoEnergy(nA->phoConfTmp, nB->phoConfTmp, sep, graph->et);
+			else
+				eA->pairEneTmp[8] = nuPhoPhoEnergy(nB->phoConfTmp, nA->phoConfTmp, sepR, graph->et);
+
 			eB->pairEneTmp[8] = eA->pairEneTmp[8];
 		}
 	}
@@ -1076,7 +1160,12 @@ void NuEdge::updateCsMove(CsMove& cm){
 			sepR = graph->sepTable[nB->seqID*graph->seqLen+nA->seqID];
 			eA = graph->allEdges[nA->seqID*graph->seqLen+nB->seqID];
 			eB = graph->allEdges[nB->seqID*graph->seqLen+nA->seqID];
-			eA->pairEneTmp[8] = nuPhoPhoEnergy(nA->phoConfTmp, nB->phoConfTmp, sep, graph->et);
+
+			if(nA->seqID < nB->seqID)
+				eA->pairEneTmp[8] = nuPhoPhoEnergy(nA->phoConfTmp, nB->phoConfTmp, sep, graph->et);
+			else
+				eA->pairEneTmp[8] = nuPhoPhoEnergy(nB->phoConfTmp, nA->phoConfTmp, sepR, graph->et);
+
 			eB->pairEneTmp[8] = eA->pairEneTmp[8];
 		}
 	}
@@ -1091,7 +1180,10 @@ void NuEdge::updateCsMove(CsMove& cm){
 			sepR = graph->sepTable[nB->seqID*graph->seqLen+nA->seqID];
 			eA = graph->allEdges[nA->seqID*graph->seqLen+nB->seqID];
 			eB = graph->allEdges[nB->seqID*graph->seqLen+nA->seqID];
-			eA->pairEneTmp[8] = nuPhoPhoEnergy(nA->phoConfTmp, nB->phoConfTmp, sep, graph->et);
+			if(nA->seqID < nB->seqID)
+				eA->pairEneTmp[8] = nuPhoPhoEnergy(nA->phoConfTmp, nB->phoConfTmp, sep, graph->et);
+			else
+				eA->pairEneTmp[8] = nuPhoPhoEnergy(nB->phoConfTmp, nA->phoConfTmp, sepR, graph->et);
 			eB->pairEneTmp[8] = eA->pairEneTmp[8];
 		}
 	}
@@ -1111,7 +1203,11 @@ void NuEdge::updateCsMove(CsMove& cm){
 			eB = graph->allEdges[nB->seqID*graph->seqLen+nA->seqID];
 
 
-			eA->pairEneTmp[8] = nuPhoPhoEnergy(nA->phoConfTmp, nB->phoConfTmp, sep, graph->et);
+			if(nA->seqID < nB->seqID)
+				eA->pairEneTmp[8] = nuPhoPhoEnergy(nA->phoConfTmp, nB->phoConfTmp, sep, graph->et);
+			else
+				eA->pairEneTmp[8] = nuPhoPhoEnergy(nB->phoConfTmp, nA->phoConfTmp, sepR, graph->et);
+
 			eB->pairEneTmp[8] = eA->pairEneTmp[8];
 		}
 	}
@@ -1704,7 +1800,12 @@ bool NuEdge::checkEnergy(){
 	if(abs(sepR) > 1)
 		sepR = 2;
 
-	double e0 = nuBaseBaseEnergy(nodeA->baseConf, nodeB->baseConf, sep, graph->et);
+	double e0;
+	if(nodeA->seqID < nodeB->seqID)
+		e0 = nuBaseBaseEnergy(nodeA->baseConf, nodeB->baseConf, sep, graph->et);
+	else
+		e0 = nuBaseBaseEnergy(nodeB->baseConf, nodeA->baseConf, sepR, graph->et);
+
 	double e1 = nuBaseRiboseEnergy(nodeA->baseConf, nodeB->riboseConf, sep, graph->et);
 	double e2 = nuBasePhoEnergy(nodeA->baseConf, nodeB->phoConf, sep, graph->et);
 	double e3 = nuBaseRiboseEnergy(nodeB->baseConf, nodeA->riboseConf, sepR, graph->et);
@@ -1714,7 +1815,12 @@ bool NuEdge::checkEnergy(){
 	double e7 = nuRibosePhoEnergy(nodeB->riboseConf, nodeA->phoConf, sepR, graph->et);
 	double e8 = nuPhoPhoEnergy(nodeA->phoConf, nodeB->phoConf, sep, graph->et);
 
-	double e0Tmp = nuBaseBaseEnergy(nodeA->baseConfTmp, nodeB->baseConfTmp, sep, graph->et);
+	double e0Tmp;
+	if(nodeA->seqID < nodeB->seqID)
+		e0Tmp = nuBaseBaseEnergy(nodeA->baseConfTmp, nodeB->baseConfTmp, sep, graph->et);
+	else
+		e0Tmp = nuBaseBaseEnergy(nodeB->baseConfTmp, nodeA->baseConfTmp, sepR, graph->et);
+
 	double e1Tmp = nuBaseRiboseEnergy(nodeA->baseConfTmp, nodeB->riboseConfTmp, sep, graph->et);
 	double e2Tmp = nuBasePhoEnergy(nodeA->baseConfTmp, nodeB->phoConfTmp, sep, graph->et);
 	double e3Tmp = nuBaseRiboseEnergy(nodeB->baseConfTmp, nodeA->riboseConfTmp, sepR, graph->et);
@@ -1971,6 +2077,12 @@ void NuTree::updateNodeInfo(){
 	}
 }
 
+void NuTree::printNodeInfo(){
+	for(int i=0;i<graph->seqLen;i++){
+		cout << graph->allNodes[i]->connectToNeighbor << endl;
+	}
+}
+
 void NuTree::updateEdgeInfo(){
 
 
@@ -2058,24 +2170,64 @@ void NuTree::updateSamplingInfo(){
 
 }
 
+void NuTree::randomInit(){
+	NuNode* randNode;
+	NuEdge* randEdge;
+	RiboseRotamer* randRot;
+	CsMove randMove;
+
+	for(int i=0;i<graph->seqLen;i++){
+		randNode = graph->allNodes[i];
+		randRot = graph->rotLib->riboseRotLib->getRandomRotamer(randNode->baseType);
+		randNode->updateRiboseRotamer(randRot);
+		randNode->acceptRotMutation();
+	}
+	for(int i=0;i<geList.size();i++){
+		randEdge = geList[i];
+
+		BaseDistanceMatrix dm0(randEdge->cm);
+
+		randMove = randEdge->moveSet->getRandomMove();
+
+		cout << "print move set info:" << endl;
+		randEdge->moveSet->printMoveSetInfo();
+
+		BaseDistanceMatrix dm1(randMove);
+		int pairtype = graph->pairLib->getPairType(dm1, randEdge->indexA, randEdge->indexB, randEdge->sep);
+
+		cout << "current pair type: " << pairtype << endl;
+
+		double dist = dm0.distanceTo(dm1);
+		printf("rand init edge %d-%d, distance = %5.3f\n", geList[i]->indexA, geList[i]->indexB, dist);
+
+		randEdge->updateCsMove(randMove);
+		randEdge->acceptMutation();
+	}
+}
+
 
 void NuTree::printEdges(){
 	for(int i=0;i<geList.size();i++){
 		NuEdge* e = geList[i];
 		printf("%-3d %-3d %7.3f\n", e->indexA, e->indexB, e->weight);
+		e->moveSet->printMoveSetInfo();
 	}
 }
 
-void NuTree::runAtomicMC(){
+void NuTree::runAtomicMC(const string& output){
 
-	int stepNum = 10;
+	randomInit();
+
+	int stepNum = this->graph->seqLen*2000;
 
 	double T0 = 5.0;
-	double T1 = 0.001;
+	double T1 = 0.01;
 	double anneal = 0.95;
 
 	double curEne = graph->totalEnergy();
 	double lastEne = curEne;
+
+
 
 	int i,j,k, randPos, nAc, eAc, nTot, eTot;
 	double T, randP, mutE;
@@ -2101,16 +2253,11 @@ void NuTree::runAtomicMC(){
 				 * rotamer mut
 				 */
 				nTot ++;
-
 				randPos = randPoolNode[rand()%poolSize];
 				randNode = graph->allNodes[randPos];
 				randRot = graph->rotLib->riboseRotLib->getRandomRotamer(randNode->baseType);
 				randNode->updateRiboseRotamer(randRot);
 				mutE = randNode->rotMutEnergy();
-
-				double mutE2 = graph->totalEnergyTmp() - graph->totalEnergy();
-
-
 				if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
 					randNode->acceptRotMutation();
 					curEne += mutE;
@@ -2119,18 +2266,17 @@ void NuTree::runAtomicMC(){
 				else {
 					randNode->clearRotMutation();
 				}
-
 			}
 			else {
-
+				/*
+				 * edge mut
+				 */
 				eTot ++;
 				randPos = randPoolEdge[rand()%poolSize];
 				randEdge = geList[randPos];
 				randMove = randEdge->moveSet->getRandomMove();
 				randEdge->updateCsMove(randMove);
 				mutE = randEdge->mutEnergy();
-				double mutE2 = graph->totalEnergyTmp() - graph->totalEnergy();
-
 				if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
 					randEdge->acceptMutation();
 					curEne += mutE;
@@ -2143,10 +2289,14 @@ void NuTree::runAtomicMC(){
 		}
 
 		double totEne = graph->totalEnergy();
-		double totEne2 = graph->totalEnergy2();
-
-		printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f totEne2=%8.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, totEne2);
+		graphInfo* gi = graph->getGraphInfo();
+		double rms = gi->rmsd(this->graph->initInfo);
+		delete gi;
+		printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
 	}
+
+	graphInfo* gi = graph->getGraphInfo();
+	gi->printPDB(output);
 
 }
 
@@ -2154,6 +2304,89 @@ void NuTree::runCoarseGrainedMC(){
 
 }
 
+graphInfo::graphInfo(int seqLen, int* seq, bool* con, NuNode** nodes, double ene, AtomLib* atLib){
+	this->seqLen = seqLen;
+	this->seq = new int[seqLen];
+	this->connectToDownstream = new bool[seqLen];
+	this->nodes = new NuNode*[seqLen];
+	this->ene = ene;
+
+	for(int i=0;i<seqLen;i++){
+		this->seq[i] = seq[i];
+		this->connectToDownstream[i] = con[i];
+	}
+
+	for(int i=0;i<seqLen;i++){
+		NuNode* n = nodes[i];
+		NuNode* node = new NuNode(n->seqID, n->baseType, n->baseConf->cs1, n->riboseConf->rot, atLib);
+		node->phoConf->copyValueFrom(n->phoConf);
+		node->phoConfTmp->copyValueFrom(n->phoConfTmp);
+		node->connectToNeighbor = connectToDownstream[i];
+		this->nodes[i] = node;
+	}
+
+	this->atLib = atLib;
+}
+
+double graphInfo::rmsd(graphInfo* other){
+	vector<XYZ> tList1;
+	vector<XYZ> tList2;
+
+	AtomLib atLib;
+	int seqID = 0;
+	for(unsigned int i=0;i<this->seqLen;i++) {
+		vector<Atom*> aList = nodes[i]->toAtomList(this->atLib);
+		for(int j=0;j<aList.size();j++)
+			tList1.push_back(aList[j]->coord);
+		for(int k=0;k<aList.size();k++){
+			delete aList[k];
+		}
+	}
+
+	for(unsigned int i=0;i<this->seqLen;i++) {
+		vector<Atom*> aList = other->nodes[i]->toAtomList(this->atLib);
+		for(int j=0;j<aList.size();j++)
+			tList2.push_back(aList[j]->coord);
+		for(int k=0;k<aList.size();k++){
+			delete aList[k];
+		}
+	}
+	return NSPgeometry::rmsd(tList1, tList2);
+}
+
+void graphInfo::printPDB(const string& outputFile){
+	RNAChain rc;
+	string s = "AUGC";
+	char ss[20];
+	int seqID = 0;
+	int atomNum = 0;
+	for(int i=0;i<this->seqLen;i++) {
+
+		seqID++;
+		sprintf(ss, "%d", seqID);
+		RNABase* base = new RNABase(string(ss), "A", s[seq[i]]);
+		vector<Atom*> aList = nodes[i]->toAtomListWithPho(atLib);
+		for(int j=0;j<aList.size();j++)
+			base->addAtom(aList[j]);
+		rc.addBase(base);
+		atomNum += aList.size();
+	}
+
+	ofstream of;
+	of.open(outputFile, ios::out);
+	rc.printPDBFormat(of, 1);
+	of << "ene: " << this->ene << endl;
+	of.close();
+
+}
+
+graphInfo::~graphInfo(){
+	delete [] seq;
+	delete [] connectToDownstream;
+	for(int i=0;i<seqLen;i++)
+		delete nodes[i];
+	delete [] nodes;
+}
 
 
 NuGraph::NuGraph(const string& inputFile){
@@ -2163,7 +2396,6 @@ NuGraph::NuGraph(const string& inputFile){
 	this->atLib = new AtomLib();
 	this->moveLib = new NuPairMoveSetLibrary();
 	this->et = new RnaEnergyTable();
-
 	init(inputFile);
 }
 
@@ -2190,6 +2422,7 @@ NuGraph::~NuGraph() {
 		delete initRiboseRotList[i];
 	}
 
+	delete initInfo;
 }
 
 void NuGraph::init(const string& inputFile){
@@ -2301,6 +2534,7 @@ void NuGraph::init(const string& inputFile){
 	for(i=0;i<seqLen;i++){
 		LocalFrame cs1 = baseList[i]->getCoordSystem();
 		this->allNodes[i] = new NuNode(i, baseList[i]->baseTypeInt, cs1, initRiboseRotList[i], atLib);
+		this->allNodes[i]->connectToNeighbor = connectToDownstream[i];
 		this->allNodes[i]->graph = this;
 	}
 
@@ -2382,6 +2616,8 @@ void NuGraph::init(const string& inputFile){
 					if(c == d){
 						this->allEdges[i*seqLen+k]->weight = -999.9;
 						this->allEdges[k*seqLen+i]->weight = -999.9;
+						this->allEdges[i*seqLen+k]->fixNaiveMove();
+						this->allEdges[k*seqLen+i]->fixNaiveMove();
 					}
 				}
 			}
@@ -2394,6 +2630,14 @@ void NuGraph::init(const string& inputFile){
 		}
 	}
 
+	for(int i=0;i<seqLen;i++){
+		if(connectToDownstream[i]){
+			et->pb->buildPhosphate(allNodes[i]->riboseConf, allNodes[i]->riboseConf, allNodes[i]->phoConf);
+			allNodes[i]->phoConfTmp->copyValueFrom(allNodes[i]->phoConf);
+		}
+	}
+
+	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, allNodes, 0.0, atLib);
 }
 
 bool MST_cmp_weight(NuEdge* e1, NuEdge* e2){
@@ -2408,7 +2652,6 @@ int MST_find(int* parent, int f){
 }
 
 void NuGraph::initRandWeight(){
-
 
 	for(int i=0;i<seqLen;i++){
 		for(int j=0;j<seqLen;j++){
@@ -2540,7 +2783,6 @@ double NuGraph::totalEnergy2(){
 	int i,j,k, sep, sepR;
 	for(i=0;i<seqLen;i++){
 		ene += allNodes[i]->ene;
-
 	}
 
 	for(i=0;i<seqLen;i++){
@@ -2563,6 +2805,11 @@ void NuGraph::printEnergy(){
 			printf("eTmp: %2d %2d sep: %2d BB %7.3f BR %7.3f BP %7.3f RB %7.3f RR %7.3f RP %7.3f PB %7.3f PR %7.3f PP %7.3f\n", i, j, eg->sep, eg->pairEneTmp[0], eg->pairEneTmp[1], eg->pairEneTmp[2],eg->pairEneTmp[3],eg->pairEneTmp[4],eg->pairEneTmp[5],eg->pairEneTmp[6],eg->pairEneTmp[7],eg->pairEneTmp[8]);
 		}
 	}
+}
+
+graphInfo* NuGraph::getGraphInfo(){
+	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, allNodes, totalEnergy(), atLib);
+	return gi;
 }
 
 

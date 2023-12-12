@@ -93,7 +93,7 @@ vector<Atom*> BRNode::toAtomList(AtomLib& atLib) {
 
 vector<Atom*> BRNode::toBaseAtomList(AtomLib& atLib) {
 
-    vector<Atom*> list;
+
     vector<string>* names = atLib.getRnaSidechainAtoms(this->baseType);
     vector<XYZ> tList;
     for(int i=0;i<baseConf->rot->atomNum;i++){

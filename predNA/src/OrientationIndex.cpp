@@ -71,7 +71,7 @@ CsMove OrientationIndex::index1000ToCsMove(int index){
 	LocalFrame csA = getCsA(tList1000[spIndexA], ang, dist);
 	LocalFrame csB = getCsB(tList1000[spIndexB], ang, dist);
 
-	CsMove cm = csA - csB;
+	CsMove cm = csB - csA;
 	return cm;
 }
 
@@ -88,7 +88,7 @@ CsMove OrientationIndex::index2000ToCsMove(int indexA, int indexB){
 	LocalFrame csA = getCsA(tList2000[spIndexA], ang, dist);
 	LocalFrame csB = getCsB(tList2000[spIndexB], ang, dist);
 
-	CsMove cm = csA - csB;
+	CsMove cm = csB - csA;
 	return cm;
 }
 

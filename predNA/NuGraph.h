@@ -21,6 +21,7 @@
 #include "model/RiboseRotamer.h"
 #include "model/PhosphateRotamer.h"
 #include "model/BasePairLib.h"
+#include "geometry/RMSD.h"
 #include "predNA/NuMoveSet.h"
 #include "predNA/EdgeInformation.h"
 #include "tools/InputParser.h"
@@ -48,7 +49,6 @@ public:
 	int baseType;
 
 	bool connectToNeighbor;
-
 
 	BaseConformer* baseConf;
 	BaseConformer* baseConfTmp;
@@ -104,6 +104,8 @@ public:
 	double mutEnergyCG();
 	bool checkEnergyCG();
 
+	vector<Atom*> toAtomList(AtomLib* atLib);
+	vector<Atom*> toAtomListWithPho(AtomLib* atLib);
 
 	virtual ~NuNode();
 };
@@ -206,13 +208,34 @@ public:
 
 	NuTree(NuGraph* graph);
 	void updateNodeInfo();
-	void updateEdgeInfo();
 
+	void printNodeInfo();
+
+	void updateEdgeInfo();
 	void updateSamplingInfo();
+	void randomInit();
+
 	void printEdges();
-	void runAtomicMC();
+	void runAtomicMC(const string& output);
 	void runCoarseGrainedMC();
 	virtual ~NuTree();
+};
+
+class graphInfo{
+public:
+	int seqLen;
+	int* seq;
+	bool* connectToDownstream;
+	NuNode** nodes;
+	double ene;
+	AtomLib* atLib;
+
+	graphInfo(int seqLen, int* seq, bool* con, NuNode** nodes, double ene, AtomLib* atLib);
+
+	double rmsd(graphInfo* other);
+	void printPDB(const string& outputFile);
+	virtual ~graphInfo();
+
 };
 
 class NuGraph {
@@ -236,17 +259,21 @@ public:
 	NuPairMoveSetLibrary* moveLib;
 	RnaEnergyTable* et;
 
+	graphInfo* initInfo;
+
 	NuGraph(const string& inputFile);
 	void init(const string& inputFile);
 	void initRandWeight();
 	void MST_kruskal(NuTree* output);
 	void printAllEdge();
 	void checkEnergy();
+
 	double totalEnergy();
 	double totalEnergyTmp();
 	double totalEnergy2();
-
 	void printEnergy();
+
+	graphInfo* getGraphInfo();
 
 	virtual ~NuGraph();
 };

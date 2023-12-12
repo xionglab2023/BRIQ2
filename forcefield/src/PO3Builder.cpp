@@ -342,9 +342,6 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			minE = e;
 		}
 
-		if(abs(e) > 999999.9){
-			printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
-		}
 		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[dihed1][dihed2], minE*para->wtPho);
 		return;
 	}
@@ -445,10 +442,6 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			bestDihed2 = dihed2;
 			bestIndex1 = i;
 			minE = e;
-		}
-
-		if(abs(e) > 999999.9){
-			printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
 		}
 	}
 
@@ -553,9 +546,6 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			minE = e;
 		}
 
-		if(abs(e) > 999999.9){
-			printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
-		}
 	}
 
 	double libErr;
@@ -658,9 +648,6 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 					minE = e;
 				}
 
-				if(abs(e) > 999999.9){
-					printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
-				}
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
@@ -762,9 +749,6 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 					minE = e;
 				}
 
-				if(abs(e) > 999999.9){
-					printf("impA : %3d dihed1: %7.2f dihed2: %7.2f dihed3: %7.2f dihed4: %7.2f dihed5: %7.2f impB: %3d regionA: %d regionB: %d regionC: %d\n", impIndexA, dihed1, dihed2, xdihed3, xdihed4, xdihed5, impIndexB, regionIndexA, regionIndexB, regionIndexC);
-				}
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;

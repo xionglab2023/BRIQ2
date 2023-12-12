@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -77,6 +78,8 @@ public:
 		this->fixedNativeCM = true;
 	}
 	CsMove getRandomMove();
+
+	void printMoveSetInfo();
 
 	virtual ~MixedNuPairCluster();
 };

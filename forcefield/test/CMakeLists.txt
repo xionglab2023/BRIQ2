@@ -10,3 +10,5 @@ target_link_libraries (testClashEnergy briqx)
 target_link_libraries (testBaseAtomName briqx)
 target_link_libraries (rnaEne briqx)
 
+install(TARGETS rnaEne
+    RUNTIME DESTINATION bin)

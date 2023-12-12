@@ -37,6 +37,7 @@ int main(int argc, char** argv){
 	/*
 	BasePairLib* pairLib = new BasePairLib();
 	NuPairMoveSetLibrary* moveLib = NULL;
+	RnaEnergyTable* et = new RnaEnergyTable();
 
 	AtomLib* atLib = new AtomLib();
 	RNAPDB* pdb = new RNAPDB("/public/home/pengx/cpp/briqx/demo/gcaa/gcaa.pdb", "xxx");
@@ -66,7 +67,55 @@ int main(int argc, char** argv){
 			edgeList.push_back(edge);
 		}
 	}
+
+	for(int i=0;i<baseList.size();i++){
+		BaseConformer* confA = nodeList[i]->baseConf;
+		for(int j=i+2;j<baseList.size();j++){
+			BaseConformer* confB = nodeList[j]->baseConf;
+			double e1 = nuBaseBaseEnergy(confA, confB, 2, et);
+			double e2 = nuBaseBaseEnergy(confB, confA, 2, et);
+			if(abs(e1+e2) > 0){
+				printf("baseA: %d baseB: %d e1: %7.3f e2: %7.3f\n", i, j, e1, e2);
+			}
+		}
+	}
 	*/
+
+	/*
+	int typeA = 0;
+	int typeB = 2;
+	int sep = 2;
+	int pairType = typeA*4+typeB;
+	int clusterID = 2;
+
+
+	OrientationIndex* oi = new OrientationIndex();
+
+
+	BasePairLib* pairLib = new BasePairLib();
+
+
+	NuPairMoveSetLibrary* moveSet = new NuPairMoveSetLibrary();
+
+	EdgeInformation* ei = new EdgeInformation(sep, typeA, typeB, pairLib);
+	ei->setUniqueCluster(2, pairLib);
+	MixedNuPairCluster* mc = new MixedNuPairCluster(sep, typeA*4+typeB, moveSet);
+	mc->updateEdgeInformation(ei);
+
+	for(int i=0;i<100;i++){
+		CsMove cm = mc->getRandomMove();
+		BaseDistanceMatrix dm(cm);
+		int clusterID = pairLib->getPairType(dm, typeA, typeB, sep);
+		double d = pairLib->nnbDMClusterCenters[typeA*4+typeB][clusterID].distanceTo(dm);
+		printf("%-3d %5.3f\n", clusterID, d);
+	}
+	delete moveSet;
+	delete pairLib;
+	delete ei;
+	delete mc;
+	*/
+
+
 
 
 	cout << "init graph" << endl;
@@ -74,35 +123,28 @@ int main(int argc, char** argv){
 	graph->initRandWeight();
 	cout << "all edge" << endl;
 	graph->printAllEdge();
-
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	cout << "tree: " << endl;
 	tree->printEdges();
-
 	cout << "adde node info" << endl;
-
 	tree->updateNodeInfo();
-
 	for(int i=0;i<graph->seqLen;i++){
 		graph->allNodes[i]->printNodeInfo();
 	}
-
-
-
-
 	cout << "edgeInfo: " << endl;
 	tree->updateEdgeInfo();
 	for(int i=0;i<tree->geList.size();i++){
 		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
 		tree->geList[i]->printPartition();
 	}
-
 	cout << "update sampling info" << endl;
 	tree->updateSamplingInfo();
 
+	tree->printNodeInfo();
+
 	cout << "run MC" << endl;
-	tree->runAtomicMC();
+	tree->runAtomicMC(outputPDB);
 
 	clock_t end1 = clock();
 	cout << "time1: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
