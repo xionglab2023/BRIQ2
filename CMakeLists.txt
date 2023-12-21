@@ -8,8 +8,8 @@ SET( EXECUTABLE_OUTPUT_PATH  "${PROJECT_BINARY_DIR}/bin" )
 SET( LIBRARY_OUTPUT_PATH  "${PROJECT_BINARY_DIR}/lib" )
 
 include_directories("${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/include/")
-SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++20 -pthread -L ${LIBRARY_OUTPUT_PATH} -Wl,-rpath,$ENV{LIBRARY_PATH}") # bypassing CMake rpath mechanism
-# SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++20 -pthread -L ${LIBRARY_OUTPUT_PATH}")
+SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -pthread -L ${LIBRARY_OUTPUT_PATH} -Wl,-rpath,$ENV{LIBRARY_PATH}") # bypassing CMake rpath mechanism
+# SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -pthread -L ${LIBRARY_OUTPUT_PATH}")  # -std is handled by cmake
 
 # set(CMAKE_BUILD_RPATH "$ENV{LIBRARY_PATH}")
 # set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
