@@ -337,6 +337,11 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		e += eImpD4D5[impIndexB*32400 + ((int)(xdihed4*0.5))*180 + (int)(xdihed5*0.5)] + para->rnaDihedImpD4D5Shift[regionIndexB];
 		e += eD2D4D3[((int)(dihed2*0.166666666))*10800 + ((int)(xdihed4*0.166666666))*180 + (int)(xdihed3*0.5)] + para->rnaDihedD2D3D4Shift[regionIndexC];
 
+
+		if(e < minE){
+			minE = e;
+		}
+
 		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[dihed1][dihed2], minE*para->wtPho);
 		return;
 	}
@@ -540,6 +545,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			bestDihed2 = dihed2;
 			minE = e;
 		}
+
 	}
 
 	double libErr;
@@ -641,6 +647,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 					bestDihed2 = dihed2;
 					minE = e;
 				}
+
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
@@ -741,6 +748,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 					bestDihed2 = dihed2;
 					minE = e;
 				}
+
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
