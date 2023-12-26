@@ -34,6 +34,13 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clus
 	int moveID, binID;
 	double p;
 	while(file >> moveID >> p >> binID){
+		CsMove m1 = oi->index1000ToCsMove(moveID);
+		double d = m1.oriMove.length();
+		if(d < 0.001){
+			printf("%s %d\n", fileName, moveID);
+		}
+
+
 		if(sep > 0)
 			moveIndexList[binID].push_back(moveID);
 		else if(sep == -1){

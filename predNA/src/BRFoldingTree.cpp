@@ -302,7 +302,7 @@ BRFoldingTree::BRFoldingTree(const string& inputFile){
 			baseConstraintFactor[i] = 0;
 		}
 		else if(c >= '0' && c <= '9'){
-			float kk = c - '0';
+			double kk = c - '0';
 			baseConstraintFactor[i] = 0.05*pow(2.0, kk);
 			if(c == '0'){
 				baseConstraintFactor[i] = 0;
@@ -327,7 +327,7 @@ BRFoldingTree::BRFoldingTree(const string& inputFile){
 		}
 		int indexA = atoi(spt[0].c_str());
 		int indexB = atoi(spt[1].c_str());
-		float kk = atof(spt[2].c_str());
+		double kk = atof(spt[2].c_str());
 		basePairConstraintFactor[indexA*len+indexB] = 0.05*pow(2.0, kk);
 		basePairConstraintFactor[indexB*len+indexA] = 0.05*pow(2.0, kk);
 	}
@@ -878,7 +878,7 @@ BRFoldingTree::BRFoldingTree(const string& inputFile, RnaEnergyTable* et){
 			baseConstraintFactor[i] = 0;
 		}
 		else if(c >= '0' && c <= '9'){
-			float kk = c - '0';
+			double kk = c - '0';
 			baseConstraintFactor[i] = 0.05*pow(2.0, kk);
 			if(c == '0'){
 				baseConstraintFactor[i] = 0;
@@ -903,7 +903,7 @@ BRFoldingTree::BRFoldingTree(const string& inputFile, RnaEnergyTable* et){
 		}
 		int indexA = atoi(spt[0].c_str());
 		int indexB = atoi(spt[1].c_str());
-		float kk = atof(spt[2].c_str());
+		double kk = atof(spt[2].c_str());
 		basePairConstraintFactor[indexA*len+indexB] = 0.05*pow(2.0, kk);
 		basePairConstraintFactor[indexB*len+indexA] = 0.05*pow(2.0, kk);
 	}

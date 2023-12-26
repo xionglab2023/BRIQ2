@@ -1,7 +1,7 @@
 /*
  * NuEnergyCalculator.h
  *
- *  Created on: 2023Äê11ÔÂ23ÈÕ
+ *  Created on: 2023ï¿½ï¿½11ï¿½ï¿½23ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -159,7 +159,6 @@ inline double nuRiboseRiboseEnergy(RiboseConformer* riboseConfA, RiboseConformer
 					clashEnergy += et->acET->getRiboseRiboseEnergy(i,j,dd, sep);
 			}
 		}
-
 	}
 	return clashEnergy + hbondEnergy;
 }
@@ -182,7 +181,6 @@ inline double nuRibosePhoEnergy(RiboseConformer* riboseConf, PhosphateConformer*
 	hbondEnergy += et->hbET->getEnergy(O2UniqueID, riboseConf->o2Polar, uniqueIDOP1, phoConf->op1Polar);
 	hbondEnergy += et->hbET->getEnergy(O2UniqueID, riboseConf->o2Polar, uniqueIDOP2, phoConf->op2Polar);
 
-
 	nA = riboseConf->rot->atomNum;
 	for(i=0;i<nA;i++){
 		for(j=1;j<4;j++){
@@ -191,7 +189,6 @@ inline double nuRibosePhoEnergy(RiboseConformer* riboseConf, PhosphateConformer*
 				clashEnergy += et->acET->getRibosePhoEnergy(i,j,dd, sep);
 		}
 	}
-
 	return clashEnergy + hbondEnergy;
 }
 
@@ -216,19 +213,83 @@ inline double nuPhoPhoEnergy(PhosphateConformer* phoConfA, PhosphateConformer* p
 }
 
 inline double nuBaseBaseEnergyCG(BaseConformerCG* baseConfA, BaseConformerCG* baseConfB, int sep, RnaEnergyTable* et){
-	return 0.0;
+	double bpEnergy = 0.0;
+	double clashEnergy = 0.0;
+	double minDD, dd;
+	int i,j, nA, nB;
+	if(squareDistance(baseConfA->coords[0], baseConfB->coords[0]) < 225.0) {
+		minDD = 999999.9;
+		nA = 3;
+		nB = 3;
+		for(i=0;i<nA;i++){
+			for(j=0;j<nB;j++){
+				dd = squareDistance(baseConfA->coords[i], baseConfB->coords[j]);
+				if(dd < minDD){
+					minDD = dd;
+				}
+				if(dd < 16.0) {
+					clashEnergy += et->acET->getClashEnergyCG(baseConfA->rot->uniqueIDs[i],  baseConfB->rot->uniqueIDs[j], dd);
+				}
+			}
+		}
+		if(minDD < 20.25){
+			bpEnergy = et->bpcgET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
+		}
+	}
+	return bpEnergy+clashEnergy;
 }
 
 inline double nuBaseRiboseEnergyCG(BaseConformerCG* baseConf, RiboseConformerCG* riboConf, int sep, RnaEnergyTable* et){
-	return 0.0;
+
+	double clashEnergy = 0.0;
+	int i,j;
+	double dd;
+
+	if(squareDistance(baseConf->coords[0], riboConf->coords[0]) < 144.0){
+		if(abs(sep) > 0) {
+
+			for(i=0;i<3;i++){
+				for(j=0;j<3;j++){
+					dd = squareDistance(baseConf->coords[i], riboConf->coords[j]);
+					if(dd < 16)
+						clashEnergy += et->acET->getClashEnergyCG(baseConf->rot->uniqueIDs[i], riboConf->rot->uniqueIDs[j], dd);
+				}
+			}
+		}
+	}
+	return  clashEnergy;
 }
 
 inline double nuRiboseRiboseEnergyCG(RiboseConformerCG* riboConfA, RiboseConformerCG* riboConfB, int sep, RnaEnergyTable* et){
-	return 0.0;
+	double clashEnergy = 0.0;
+	int i,j;
+	double dd;
+
+	if(squareDistance(riboConfA->coords[0], riboConfB->coords[0]) < 144.0){
+		if(abs(sep) > 0) {
+
+			for(i=0;i<3;i++){
+				for(j=0;j<3;j++){
+					dd = squareDistance(riboConfA->coords[i], riboConfB->coords[j]);
+					if(dd < 16)
+						clashEnergy += et->acET->getClashEnergyCG(riboConfA->rot->uniqueIDs[i], riboConfB->rot->uniqueIDs[j], dd);
+				}
+			}
+		}
+	}
+	return  clashEnergy;
 }
 
 inline double nuConnectionEnergyCG(RiboseConformerCG* riboConfA, RiboseConformerCG* riboConfB, RnaEnergyTable* et){
-	return 0.0;
+	XYZ c1A = riboConfA->coords[0];
+	XYZ o3A = riboConfA->coords[1];
+	XYZ c5B = riboConfB->coords[2];
+	XYZ c1B = riboConfB->coords[0];
+	double d = o3A.distance(c5B);
+	double ang1 = angleX(c1A, o3A, c5B);
+	double ang2 = angleX(o3A, c5B, c1B);
+	double dihed = dihedral(c1A, o3A, c5B, c1B);
+	return et->bbcgET->getEnergy(d, ang1, ang2, dihed);
 }
 
 } /* namespace NSPpredNA */

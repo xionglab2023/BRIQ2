@@ -207,9 +207,7 @@ int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int se
 		}
 	}
 
-	if(abs(sep) == 1)
-		return minIndex;
-	else if(minD < 1.5)
+	if(minD < 1.5)
 		return minIndex;
 	else
 		return -1;
@@ -242,6 +240,18 @@ double BasePairLib::distanceToClusterCenter(BaseDistanceMatrix dm, int typeA, in
 		int pairNum = nbBasePairNum[pairType];
 		for(int i=0;i<pairNum;i++){
 			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+	else if(sep == -1){
+		int revPairType = typeB*4+typeA;
+		BaseDistanceMatrix revDM = dm.reverse();
+		int pairNum = nbBasePairNum[revPairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
 			if(d < minD){
 				minD = d;
 				minIndex = i;
@@ -294,6 +304,18 @@ double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int s
 			}
 		}
 	}
+	else if(sep == -1){
+		int revPairType = typeB*4+typeA;
+		BaseDistanceMatrix revDM = dm.reverse();
+		int pairNum = nbBasePairNum[revPairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
 	else { //non-neighbor base pair
 		int pairNum = nnbBasePairNum[pairType];
 		for(int i=0;i<pairNum;i++){
@@ -304,12 +326,19 @@ double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int s
 			}
 		}
 	}
-
 	double ene = 0.0;
 
-
-
-	if(sep == 1) {
+	if(sep == 1 && minD < 1.5) {
+		int revPairType = typeB*4+typeA;
+		double e = this->nbEnegy[revPairType][minIndex];
+		double p = this->nbProportion[revPairType][minIndex];
+		if(p < 0.001) p = 0.001;
+		if(p > 0.3) p = 0.3;
+		ene = e*0.25 - (log(p)+6.0)*0.4;
+		if(ene > -0.01)
+			ene = -0.01;
+	}
+	else if(sep == -1 && minD < 1.5){
 		double e = this->nbEnegy[typeA*4+typeB][minIndex];
 		double p = this->nbProportion[typeA*4+typeB][minIndex];
 		if(p < 0.001) p = 0.001;
@@ -318,7 +347,7 @@ double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int s
 		if(ene > -0.01)
 			ene = -0.01;
 	}
-	else if(minD < 1.5) {
+	else if(sep == 2 && minD < 1.5) {
 		ene = (this->nnbEnegy[typeA*4+typeB][minIndex]-2.0)*0.25;
 	}
 
@@ -448,6 +477,18 @@ double BasePairLib::getEnergyWithOxy(BaseDistanceMatrix dm, int typeA, int typeB
 		int pairNum = nbBasePairNum[pairType];
 		for(int i=0;i<pairNum;i++){
 			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+	else if(sep == -1){
+		int revPairType = typeB*4+typeA;
+		BaseDistanceMatrix revDM = dm.reverse();
+		int pairNum = nbBasePairNum[revPairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
 			if(d < minD){
 				minD = d;
 				minIndex = i;

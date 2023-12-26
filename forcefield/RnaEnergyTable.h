@@ -11,10 +11,12 @@
 #include "forcefield/XPara.h"
 
 #include "forcefield/BasePair6DEnergyTable.h"
+#include "forcefield/BasePair6DEnergyTableCG.h"
 #include "forcefield/PO3Builder.h"
 #include "forcefield/RiboseOxygenEnergyTable.h"
 #include "forcefield/AtomicClashEnergy.h"
 #include "forcefield/HbondEnergy.h"
+#include "forcefield/BackboneConnectionEnergyCG.h"
 
 #include <time.h>
 #include <math.h>
@@ -31,10 +33,13 @@ using namespace NSPmodel;
 class RnaEnergyTable{
 public:
 	BasePair6DEnergyTable* bpET;
+	BasePair6DEnergyTableCG* bpcgET;
 	AtomicClashEnergy* acET;
 	PO3Builder* pb;
 	RiboseOxygenEnergyTable* roET;
 	HbondEnergy* hbET;
+	BackboneConnectionEnergyCG* bbcgET;
+
 	ForceFieldPara* para;
 	bool deleteTag;
 
@@ -42,10 +47,12 @@ public:
 		this->para = new ForceFieldPara();
 		deleteTag = true;
 		bpET = new BasePair6DEnergyTable(para);
+		bpcgET = new BasePair6DEnergyTableCG(para);
 		acET = new AtomicClashEnergy(para);
 		roET = new RiboseOxygenEnergyTable(para);
 		pb = new PO3Builder(para);
 		hbET = new HbondEnergy(para);
+		bbcgET = new BackboneConnectionEnergyCG(para);
 	}
 
 	RnaEnergyTable(const string& paraFile){
@@ -53,20 +60,24 @@ public:
 		this->para = new ForceFieldPara();
 		deleteTag = true;
 		bpET = new BasePair6DEnergyTable(para);
+		bpcgET = new BasePair6DEnergyTableCG(para);
 		acET = new AtomicClashEnergy(para);
 		roET = new RiboseOxygenEnergyTable(para);
 		pb = new PO3Builder(para);
 		hbET = new HbondEnergy(para);
+		bbcgET = new BackboneConnectionEnergyCG(para);
 	}
 
 	RnaEnergyTable(ForceFieldPara* para){
 		this->para = para;
 		deleteTag = false;
 		bpET = new BasePair6DEnergyTable(para);
+		bpcgET = new BasePair6DEnergyTableCG(para);
 		acET = new AtomicClashEnergy(para);
 		roET = new RiboseOxygenEnergyTable(para);
 		pb = new PO3Builder(para);
 		hbET = new HbondEnergy(para);
+		bbcgET = new BackboneConnectionEnergyCG(para);
 	}
 
 	virtual ~RnaEnergyTable();

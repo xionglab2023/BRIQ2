@@ -1,7 +1,7 @@
 /*
  * AtomicClashEnergy.h
  *
- *  Created on: 2023Äê4ÔÂ25ÈÕ
+ *  Created on: 2023ï¿½ï¿½4ï¿½ï¿½25ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -180,6 +180,14 @@ public:
 		else
 			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
 	}
+
+	double getClashEnergyCG(int uniqueIDA, int uniqueIDB, double dd){
+		if(dd >= 16.00) return 0;
+		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
+		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) d0 = 2.8;
+		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) d0 = 2.8;
+		return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
+	}	
 
 
 	virtual ~AtomicClashEnergy();

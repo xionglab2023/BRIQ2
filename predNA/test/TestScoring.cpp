@@ -21,10 +21,6 @@ using namespace std;
 
 int main(int argc, char** argv){
 	string inputFile = string(argv[1]);
-
-
-
-
 	cout << "init energy table:" << endl;
 	ForceFieldPara* para = new ForceFieldPara();
 
@@ -35,11 +31,8 @@ int main(int argc, char** argv){
 
 	ft->printDetailEnergy();
 
-
 	delete et;
 	delete ft;
-
-
 
 }
 

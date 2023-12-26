@@ -1,7 +1,7 @@
 /*
  * NuGraph.h
  *
- *  Created on: 2023Äê11ÔÂ15ÈÕ
+ *  Created on: 2023ï¿½ï¿½11ï¿½ï¿½15ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <memory>
 #include "model/StructureModel.h"
 #include "model/AtomLib.h"
 #include "model/RotamerLib.h"
@@ -68,6 +69,9 @@ public:
 	RiboseConformerCG* riboseConfCG;
 	RiboseConformerCG* riboseConfCGTmp;
 
+	double bbcg;
+	double bbcgTmp;
+
 	double eneCG;
 	double eneCGTmp;
 
@@ -79,7 +83,7 @@ public:
 
 	double samplingFreq;
 
-	NuNode(int id, int baseType,LocalFrame& cs1, RiboseRotamer* riboRot, AtomLib* atLib);
+	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamer* baseRot, RiboseRotamer* riboRot, AtomLib* atLib);
 
 	void updateNodeInformation(NuTree* tree);
 	void printNodeInfo();
@@ -87,12 +91,10 @@ public:
 	void updateRiboseRotamer(RiboseRotamer* rot);
 	void acceptRotMutation();
 	void clearRotMutation();
-	double rotMutEnergy();
-
 	void updateCoordinate(LocalFrame& cs);
 	void acceptCoordMove();
 	void clearCoordMove();
-
+	double rotMutEnergy();
 	bool checkEnergy();
 
 	void updateRiboseRotamerCG(RiboseRotamerCG* rot);
@@ -162,8 +164,8 @@ public:
  	double pairEne[9];
 	double pairEneTmp[9]; //BB, BR, BP, RB, RR, RP, PB, PR, PP
 
-	double eneCG[4]; //BB, BR, RB, RR
-	double eneCGTmp[4]; //BB, BR, RB, RR
+	double pairEneCG[4]; //BB, BR, RB, RR
+	double pairEneCGTmp[4]; //BB, BR, RB, RR
 
 	double samplingFreq;
 
@@ -208,14 +210,14 @@ public:
 
 	NuTree(NuGraph* graph);
 	void updateNodeInfo();
-
 	void printNodeInfo();
-
 	void updateEdgeInfo();
 	void updateSamplingInfo();
 	void randomInit();
 
 	void printEdges();
+	void printEdgeInfo(const string& output);
+
 	void runAtomicMC(const string& output);
 	void runCoarseGrainedMC();
 	virtual ~NuTree();
@@ -228,12 +230,17 @@ public:
 	bool* connectToDownstream;
 	NuNode** nodes;
 	double ene;
+	double rms;
 	AtomLib* atLib;
 
 	graphInfo(int seqLen, int* seq, bool* con, NuNode** nodes, double ene, AtomLib* atLib);
 
+	void setRMS(double rms){
+		this->rms = rms;
+	}
 	double rmsd(graphInfo* other);
 	void printPDB(const string& outputFile);
+	void printAlignedPDB(graphInfo* alignTarget, const string& outputFile);
 	virtual ~graphInfo();
 
 };
@@ -247,6 +254,7 @@ public:
 	bool* connectToDownstream;
 	int* sepTable; //sequence seperation: -1, 0, 1, 2
 
+	vector<BaseRotamer*> initBaseRotList;
 	vector<RiboseRotamer*> initRiboseRotList;
 	NuNode** allNodes; //L nodes
 	NuEdge** allEdges; //L*L edges
@@ -261,8 +269,10 @@ public:
 
 	graphInfo* initInfo;
 
-	NuGraph(const string& inputFile);
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et);
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
 	void init(const string& inputFile);
+	void initForMST(const string& inputFile);
 	void initRandWeight();
 	void MST_kruskal(NuTree* output);
 	void printAllEdge();

@@ -95,6 +95,23 @@ CsMoveTo6DKey::CsMoveTo6DKey() {
 }
 
 void CsMoveTo6DKey::getIndexAndWeight(const LocalFrame& csA, const LocalFrame& csB, double len, int outIndex[5], double outWeights[4]){
+
+	if(len == 0) {
+		int index = 0;
+
+		outIndex[0] = this->biIndex[index];
+		outIndex[1] = this->biIndex[index+1];
+		outIndex[2] = this->biIndex[index+2];
+		outIndex[3] = this->biIndex[index+3];
+
+		outIndex[4] = 0;
+		outWeights[0] = this->biWt[index];
+		outWeights[1] = this->biWt[index+1];
+		outWeights[2] = this->biWt[index+2];
+		outWeights[3] = this->biWt[index+3];
+		return;
+	}
+
 	double xLen = 1.0/len;
 
 	XYZ tBInA = global2local(csA, csB.origin_)*xLen;
@@ -181,6 +198,46 @@ void CsMoveTo6DKey::getIndexAndWeight(const LocalFrame& csA, const LocalFrame& c
 }
 
 void CsMoveTo6DKey::getIndexAndWeight6DInterpolation(const LocalFrame& csA, const LocalFrame& csB, double len, int outIndex[13], double outWeights[13]){
+
+
+	if(len == 0){
+		int index = 0;
+		int idA = 0;
+		int idB = 0;
+
+		outIndex[0] = this->biIndex[index];
+		outIndex[1] = this->biIndex[index+1];
+		outIndex[2] = this->biIndex[index+2];
+		outIndex[3] = this->biIndex[index+3];
+
+		outIndex[4] = spIndex1[idA]*this->spherePointNum+spIndex1[idB];
+		outIndex[5] = spIndex1[idA]*this->spherePointNum+spIndex2[idB];
+		outIndex[6] = spIndex1[idA]*this->spherePointNum+spIndex3[idB];
+		outIndex[7] = spIndex2[idA]*this->spherePointNum+spIndex1[idB];
+		outIndex[8] = spIndex2[idA]*this->spherePointNum+spIndex2[idB];
+		outIndex[9] = spIndex2[idA]*this->spherePointNum+spIndex3[idB];
+		outIndex[10] = spIndex3[idA]*this->spherePointNum+spIndex1[idB];
+		outIndex[11] = spIndex3[idA]*this->spherePointNum+spIndex2[idB];
+		outIndex[12] = spIndex3[idA]*this->spherePointNum+spIndex3[idB];
+
+
+		outWeights[0] = this->biWt[index];
+		outWeights[1] = this->biWt[index+1];
+		outWeights[2] = this->biWt[index+2];
+		outWeights[3] = this->biWt[index+3];
+		outWeights[4] = spWt1[idA]*spWt1[idB];
+		outWeights[5] = spWt1[idA]*spWt2[idB];
+		outWeights[6] = spWt1[idA]*spWt3[idB];
+		outWeights[7] = spWt2[idA]*spWt1[idB];
+		outWeights[8] = spWt2[idA]*spWt2[idB];
+		outWeights[9] = spWt2[idA]*spWt3[idB];
+		outWeights[10] = spWt3[idA]*spWt1[idB];
+		outWeights[11] = spWt3[idA]*spWt2[idB];
+		outWeights[12] = spWt3[idA]*spWt3[idB];
+
+		return;
+	}
+
 	double xLen = 1.0/len;
 
 	XYZ tBInA = global2local(csA, csB.origin_)*xLen;
@@ -288,6 +345,11 @@ void CsMoveTo6DKey::getIndexAndWeight6DInterpolation(const LocalFrame& csA, cons
 }
 
 pair<int,int> CsMoveTo6DKey::toIndexPair(const LocalFrame& csA, const LocalFrame& csB, double len){
+	if(len == 0){
+		pair<int,int> p(0, 0);
+		return p;
+	}
+
 	double xLen = 1.0/len;
 
 	XYZ tBInA = global2local(csA, csB.origin_)*xLen;

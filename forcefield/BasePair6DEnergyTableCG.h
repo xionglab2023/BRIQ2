@@ -1,7 +1,7 @@
 /*
  * BasePair6DEnergyTableCG.h
  *
- *  Created on: 2023Äê11ÔÂ28ÈÕ
+ *  Created on: 2023ï¿½ï¿½11ï¿½ï¿½28ï¿½ï¿½
  *      Author: nuc
  */
 
