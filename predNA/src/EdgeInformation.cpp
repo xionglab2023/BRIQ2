@@ -15,8 +15,10 @@ EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pai
 	this->typeB = typeB%4;
 
 
-	if(sep == 1 || sep == -1)
+	if(sep == 1)
 		this->totalClusterNum = pairLib->nbBasePairNum[this->typeA*4+this->typeB];
+	else if(sep == -1)
+		this->totalClusterNum = pairLib->nbBasePairNum[this->typeB*4+this->typeA];
 	else
 		this->totalClusterNum = pairLib->nnbBasePairNum[this->typeA*4+this->typeB];
 
@@ -76,7 +78,7 @@ void EdgeInformation::setUniqueCluster(int clusterID, BasePairLib* pairLib){
 			this->pCluster[i] = 1.0/totalClusterNum;
 		}
 		this->pContact = 1.0;
-		this->weight = 0.0;
+		this->weight = 99.9;
 	}
 	else if(clusterID < totalClusterNum) {
 		for(int i=0;i<totalClusterNum;i++){
@@ -87,7 +89,7 @@ void EdgeInformation::setUniqueCluster(int clusterID, BasePairLib* pairLib){
 		this->weight = pairLib->getEnergyWithOxy(clusterID, typeA, typeB, sep);
 	}
 	else {
-		cout << "invalid clusterID: "<< clusterID << endl;
+		cout << "invalid clusterID: "<< clusterID <<  " typeA: " << typeA << " typeB: " << typeB << " sep: " << sep << " totNum: " << totalClusterNum << endl;
 		exit(0);
 	}
 

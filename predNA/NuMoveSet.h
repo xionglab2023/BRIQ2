@@ -1,7 +1,7 @@
 /*
  * NuMoveSet.h
  *
- *  Created on: 2023Äê11ÔÂ23ÈÕ
+ *  Created on: 2023ï¿½ï¿½11ï¿½ï¿½23ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -19,7 +19,7 @@
 #include "geometry/CsMove.h"
 #include "model/BasePairLib.h"
 #include "predNA/EdgeInformation.h"
-#include "predNA/OrientationIndex.h"
+#include "geometry/OrientationIndex.h"
 
 namespace NSPpredNA {
 

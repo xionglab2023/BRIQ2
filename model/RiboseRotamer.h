@@ -1,7 +1,7 @@
 /*
  * RiboseRotamer.h
  *
- *  Created on: 2022Äê9ÔÂ6ÈÕ
+ *  Created on: 2022ï¿½ï¿½9ï¿½ï¿½6ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -162,8 +162,8 @@ class RiboseRotamerCG {
 	/*
 	 * Atom Order
 	 * 0:  C1'
-	 * 6:  O3'
-	 * 7:  C5'
+	 * 1:  O3'
+	 * 2:  C5'
 	 */
 
 
@@ -174,6 +174,7 @@ public:
 	int rotType;
 
 	XYZ localCoords[3]; //local coordinate in cs1
+	int uniqueIDs[3];
 	double energy;
 
 	RiboseRotamerCG(){
@@ -194,6 +195,7 @@ public:
 		this->rotType = other.rotType;
 		for(int i=0;i<3;i++){
 			localCoords[i] = other.localCoords[i];
+			uniqueIDs[i] = other.uniqueIDs[i];
 		}
 		energy = other.energy;
 		return *this;
@@ -205,6 +207,7 @@ public:
 		this->rotType = other->rotType;
 		for(int i=0;i<3;i++){
 			localCoords[i] = other->localCoords[i];
+			uniqueIDs[i] = other->uniqueIDs[i];
 		}
 		energy = other->energy;
 	}
@@ -260,6 +263,12 @@ public:
 };
 
 class RiboseConformerCG {
+	/*
+	 * Atom Order
+	 * 0:  C1'
+	 * 1:  O3'
+	 * 2:  C5'
+	 */
 public:
 	RiboseRotamerCG* rot;
 

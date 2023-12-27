@@ -1,7 +1,7 @@
 /*
  * RiboseRotamer.cpp
  *
- *  Created on: 2022Äê9ÔÂ6ÈÕ
+ *  Created on: 2022ï¿½ï¿½9ï¿½ï¿½6ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -186,6 +186,48 @@ RiboseRotamerCG::RiboseRotamerCG(const string& line){
 	this->localCoords[2] = rot.localCoords[6];
 
 	this->energy = rot.energy;
+
+	if(resType == 0){
+		this->uniqueIDs[0] = 178;
+		this->uniqueIDs[1] = 175;
+		this->uniqueIDs[2] = 171;
+	}
+	else if(resType == 1){
+		this->uniqueIDs[0] = 200;
+		this->uniqueIDs[1] = 197;
+		this->uniqueIDs[2] = 193;
+	}
+	else if(resType == 2){
+		this->uniqueIDs[0] = 220;
+		this->uniqueIDs[1] = 217;
+		this->uniqueIDs[2] = 213;		
+	}
+	else if(resType == 3){
+		this->uniqueIDs[0] = 243;
+		this->uniqueIDs[1] = 240;
+		this->uniqueIDs[2] = 236;			
+	}
+	else if(resType == 4){
+		this->uniqueIDs[0] = 262;
+		this->uniqueIDs[1] = 260;
+		this->uniqueIDs[2] = 256;
+	}
+	else if(resType == 5){
+		this->uniqueIDs[0] = 283;
+		this->uniqueIDs[1] = 281;
+		this->uniqueIDs[2] = 277;
+	}
+	else if(resType == 6){
+		this->uniqueIDs[0] = 303;
+		this->uniqueIDs[1] = 301;
+		this->uniqueIDs[2] = 297;
+	}
+	else {
+		this->uniqueIDs[0] = 325;
+		this->uniqueIDs[1] = 323;
+		this->uniqueIDs[2] = 319;
+	}
+
 }
 
 RiboseRotamerCG::RiboseRotamerCG(RiboseRotamer* riboRot){
@@ -198,6 +240,46 @@ RiboseRotamerCG::RiboseRotamerCG(RiboseRotamer* riboRot){
 	this->localCoords[2] = riboRot->localCoords[6];
 
 	this->energy = riboRot->energy;
+	if(resType == 0){
+		this->uniqueIDs[0] = 178;
+		this->uniqueIDs[1] = 175;
+		this->uniqueIDs[2] = 171;
+	}
+	else if(resType == 1){
+		this->uniqueIDs[0] = 200;
+		this->uniqueIDs[1] = 197;
+		this->uniqueIDs[2] = 193;
+	}
+	else if(resType == 2){
+		this->uniqueIDs[0] = 220;
+		this->uniqueIDs[1] = 217;
+		this->uniqueIDs[2] = 213;		
+	}
+	else if(resType == 3){
+		this->uniqueIDs[0] = 243;
+		this->uniqueIDs[1] = 240;
+		this->uniqueIDs[2] = 236;			
+	}
+	else if(resType == 4){
+		this->uniqueIDs[0] = 262;
+		this->uniqueIDs[1] = 260;
+		this->uniqueIDs[2] = 256;
+	}
+	else if(resType == 5){
+		this->uniqueIDs[0] = 283;
+		this->uniqueIDs[1] = 281;
+		this->uniqueIDs[2] = 277;
+	}
+	else if(resType == 6){
+		this->uniqueIDs[0] = 303;
+		this->uniqueIDs[1] = 301;
+		this->uniqueIDs[2] = 297;
+	}
+	else {
+		this->uniqueIDs[0] = 325;
+		this->uniqueIDs[1] = 323;
+		this->uniqueIDs[2] = 319;
+	}
 }
 
 RiboseRotamerCG::~RiboseRotamerCG(){

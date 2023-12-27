@@ -55,8 +55,11 @@ int main(int argc, char** argv){
 	MCRun mc(ft);
 	mc.simpleMC(outputPDB, false);
 
+	cout << "delete et" << endl;
 	delete et;
+	cout << "delete ft" << endl;
 	delete ft;
 
+	cout << "." << endl;
 
 }

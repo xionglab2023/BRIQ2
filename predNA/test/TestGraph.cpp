@@ -26,10 +26,9 @@ int main(int argc, char** argv){
 
 
 	clock_t start = clock();
-	//Usage: briq_Predict $INPUT_FILE $OUTPUT_PDB
 
 	string inputFile = string(argv[1]);
-	string outputPDB = string(argv[2]);
+	string output = string(argv[2]);
 	int randseed = atoi(argv[3]);
 
 	srand(randseed);
@@ -81,6 +80,10 @@ int main(int argc, char** argv){
 	}
 	*/
 
+
+	//NuPairMoveSetLibrary* moveSet = new NuPairMoveSetLibrary();
+
+
 	/*
 	int typeA = 0;
 	int typeB = 2;
@@ -88,14 +91,8 @@ int main(int argc, char** argv){
 	int pairType = typeA*4+typeB;
 	int clusterID = 2;
 
-
 	OrientationIndex* oi = new OrientationIndex();
-
-
 	BasePairLib* pairLib = new BasePairLib();
-
-
-	NuPairMoveSetLibrary* moveSet = new NuPairMoveSetLibrary();
 
 	EdgeInformation* ei = new EdgeInformation(sep, typeA, typeB, pairLib);
 	ei->setUniqueCluster(2, pairLib);
@@ -115,11 +112,27 @@ int main(int argc, char** argv){
 	delete mc;
 	*/
 
+	/*
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib);
+	NuTree* tree = new NuTree(graph);
+	graph->MST_kruskal(tree);
+	tree->printEdgeInfo(output);
+	*/
 
+
+	/*
+	 * check tree connection
+	*/
+
+	BasePairLib* pairLib = new BasePairLib();
+	RotamerLib* rotLib = new RotamerLib();
+	AtomLib* atLib = new AtomLib();
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary();
+	RnaEnergyTable* et = new RnaEnergyTable();
 
 
 	cout << "init graph" << endl;
-	NuGraph* graph = new NuGraph(inputFile);
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
 	graph->initRandWeight();
 	cout << "all edge" << endl;
 	graph->printAllEdge();
@@ -132,19 +145,29 @@ int main(int argc, char** argv){
 	for(int i=0;i<graph->seqLen;i++){
 		graph->allNodes[i]->printNodeInfo();
 	}
+
 	cout << "edgeInfo: " << endl;
 	tree->updateEdgeInfo();
 	for(int i=0;i<tree->geList.size();i++){
 		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
 		tree->geList[i]->printPartition();
 	}
+
 	cout << "update sampling info" << endl;
 	tree->updateSamplingInfo();
-
 	tree->printNodeInfo();
 
 	cout << "run MC" << endl;
-	tree->runAtomicMC(outputPDB);
+	tree->runAtomicMC(output);
+
+	delete pairLib;
+	delete rotLib;
+	delete atLib;
+	delete moveLib;
+	delete et;
+	delete tree;
+	delete graph;
+
 
 	clock_t end1 = clock();
 	cout << "time1: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;

@@ -71,6 +71,7 @@ public:
 		{
 			d1 = 0.0;
 			d2 = 0.0;
+
 		}
 		else {
 			d1 = dihedral(a->coord, b->coord, c->coord, d->coord);
