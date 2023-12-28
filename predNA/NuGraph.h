@@ -7,6 +7,7 @@
 
 #ifndef PREDNA_NUGRAPH_H_
 #define PREDNA_NUGRAPH_H_
+
 #include <vector>
 #include <string>
 #include <map>
@@ -36,7 +37,6 @@ class NuEdge;
 class EdgeInformation;
 class NuTree;
 class NuGraph;
-
 
 using namespace std;
 using namespace NSPmodel;
@@ -86,6 +86,7 @@ public:
 	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamer* baseRot, RiboseRotamer* riboRot, AtomLib* atLib);
 
 	void updateNodeInformation(NuTree* tree);
+	void updateNodeInformationCG(NuTree* tree);
 	void printNodeInfo();
 
 	void updateRiboseRotamer(RiboseRotamer* rot);
@@ -103,11 +104,12 @@ public:
 	void updateCoordinateCG(LocalFrame& cs);
 	void acceptCoordMoveCG();
 	void clearCoordMoveCG();
-	double mutEnergyCG();
+	double rotMutEnergyCG();
 	bool checkEnergyCG();
 
 	vector<Atom*> toAtomList(AtomLib* atLib);
 	vector<Atom*> toAtomListWithPho(AtomLib* atLib);
+	vector<Atom*> toAtomListCG(AtomLib* atLib);
 
 	virtual ~NuNode();
 };
@@ -176,6 +178,7 @@ public:
 	void fixNaiveMove();
 
 	void updateEdgeInfo(NuTree* tree);
+	void updateEdgeInfoCG(NuTree* tree);
 
 	void updateCsMove(CsMove& cm);
 	double mutEnergy();
@@ -189,7 +192,7 @@ public:
 	void acceptMutationCG();
 	void clearMutationCG();
 	bool checkEnergyCG();
-
+	bool checkReversePairCG();
 	void printPartition();
 	virtual ~NuEdge();
 };
@@ -210,16 +213,20 @@ public:
 
 	NuTree(NuGraph* graph);
 	void updateNodeInfo();
+	void updateNodeInfoCG();
 	void printNodeInfo();
 	void updateEdgeInfo();
+	void updateEdgeInfoCG();
 	void updateSamplingInfo();
+	
 	void randomInit();
+	void randomInitCG();
 
 	void printEdges();
 	void printEdgeInfo(const string& output);
 
 	void runAtomicMC(const string& output);
-	void runCoarseGrainedMC();
+	void runCoarseGrainedMC(const string& output);
 	virtual ~NuTree();
 };
 
@@ -240,6 +247,7 @@ public:
 	}
 	double rmsd(graphInfo* other);
 	void printPDB(const string& outputFile);
+	void printPDBCG(const string& outputFile);
 	void printAlignedPDB(graphInfo* alignTarget, const string& outputFile);
 	virtual ~graphInfo();
 
@@ -271,14 +279,18 @@ public:
 
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
+
 	void init(const string& inputFile);
 	void initForMST(const string& inputFile);
 	void initRandWeight();
 	void MST_kruskal(NuTree* output);
 	void printAllEdge();
 	void checkEnergy();
+	void checkEnergyCG();
 
 	double totalEnergy();
+	double totalEnergyCG();
+	
 	double totalEnergyTmp();
 	double totalEnergy2();
 	void printEnergy();
