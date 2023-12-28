@@ -26,8 +26,9 @@ add_executable(add_base AddBaseToTarget.cpp)
 add_executable(replaceMotif ReplaceMotif.cpp)
 add_executable(replaceFragment ReplaceFragment.cpp)
 add_executable(testGraph TestGraph.cpp)
+add_executable(testGraphCG TestGraphCG.cpp)
 
-
+target_link_libraries (testGraphCG briqx)
 target_link_libraries (testGraph briqx)
 target_link_libraries (briq_RefinementFast briqx)
 target_link_libraries (replaceFragment briqx)
@@ -55,5 +56,5 @@ target_link_libraries (briq_InitPDB briqx)
 target_link_libraries (rnaScoring briqx)
 target_link_libraries (ctToRMS briqx)
 
-install(TARGETS testGraph
+install(TARGETS testGraph testGraphCG
     RUNTIME DESTINATION bin)

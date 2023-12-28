@@ -1,7 +1,7 @@
 /*
  * RiboseRotamerLib.h
  *
- *  Created on: 2022Äê9ÔÂ6ÈÕ
+ *  Created on: 2022ï¿½ï¿½9ï¿½ï¿½6ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -20,6 +20,7 @@ using namespace NSPforcefield;
 class RiboseRotamerLib {
 public:
 	RiboseRotamer* rotLib[8][1500];
+	RiboseRotamerCG* rotLibCG[8][1500];
 
 	RiboseRotamerLib();
 	RiboseRotamerLib(ForceFieldPara* para);
@@ -45,6 +46,27 @@ public:
 			return NULL;
 	}
 
+	RiboseRotamerCG* getLowestEnergyRotamerCG(int type){
+		if(type == 0)
+			return rotLibCG[0][30];
+		else if(type == 1)
+			return rotLibCG[1][105];
+		else if(type == 2)
+			return rotLibCG[2][595];
+		else if(type == 3)
+			return rotLibCG[3][209];
+		else if(type == 4)
+			return rotLibCG[4][1375];
+		else if(type == 5)
+			return rotLibCG[5][1000];
+		else if(type == 6)
+			return rotLibCG[6][671];
+		else if(type == 7)
+			return rotLibCG[7][567];
+		else
+			return NULL;
+	}	
+
 	RiboseRotamer* getRandomRotamerLv1(int baseType, int typeLv1){
 		if(baseType < 4) {
 			if(typeLv1 == 0)
@@ -68,9 +90,36 @@ public:
 		}
 	}
 
+	RiboseRotamerCG* getRandomRotamerLv1CG(int baseType, int typeLv1){
+		if(baseType < 4) {
+			if(typeLv1 == 0)
+				return rotLibCG[baseType][rand()%600];
+			else if(typeLv1 == 1)
+				return rotLibCG[baseType][600 + rand()%300];
+			else if(typeLv1 == 2)
+				return rotLibCG[baseType][900 + rand()%300];
+			else
+				return rotLibCG[baseType][1200 + rand()%300];
+		}
+		else {
+			if(typeLv1 == 0)
+				return rotLibCG[baseType][rand()%300];
+			else if(typeLv1 == 1)
+				return rotLibCG[baseType][300 + rand()%75];
+			else if(typeLv1 == 2)
+				return rotLibCG[baseType][375 + rand()%1050];
+			else
+				return rotLibCG[baseType][1425 + rand()%75];
+		}
+	}	
+
 	RiboseRotamer* getRandomRotamer(int baseType){
 		return rotLib[baseType][rand()%1500];
 	}
+
+	RiboseRotamerCG* getRandomRotamerCG(int baseType){
+		return rotLibCG[baseType][rand()%1500];
+	}	
 
 	RiboseRotamer* getFlipRotamer(int baseType){
 		/*
@@ -109,6 +158,23 @@ public:
 			if(d < minDist){
 				minDist = d;
 				nearest = rotLib[type][i];
+			}
+		}
+		return nearest;
+	}
+
+	RiboseRotamerCG* getNearestRotamerCG(RNABase* base){
+
+		int type = base->baseTypeInt;
+		double minDist = 9999.9;
+		RiboseRotamerCG rot(base);
+
+		RiboseRotamerCG* nearest;
+		for(int i=0;i<1500;i++){
+			double d = rotLibCG[type][i]->distanceTo(&rot);
+			if(d < minDist){
+				minDist = d;
+				nearest = rotLibCG[type][i];
 			}
 		}
 		return nearest;

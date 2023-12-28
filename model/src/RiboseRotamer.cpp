@@ -227,7 +227,6 @@ RiboseRotamerCG::RiboseRotamerCG(const string& line){
 		this->uniqueIDs[1] = 323;
 		this->uniqueIDs[2] = 319;
 	}
-
 }
 
 RiboseRotamerCG::RiboseRotamerCG(RiboseRotamer* riboRot){
