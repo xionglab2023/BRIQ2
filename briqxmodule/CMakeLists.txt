@@ -1,3 +1,15 @@
+set(CMAKE_PREFIX_PATH /home/spock/apps/Infomap)
+find_package(Infomap)
+if(Infomap_FOUND)
+    message(STATUS "FOUND Infomap")
+    message(STATUS "Infomap include from ${Infomap_INCLUDE_DIRS}")
+    message(STATUS "Infomap link from ${Infomap_LIBRARY_DIRS}")
+endif()
+add_executable(bmassign Main.cpp)
+target_link_directories(bmassign PUBLIC ${Infomap_LIBRARY_DIRS})
+target_include_directories(bmassign PUBLIC ${Infomap_INCLUDE_DIRS})
+target_link_libraries(bmassign briqx Infomap)
+
 add_executable(bmalign Main.cpp)
 target_link_libraries(bmalign briqx)
 install(TARGETS bmalign
