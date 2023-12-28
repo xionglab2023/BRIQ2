@@ -8,11 +8,14 @@
 namespace NSPforcefield {
 
 	RnaEnergyTable::~RnaEnergyTable(){
-		delete this->acET;
-		delete this->bpET;
-		delete this->pb;
-		delete this->roET;
-		delete this->hbET;
+		if(this->acET != NULL) delete this->acET;
+		if(this->bpET != NULL) delete this->bpET;
+		if(this->pb != NULL) delete this->pb;
+		if(this->roET != NULL) delete this->roET;
+		if(this->hbET != NULL) delete this->hbET;
+		if(this->bpcgET != NULL) delete this->bpcgET;
+		if(this->bbcgET != NULL) delete this->bbcgET;
+		
 		if(deleteTag)
 			delete this->para;
 

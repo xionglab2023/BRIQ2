@@ -1,7 +1,7 @@
 /*
  * TestGraph.cpp
  *
- *  Created on: 2023Äê12ÔÂ1ÈÕ
+ *  Created on: 2023ï¿½ï¿½12ï¿½ï¿½1ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -129,7 +129,7 @@ int main(int argc, char** argv){
 	AtomLib* atLib = new AtomLib();
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary();
 	RnaEnergyTable* et = new RnaEnergyTable();
-
+	et->loadAtomicEnergy();
 
 	cout << "init graph" << endl;
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);

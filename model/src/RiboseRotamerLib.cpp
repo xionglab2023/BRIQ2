@@ -1,7 +1,7 @@
 /*
  * RiboseRotamerLib.cpp
  *
- *  Created on: 2022Äê9ÔÂ6ÈÕ
+ *  Created on: 2022ï¿½ï¿½9ï¿½ï¿½6ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -34,6 +34,7 @@ RiboseRotamerLib::RiboseRotamerLib() {
 			rot->rotTypeLv1 = 0;
 			rot->rotType = index;
 			rotLib[i][index] = rot;
+			rotLibCG[i][index] = new RiboseRotamerCG(rot);
 			index++;
 		}
 		file.close();
@@ -75,6 +76,7 @@ RiboseRotamerLib::RiboseRotamerLib(ForceFieldPara* para){
 			rot->rotTypeLv1 = 0;
 			rot->rotType = index;
 			rotLib[i][index] = rot;
+			rotLibCG[i][index] = new RiboseRotamerCG(rot);
 			index++;
 		}
 		file.close();
@@ -88,6 +90,7 @@ RiboseRotamerLib::~RiboseRotamerLib() {
 	for(int i=0;i<8;i++){
 		for(int j=0;j<1500;j++){
 			delete rotLib[i][j];
+			delete rotLibCG[i][j];
 		}
 	}
 }

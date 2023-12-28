@@ -281,6 +281,7 @@ inline double nuRiboseRiboseEnergyCG(RiboseConformerCG* riboConfA, RiboseConform
 }
 
 inline double nuConnectionEnergyCG(RiboseConformerCG* riboConfA, RiboseConformerCG* riboConfB, RnaEnergyTable* et){
+
 	XYZ c1A = riboConfA->coords[0];
 	XYZ o3A = riboConfA->coords[1];
 	XYZ c5B = riboConfB->coords[2];
@@ -289,6 +290,7 @@ inline double nuConnectionEnergyCG(RiboseConformerCG* riboConfA, RiboseConformer
 	double ang1 = angleX(c1A, o3A, c5B);
 	double ang2 = angleX(o3A, c5B, c1B);
 	double dihed = dihedral(c1A, o3A, c5B, c1B);
+
 	return et->bbcgET->getEnergy(d, ang1, ang2, dihed);
 }
 
