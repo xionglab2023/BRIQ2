@@ -83,6 +83,7 @@ public:
 		bbcgET = NULL;
 	}
 
+
 	void loadAtomicEnergy(){
 		bpET = new BasePair6DEnergyTable(para);
 		acET = new AtomicClashEnergy(para);
@@ -90,6 +91,7 @@ public:
 		pb = new PO3Builder(para);
 		hbET = new HbondEnergy(para);
 	}
+
 
 	void loadCoarseGrainedEnergy(){
 		pb = new PO3Builder(para);

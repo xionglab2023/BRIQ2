@@ -471,6 +471,7 @@ void RiboseConformerCG::updateLocalFrame(LocalFrame& cs1) {
 
 void RiboseConformerCG::updateRotamer(RiboseRotamerCG* rot){
 
+	this->rot = rot;
 	for(int i=0;i<3;i++){
 		coords[i] = local2global(cs1, rot->localCoords[i]);
 	}
@@ -478,6 +479,7 @@ void RiboseConformerCG::updateRotamer(RiboseRotamerCG* rot){
 
 void RiboseConformerCG::updateLocalFrameAndRotamer(LocalFrame& cs1, RiboseRotamerCG* rot) {
 
+	this->rot = rot;
 	this->cs1 = cs1;
 	for(int i=0;i<3;i++){
 		coords[i] = local2global(cs1, rot->localCoords[i]);

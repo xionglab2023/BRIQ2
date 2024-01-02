@@ -55,33 +55,27 @@ int main(int argc, char** argv){
 
 	cout << "edgeInfo: " << endl;
 	tree->updateEdgeInfoCG();
-	
+
 	for(int i=0;i<tree->geList.size();i++){
 		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
 		tree->geList[i]->printPartition();
 	}
 
+
 	cout << "update sampling info" << endl;
 	tree->updateSamplingInfo();
 	tree->printNodeInfo();
 
-
 	cout << "run MC" << endl;
 	tree->runCoarseGrainedMC(output);
 
-    cout << "delete pairLib" << endl;
+
 	delete pairLib;
-    cout << "delete rotLib" << endl;
 	delete rotLib;
-    cout << "delete atLib" << endl;
 	delete atLib;
-    cout << "delete moveLib" << endl;
 	delete moveLib;
-    cout << "delete et" << endl;
 	delete et;
-    cout << "delete tree" << endl;
 	delete tree;
-    cout << "delete graph" << endl;
 	delete graph;
 
     cout << "end" << endl;
