@@ -16,6 +16,7 @@
 #include <fstream>
 #include <algorithm>
 #include "dataio/datapaths.h"
+#include "dataio/binaryTable.h"
 #include "geometry/CsMove.h"
 #include "model/BasePairLib.h"
 #include "predNA/EdgeInformation.h"
@@ -25,6 +26,7 @@ namespace NSPpredNA {
 
 using namespace NSPgeometry;
 using namespace NSPmodel;
+using namespace NSPdataio;
 
 class IndividualNuPairMoveSet {
 public:
@@ -39,7 +41,7 @@ public:
 	 */
 	vector<int> moveIndexList[20];
 
-	IndividualNuPairMoveSet(int sep, int pairType, int clusterID, OrientationIndex* oi);
+	IndividualNuPairMoveSet(int sep, int pairType, int clusterID, OrientationIndex* oi, BinaryBook* bb=nullptr);
 	CsMove getRandomMove(OrientationIndex* oi);
 
 	virtual ~IndividualNuPairMoveSet();
@@ -52,7 +54,7 @@ public:
 	vector<IndividualNuPairMoveSet*> nnbMoveList[16];
 	OrientationIndex* oi;
 
-	NuPairMoveSetLibrary();
+	NuPairMoveSetLibrary(bool withBinary=true);
 	virtual ~NuPairMoveSetLibrary();
 };
 

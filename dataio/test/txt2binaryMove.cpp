@@ -143,6 +143,7 @@ int main(int argc, char** argv) {
         ins2.open(outFile,ios::in | ios::binary);
         bb = new BinaryBook;
         bb->read(ins2);
+        ins2.close();
         end = clock();
         timeBinary = (double)(end-start) / CLOCKS_PER_SEC;
         cout << "time consumed: " << timeBinary << " seconds" << endl;

@@ -1,7 +1,7 @@
 /*
  * NuMoveSet.cpp
  *
- *  Created on: 2023Äê11ÔÂ23ÈÕ
+ *  Created on: 2023ï¿½ï¿½11ï¿½ï¿½23ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -9,13 +9,14 @@
 
 namespace NSPpredNA {
 
-IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clusterID, OrientationIndex* oi) {
+using namespace NSPdataio;
+
+IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clusterID, OrientationIndex* oi, BinaryBook* bb) {
 	// TODO Auto-generated constructor stub
 	this->sep = sep;
 	this->pairType = pairType;
 	this->clusterID = clusterID;
 
-	string path = NSPdataio::datapath()+"pairMove2/";
 	string augc = "AUGC";
 	int typeA = pairType/4;
 	int typeB = pairType%4;
@@ -24,32 +25,62 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clus
 	char xx[20];
 	sprintf(xx, "%c%c%d", augc[typeA], augc[typeB], clusterID);
 
-	if(sep == 1 || sep == -1)
-		fileName = path+"nb/"+string(xx)+".move";
-	else
-		fileName = path+"nnb/"+string(xx)+".move";
+	if(!bb){
+		string path = NSPdataio::datapath()+"pairMove2/";
 
-	ifstream file;
-	file.open(fileName.c_str(), ios::in);
-	int moveID, binID;
-	double p;
-	while(file >> moveID >> p >> binID){
-		CsMove m1 = oi->index1000ToCsMove(moveID);
-		double d = m1.oriMove.length();
-		if(d < 0.001){
-			printf("%s %d\n", fileName, moveID);
+		if(sep == 1 || sep == -1)
+			fileName = path+"nb/"+string(xx)+".move";
+		else
+			fileName = path+"nnb/"+string(xx)+".move";
+
+		ifstream file;
+		file.open(fileName.c_str(), ios::in);
+		int moveID, binID;
+		double p;
+		while(file >> moveID >> p >> binID){
+			CsMove m1 = oi->index1000ToCsMove(moveID);
+			double d = m1.oriMove.length();
+			if(d < 0.001){
+				printf("%s %d\n", fileName, moveID);
+			}
+
+
+			if(sep > 0)
+				moveIndexList[binID].push_back(moveID);
+			else if(sep == -1){
+				CsMove move = oi->index1000ToCsMove(moveID);
+				CsMove revMove = move.reverse();
+				moveIndexList[binID].push_back(oi->moveToIndex1000(revMove));
+			}
 		}
+		file.close();
+	} else {
+		string tableName = string(xx) + ".move";
+		BinaryTable* btab = bb->tables_map.at(tableName);
+		auto& moveIDCol = get<BinaryColumn<int>>(*(btab->cols[0]));
+		auto& pCol = get<BinaryColumn<double>>(*(btab->cols[1]));
+		auto& binIDCol = get<BinaryColumn<int>>(*(btab->cols[2]));
+		for(int i=0;i<btab->nRow;i++) {
+			int moveID = moveIDCol[i];
+			double p = pCol[i];
+			int binID = binIDCol[i];
+
+			CsMove m1 = oi->index1000ToCsMove(moveID);
+			double d = m1.oriMove.length();
+			if(d < 0.001){
+				printf("%s %d\n", tableName, moveID);
+			}
 
 
-		if(sep > 0)
-			moveIndexList[binID].push_back(moveID);
-		else if(sep == -1){
-			CsMove move = oi->index1000ToCsMove(moveID);
-			CsMove revMove = move.reverse();
-			moveIndexList[binID].push_back(oi->moveToIndex1000(revMove));
+			if(sep > 0)
+				moveIndexList[binID].emplace_back(moveID);
+			else if(sep == -1){
+				CsMove move = oi->index1000ToCsMove(moveID);
+				CsMove revMove = move.reverse();
+				moveIndexList[binID].push_back(oi->moveToIndex1000(revMove));
+			}
 		}
 	}
-	file.close();
 }
 
 CsMove IndividualNuPairMoveSet::getRandomMove(OrientationIndex* oi){
@@ -64,23 +95,52 @@ IndividualNuPairMoveSet::~IndividualNuPairMoveSet() {
 }
 
 
-NuPairMoveSetLibrary::NuPairMoveSetLibrary(){
+NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary){
 
 	BasePairLib* bpLib = new BasePairLib();
 	this->oi = new OrientationIndex();
 
+	if(!withBinary) {
+		/* Read from TXT*/
+		for(int i=0;i<16;i++){
+			int clusterNum = bpLib->nbBasePairNum[i];
+			for(int j=0;j<clusterNum;j++){
+				nbMoveList[i].push_back(new IndividualNuPairMoveSet(1, i, j, oi));
+				revNbMoveList[i].push_back(new IndividualNuPairMoveSet(-1, i, j, oi));
+			}
 
-	for(int i=0;i<16;i++){
-		int clusterNum = bpLib->nbBasePairNum[i];
-		for(int j=0;j<clusterNum;j++){
-			nbMoveList[i].push_back(new IndividualNuPairMoveSet(1, i, j, oi));
-			revNbMoveList[i].push_back(new IndividualNuPairMoveSet(-1, i, j, oi));
+			clusterNum = bpLib->nnbBasePairNum[i];
+			for(int j=0;j<clusterNum;j++){
+				nnbMoveList[i].push_back(new IndividualNuPairMoveSet(2, i, j, oi));
+			}
 		}
+	} else {
+		/* Read from Binary */
+		ifstream ins;
+		string FileNb = NSPdataio::datapath()+"../binaryData/pairMove2/nb";
+		string FileNnb = NSPdataio::datapath()+"../binaryData/pairMove2/nnb";
+ 	   ins.open(FileNb,ios::in | ios::binary);
+ 	   auto* bbNb = new BinaryBook;
+ 	   bbNb->read(ins);
+		ins.close();
+		ins.open(FileNnb,ios::in | ios::binary);
+ 	   auto* bbNnb = new BinaryBook;
+ 	   bbNnb->read(ins);
+		ins.close();
+		for(int i=0;i<16;i++){
+			int clusterNum = bpLib->nbBasePairNum[i];
+			for(int j=0;j<clusterNum;j++){
+				nbMoveList[i].push_back(new IndividualNuPairMoveSet(1, i, j, oi, bbNb));
+				revNbMoveList[i].push_back(new IndividualNuPairMoveSet(-1, i, j, oi, bbNb));
+			}
 
-		clusterNum = bpLib->nnbBasePairNum[i];
-		for(int j=0;j<clusterNum;j++){
-			nnbMoveList[i].push_back(new IndividualNuPairMoveSet(2, i, j, oi));
+			clusterNum = bpLib->nnbBasePairNum[i];
+			for(int j=0;j<clusterNum;j++){
+				nnbMoveList[i].push_back(new IndividualNuPairMoveSet(2, i, j, oi, bbNnb));
+			}
 		}
+		delete bbNb;
+		delete bbNnb;
 	}
 
 
