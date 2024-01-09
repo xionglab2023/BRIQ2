@@ -27,6 +27,14 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "-g -gdwarf-3")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
+set(CMAKE_PREFIX_PATH /home/spock/apps/Infomap)
+# find_package(Infomap)
+# if(Infomap_FOUND)
+#     message(STATUS "FOUND Infomap")
+#     message(STATUS "Infomap include from ${Infomap_INCLUDE_DIRS}")
+#     message(STATUS "Infomap link from ${Infomap_LIBRARY_DIRS}")
+# endif()
+
 file(GLOB_RECURSE BR_SRC
     briqxmodule/src/*.cpp
     dataio/src/*.cpp
@@ -41,6 +49,10 @@ file(GLOB_RECURSE BR_SRC
     tools/src/*.cpp
     )
 add_library(briqx SHARED ${BR_SRC})
+# if(Infomap_FOUND)
+# target_link_directories(briqx PUBLIC ${Infomap_LIBRARY_DIRS})
+# target_include_directories(briqx PUBLIC ${Infomap_INCLUDE_DIRS})
+# endif()
 install(TARGETS briqx
         LIBRARY DESTINATION lib)
 
@@ -51,3 +63,4 @@ add_subdirectory (protein/test)
 add_subdirectory (predNA/test)
 add_subdirectory (motif/test)
 add_subdirectory (tools/test)
+add_subdirectory (dataio/test)
