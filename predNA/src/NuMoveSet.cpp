@@ -6,6 +6,9 @@
  */
 
 #include <predNA/NuMoveSet.h>
+#ifdef TIMING
+#include <time.h>
+#endif
 
 namespace NSPpredNA {
 
@@ -75,9 +78,9 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clus
 			if(sep > 0)
 				moveIndexList[binID].emplace_back(moveID);
 			else if(sep == -1){
-				CsMove move = oi->index1000ToCsMove(moveID);
-				CsMove revMove = move.reverse();
-				moveIndexList[binID].push_back(oi->moveToIndex1000(revMove));
+				// CsMove move = oi->index1000ToCsMove(moveID);
+				CsMove revMove = m1.reverse();
+				moveIndexList[binID].emplace_back(oi->moveToIndex1000(revMove));
 			}
 		}
 	}
@@ -97,8 +100,21 @@ IndividualNuPairMoveSet::~IndividualNuPairMoveSet() {
 
 NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary){
 
+	#ifdef TIMING
+	clock_t start, end;
+	start = clock(); 
+	#endif
 	BasePairLib* bpLib = new BasePairLib();
+	#ifdef TIMING
+	double bpLibTime = (double) (clock()-start)/CLOCKS_PER_SEC;
+	cout << "bpLib initialization time: " << bpLibTime << " seconds" << endl;
+	#endif
 	this->oi = new OrientationIndex();
+	#ifdef TIMING
+	double oiTime = (double) (clock()-start)/CLOCKS_PER_SEC - bpLibTime;
+	cout << "oi initialization time: " << oiTime << " seconds, total " <<
+	oiTime + bpLibTime << " seconds" << endl;
+	#endif
 
 	if(!withBinary) {
 		/* Read from TXT*/
@@ -119,30 +135,34 @@ NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary){
 		ifstream ins;
 		string FileNb = NSPdataio::datapath()+"../binaryData/pairMove2/nb";
 		string FileNnb = NSPdataio::datapath()+"../binaryData/pairMove2/nnb";
- 	   ins.open(FileNb,ios::in | ios::binary);
- 	   auto* bbNb = new BinaryBook;
- 	   bbNb->read(ins);
+ 	    ins.open(FileNb,ios::in | ios::binary);
+ 	    auto* bbNb = new BinaryBook;
+ 	    bbNb->read(ins);
 		ins.close();
 		ins.open(FileNnb,ios::in | ios::binary);
- 	   auto* bbNnb = new BinaryBook;
- 	   bbNnb->read(ins);
+ 	    auto* bbNnb = new BinaryBook;
+ 	    bbNnb->read(ins);
 		ins.close();
 		for(int i=0;i<16;i++){
 			int clusterNum = bpLib->nbBasePairNum[i];
 			for(int j=0;j<clusterNum;j++){
-				nbMoveList[i].push_back(new IndividualNuPairMoveSet(1, i, j, oi, bbNb));
-				revNbMoveList[i].push_back(new IndividualNuPairMoveSet(-1, i, j, oi, bbNb));
+				nbMoveList[i].emplace_back(new IndividualNuPairMoveSet(1, i, j, oi, bbNb));
+				revNbMoveList[i].emplace_back(new IndividualNuPairMoveSet(-1, i, j, oi, bbNb));
 			}
 
 			clusterNum = bpLib->nnbBasePairNum[i];
 			for(int j=0;j<clusterNum;j++){
-				nnbMoveList[i].push_back(new IndividualNuPairMoveSet(2, i, j, oi, bbNnb));
+				nnbMoveList[i].emplace_back(new IndividualNuPairMoveSet(2, i, j, oi, bbNnb));
 			}
 		}
 		delete bbNb;
 		delete bbNnb;
 	}
-
+	#ifdef TIMING
+	double nuPairMoveSetTime = (double) (clock()-start)/CLOCKS_PER_SEC - bpLibTime - oiTime;
+	cout << "NuPairMoveSet initialization time: " << nuPairMoveSetTime << " seconds, total " <<
+	oiTime + bpLibTime + nuPairMoveSetTime << " seconds" << endl;
+	#endif
 
 	delete bpLib;
 }
