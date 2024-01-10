@@ -6,6 +6,7 @@
  */
 
 #include <predNA/NuMoveSet.h>
+#include "tools/ThreadPool.h"
 #ifdef TIMING
 #include <time.h>
 #endif
@@ -13,6 +14,7 @@
 namespace NSPpredNA {
 
 using namespace NSPdataio;
+using namespace NSPthread;
 
 IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clusterID, OrientationIndex* oi, BinaryBook* bb) {
 	// TODO Auto-generated constructor stub
@@ -98,6 +100,18 @@ IndividualNuPairMoveSet::~IndividualNuPairMoveSet() {
 }
 
 
+int runIndividualNuPairMoveSetMT(int sep, int pairType, int clusterID, 
+OrientationIndex* oi, BinaryBook* bb, vector<IndividualNuPairMoveSet*> * rvec) {
+	try {
+		rvec->at(clusterID) = new IndividualNuPairMoveSet(sep, pairType, clusterID, oi, bb);
+		return EXIT_SUCCESS;
+	} catch(exception& e) {
+		string errInfo = e.what() + '\n';
+		cerr << errInfo;
+		return EXIT_FAILURE;
+	}
+}
+
 NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary){
 
 	#ifdef TIMING
@@ -143,18 +157,44 @@ NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary){
  	    auto* bbNnb = new BinaryBook;
  	    bbNnb->read(ins);
 		ins.close();
+
+		char *ntstr=std::getenv("OMP_NUM_THREADS");
+		int nt = *ntstr ? atoi(ntstr) : 1;
+		shared_ptr<ThreadPool> thrPool(new ThreadPool(nt));
+		size_t jid = 0;
 		for(int i=0;i<16;i++){
 			int clusterNum = bpLib->nbBasePairNum[i];
+			nbMoveList[i].resize(clusterNum);
+			revNbMoveList[i].resize(clusterNum);
 			for(int j=0;j<clusterNum;j++){
-				nbMoveList[i].emplace_back(new IndividualNuPairMoveSet(1, i, j, oi, bbNb));
-				revNbMoveList[i].emplace_back(new IndividualNuPairMoveSet(-1, i, j, oi, bbNb));
+				shared_ptr<IntFuncTask> request(new IntFuncTask);
+				request->asynBind(runIndividualNuPairMoveSetMT, 1, i, j, oi, bbNb, &nbMoveList[i]);
+                jid++;
+                thrPool->addTask(request);
+				shared_ptr<IntFuncTask> request2(new IntFuncTask);
+				request2->asynBind(runIndividualNuPairMoveSetMT, -1, i, j, oi, bbNb, &revNbMoveList[i]);
+                jid++;
+                thrPool->addTask(request2);
+				// nbMoveList[i].emplace_back(new IndividualNuPairMoveSet(1, i, j, oi, bbNb));
+				// revNbMoveList[i].emplace_back(new IndividualNuPairMoveSet(-1, i, j, oi, bbNb));
 			}
 
 			clusterNum = bpLib->nnbBasePairNum[i];
+			nnbMoveList[i].resize(clusterNum);
 			for(int j=0;j<clusterNum;j++){
-				nnbMoveList[i].emplace_back(new IndividualNuPairMoveSet(2, i, j, oi, bbNnb));
+				shared_ptr<IntFuncTask> request(new IntFuncTask);
+				request->asynBind(runIndividualNuPairMoveSetMT, 2, i, j, oi, bbNnb, &nnbMoveList[i]);
+                jid++;
+                thrPool->addTask(request);
+				// nnbMoveList[i].emplace_back(new IndividualNuPairMoveSet(2, i, j, oi, bbNnb));
 			}
 		}
+        while(true) {
+            sleep(1);
+            if(thrPool->getTaskCount() == 0) {
+                break;
+            }
+        }
 		delete bbNb;
 		delete bbNnb;
 	}

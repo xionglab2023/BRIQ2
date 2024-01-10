@@ -10,29 +10,59 @@
  */
 
 #include "predNA/NuMoveSet.h"
-#include <time.h>
+#include <sys/time.h>
 
 using namespace NSPdataio;
 using namespace NSPpredNA;
 using namespace std;
 
 int main() {
-    clock_t start, end;
+    struct timeval start, end;
     double timeTxt, timeBinary;
     cout << "Creating NuMoveSet from txt" << endl;
-    start = clock();
+    gettimeofday(&start, NULL);  // gettimeofday 计现实时间，clock() 计cpu时钟数，受sleep() 和多线程影响
     auto * set1 = new NuPairMoveSetLibrary(false);
-    end = clock();
-    timeTxt = (double)(end-start) / CLOCKS_PER_SEC;
+    gettimeofday(&end, NULL);
+    timeTxt = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
     cout << "time consumed: " << timeTxt << " seconds" << endl;
+    cout << "first int in each vector of nbMoveList[6][9] moveIndexList:" << endl;
+    for(int i=0; i<20; i++) {
+        cout << set1->nbMoveList[6][9]->moveIndexList[i][0] << " ";
+    }
+    cout << endl;
+    cout << "first int in each vector of revNbMoveList[6][9] moveIndexList:" << endl;
+    for(int i=0; i<20; i++) {
+        cout << set1->revNbMoveList[6][9]->moveIndexList[i][0] << " ";
+    }
+    cout << endl;
+    cout << "first int in each vector of nnbMoveList[6][9] moveIndexList:" << endl;
+    for(int i=0; i<20; i++) {
+        cout << set1->nnbMoveList[6][9]->moveIndexList[i][0] << " ";
+    }
+    cout << endl;
     delete set1;
     
     cout << "Creating NuMoveSet from binary" << endl;
-    start = clock();
+    gettimeofday(&start, NULL);
     set1 = new NuPairMoveSetLibrary();
-    end = clock();
-    timeBinary = (double)(end-start) / CLOCKS_PER_SEC;
+    gettimeofday(&end, NULL);
+    timeBinary = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
     cout << "time consumed: " << timeBinary << " seconds" << endl;
+    cout << "first int in each vector of nbMoveList[6][9] moveIndexList:" << endl;
+    for(int i=0; i<20; i++) {
+        cout << set1->nbMoveList[6][9]->moveIndexList[i][0] << " ";
+    }
+    cout << endl;
+    cout << "first int in each vector of revNbMoveList[6][9] moveIndexList:" << endl;
+    for(int i=0; i<20; i++) {
+        cout << set1->revNbMoveList[6][9]->moveIndexList[i][0] << " ";
+    }
+    cout << endl;
+    cout << "first int in each vector of nnbMoveList[6][9] moveIndexList:" << endl;
+    for(int i=0; i<20; i++) {
+        cout << set1->nnbMoveList[6][9]->moveIndexList[i][0] << " ";
+    }
+    cout << endl;
     cout << "Reading Binary is " << timeTxt/timeBinary << "x boosting than reading txt." << endl;
     delete set1;
 }

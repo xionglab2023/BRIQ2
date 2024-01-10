@@ -16,6 +16,7 @@
 
 namespace NSPthread {
 
+atomic<size_t> Task::requestCount = 0;  // 类对象共享的类静态成员
 using namespace std;
 
 ThreadPool::ThreadPool(size_t threadRequested) : terminate(false) {

@@ -67,7 +67,7 @@ namespace NSPthread {
 
     };
 
-    atomic<size_t> Task::requestCount = 0;
+    // atomic<size_t> Task::requestCount = 0;
 
     class IntFuncTask:public Task  // 执行一个具有整数返回值的函数的 Task
     {
