@@ -4,47 +4,108 @@
  */
 
 #include <forcefield/BasePair6DEnergyTable.h>
+#include <string.h>
 
 namespace NSPforcefield {
 
-CsMoveTo6DKey::CsMoveTo6DKey() {
+CsMoveTo6DKey::CsMoveTo6DKey(bool withBinary, int binaryMode) {
 	// TODO Auto-generated constructor stub
+
+	#ifdef TIMING
+	clock_t start, end;
+	start = clock();
+	double indexTime, indexN3PTime;
+	#endif 
+
 	this->spherePointNum = 2000;
 	ifstream file;
 	char xx[20];
 	sprintf(xx, "%d", spherePointNum);
-	string fileName = NSPdataio::datapath() + "sphere/sphere" + string(xx) + ".index";
-	file.open(fileName, ios::in);
-	if(!file.is_open()) {
-		cout << "can't open file: " << fileName << endl;
-	}
-	int keyIndex;
-	int spIndex;
-	while(file >> keyIndex >> spIndex){
-		this->sphereKeyMap[keyIndex] = spIndex;
-	}
-	file.close();
+	if(!withBinary) {
+		string fileName = NSPdataio::datapath() + "sphere/sphere" + string(xx) + ".index";
+		file.open(fileName, ios::in);
+		if(!file.is_open()) {
+			cout << "can't open file: " << fileName << endl;
+		}
+		int keyIndex;
+		int spIndex;
+		while(file >> keyIndex >> spIndex){
+			this->sphereKeyMap[keyIndex] = spIndex;
+		}
+		file.close();
 
-	fileName = NSPdataio::datapath() + "sphere/sphere" + string(xx) + ".index_nearest3Pts";
-	file.open(fileName, ios::in);
-	if(!file.is_open()) {
-		cout << "can't open file: " << fileName << endl;
+		#ifdef TIMING
+		end = clock();
+		indexTime = (double) (end-start)/CLOCKS_PER_SEC;
+		cout << "sphere index reading time: " << indexTime << " seconds" << endl;
+		#endif
+
+		fileName = NSPdataio::datapath() + "sphere/sphere" + string(xx) + ".index_nearest3Pts";
+		file.open(fileName, ios::in);
+		if(!file.is_open()) {
+			cout << "can't open file: " << fileName << endl;
+		}
+
+		int sp1, sp2, sp3;
+		double wt1, wt2, wt3;
+		int lineId = 0;
+		while(file >> keyIndex >> sp1 >> sp2 >> sp3 >> wt1 >> wt2 >> wt3){
+			this->keyIdToListID[keyIndex] = lineId;
+			this->spIndex1[lineId] = sp1;
+
+			this->spIndex2[lineId] = sp2;
+			this->spIndex3[lineId] = sp3;
+			this->spWt1[lineId] = wt1;
+			this->spWt2[lineId] = wt2;
+			this->spWt3[lineId] = wt3;
+			lineId ++;
+		} 
+		file.close();
+
+		#ifdef TIMING
+		end = clock();
+		indexN3PTime = (double) (end-start)/CLOCKS_PER_SEC - indexTime;
+		cout << "sphere index_nearest3Pts reading time: " << indexN3PTime << " seconds" << endl;
+		#endif
+	} else if(binaryMode==2) {
+		string fileName = NSPdataio::datapath() + "../binaryData/sphere/sphere" + string(xx) + ".index";
+		file.open(fileName, ios::in|ios::binary);
+		if(!file.is_open()) {
+			throw("can't open file: " + fileName);
+		}
+		auto* bb = new BinaryBook;
+ 		bb->read(file);
+		file.close();
+		auto* btab = bb->tables_vec[0];
+		auto& keyIndexCol = get<BinaryColumn<int>>(*(btab->cols[0]));
+		auto& spIndexCol = get<BinaryColumn<int>>(*(btab->cols[1]));
+		for(int i=0;i<btab->nRow; i++) {
+			this->sphereKeyMap[keyIndexCol[i]] = spIndexCol[i];
+		}
+		delete bb;
+
+		fileName = NSPdataio::datapath() + "../binaryData/sphere/sphere" + string(xx) + ".index_nearest3Pts";
+		file.open(fileName, ios::in|ios::binary);
+		if(!file.is_open()) {
+			throw("can't open file: " + fileName);
+		}
+		bb = new BinaryBook;
+ 		bb->read(file);
+		file.close();
+		btab = bb->tables_vec[0];
+		auto& keyIndexCol2 = get<BinaryColumn<int>>(*(btab->cols[0]));
+		for(int i=0;i<btab->nRow; i++) {
+			this->keyIdToListID[keyIndexCol2[i]] = i;
+		}
+		memcpy(this->spIndex1, &(get<BinaryColumn<int>>(*(btab->cols[1])).getVal()[0]), sizeof(int)*btab->nRow);
+		memcpy(this->spIndex2, &(get<BinaryColumn<int>>(*(btab->cols[2])).getVal()[0]), sizeof(int)*btab->nRow);
+		memcpy(this->spIndex3, &(get<BinaryColumn<int>>(*(btab->cols[3])).getVal()[0]), sizeof(int)*btab->nRow);
+		memcpy(this->spWt1, &(get<BinaryColumn<double>>(*(btab->cols[4])).getVal()[0]), sizeof(double)*btab->nRow);
+		memcpy(this->spWt2, &(get<BinaryColumn<double>>(*(btab->cols[5])).getVal()[0]), sizeof(double)*btab->nRow);
+		memcpy(this->spWt3, &(get<BinaryColumn<double>>(*(btab->cols[6])).getVal()[0]), sizeof(double)*btab->nRow);
+		delete bb;
 	}
 
-	int sp1, sp2, sp3;
-	double wt1, wt2, wt3;
-	int lineId = 0;
-	while(file >> keyIndex >> sp1 >> sp2 >> sp3 >> wt1 >> wt2 >> wt3){
-		this->keyIdToListID[keyIndex] = lineId;
-		this->spIndex1[lineId] = sp1;
-
-		this->spIndex2[lineId] = sp2;
-		this->spIndex3[lineId] = sp3;
-		this->spWt1[lineId] = wt1;
-		this->spWt2[lineId] = wt2;
-		this->spWt3[lineId] = wt3;
-		lineId ++;
-	}
 
 	int indexA, indexB, indexC, indexD;
 	double dA, dB, dC, dD;
@@ -92,6 +153,12 @@ CsMoveTo6DKey::CsMoveTo6DKey() {
 			this->biWt[i*1800 + j*4 + 3] = dA * dC;
 		}
 	}
+	
+	#ifdef TIMING
+	end = clock();
+	double othTime = (double) (end-start)/CLOCKS_PER_SEC - indexTime - indexN3PTime;
+	cout << "Other initialization time: " << othTime << " seconds" << endl;
+	#endif
 }
 
 void CsMoveTo6DKey::getIndexAndWeight(const LocalFrame& csA, const LocalFrame& csB, double len, int outIndex[5], double outWeights[4]){
@@ -600,8 +667,9 @@ CsMoveTo6DKey::~CsMoveTo6DKey() {
 	// TODO Auto-generated destructor stub
 }
 
-
-BasePair6DEnergyTable::BasePair6DEnergyTable(ForceFieldPara* para) {
+BasePair6DEnergyTable::BasePair6DEnergyTable(ForceFieldPara* para, bool withBinary, int binaryMode):
+cm2Key(withBinary, binaryMode) 
+{
 
 	this->wtNb = para->wtBp1;
 	this->wtNnb = para->wtBp2;
@@ -613,28 +681,78 @@ BasePair6DEnergyTable::BasePair6DEnergyTable(ForceFieldPara* para) {
 	ifstream file;
 	string augc = "AUGC";
 
-	for(int i=0;i<4;i++){
-		for(int j=0;j<4;j++){
-			string pairType = augc.substr(i,1) + augc.substr(j,1);
-			file.open(path + "pairEne/nb/"+pairType+".ene");
+	if(withBinary && binaryMode==2) {
+		string fileName = path + "../binaryData/pairEne/nb";
+		ifstream ins;
+        ins.open(fileName,ios::in | ios::binary);
+        if(!ins.is_open()) {
+            throw("Unable to open " + fileName);
+        }
+        auto* bb = new BinaryBook;
+        bb->read(ins);
+        ins.close();
+		for(int i=0; i<4; i++) {
+			for(int j=0;j<4;j++) {
+				string tN = string(augc.substr(i,1)) + augc.substr(j,1) + ".ene";
+				BinaryTable* btab = bb->tables_map.at(tN);
+				auto& indexACol = get<BinaryColumn<int>>(*(btab->cols[0]));
+				auto& indexBCol = get<BinaryColumn<int>>(*(btab->cols[1]));
+				auto& eneCol = get<BinaryColumn<double>>(*(btab->cols[2]));
+				// nbKeysEnergy 在元素map中随机赋值，且各map size 未知，无法并行
+				for(int k=0;k<btab->nRow;k++) {
+					this->nbKeysEnergy[(i*4+j)*2250+indexACol[k]][indexBCol[k]] = eneCol[k];
+				}
+			}
+		}
+		delete bb;
 
-			if(!file.is_open()) {
-				cout << "can't open file " << path + "pairEne/nb/" +pairType+".ene" << endl;
+		fileName = path + "../binaryData/pairEne/nnb";
+        ins.open(fileName,ios::in | ios::binary);
+        if(!ins.is_open()) {
+            throw("Unable to open " + fileName);
+        }
+        bb = new BinaryBook;
+        bb->read(ins);
+        ins.close();
+		for(int i=0; i<4; i++) {
+			for(int j=0;j<4;j++) {
+				string tN = string(augc.substr(i,1)) + augc.substr(j,1) + ".ene";
+				BinaryTable* btab = bb->tables_map.at(tN);
+				auto& indexACol = get<BinaryColumn<int>>(*(btab->cols[0]));
+				auto& indexBCol = get<BinaryColumn<int>>(*(btab->cols[1]));
+				auto& eneCol = get<BinaryColumn<double>>(*(btab->cols[2]));
+				for(int k=0;k<btab->nRow;k++) {
+					this->nnbKeysEnergy[(i*4+j)*2250+indexACol[k]][indexBCol[k]] = eneCol[k];
+				}
 			}
-			while(file >> indexA >> indexB >> ene >> clusterID){
-				this->nbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
-			}
-			file.close();
+		}
+		delete bb;		
+	} else if(withBinary && binaryMode == 1) {
 
-			file.open(path + "pairEne/nnb/"+pairType+".ene");
-			if(!file.is_open()) {
-				cout << "can't open file " << path + "pairEne/nnb/" +pairType+".ene" << endl;
-			}
-			while(file >> indexA >> indexB >> ene >> clusterID){
-				this->nnbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
-			}
-			file.close();
+	} else {
+		for(int i=0;i<4;i++){
+			for(int j=0;j<4;j++){
+				string pairType = augc.substr(i,1) + augc.substr(j,1);
+				file.open(path + "pairEne/nb/"+pairType+".ene");
 
+				if(!file.is_open()) {
+					cout << "can't open file " << path + "pairEne/nb/" +pairType+".ene" << endl;
+				}
+				while(file >> indexA >> indexB >> ene >> clusterID){
+					this->nbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
+				}
+				file.close();
+
+				file.open(path + "pairEne/nnb/"+pairType+".ene");
+				if(!file.is_open()) {
+					cout << "can't open file " << path + "pairEne/nnb/" +pairType+".ene" << endl;
+				}
+				while(file >> indexA >> indexB >> ene >> clusterID){
+					this->nnbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
+				}
+				file.close();
+
+			}
 		}
 	}
 }

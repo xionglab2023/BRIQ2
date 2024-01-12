@@ -1,7 +1,7 @@
 /**
  * @file testMoveIO.cpp
  * @author Klark Chen (klarkchen@ustc.edu.cn)
- * @brief test IO performance of NuMoveSet with txt and binary data soutces
+ * @brief test IO performance of NuMoveSet with txt and binary data sources
  * @version 0.1
  * @date 2024-01-09
  * 

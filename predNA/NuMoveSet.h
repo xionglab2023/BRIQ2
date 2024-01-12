@@ -42,7 +42,29 @@ public:
 	 */
 	vector<int> moveIndexList[20];
 
+	/**
+	 * @brief Construct an empty IndividualNuPairMoveSet object 
+	 * in advance of object loading
+	 * 
+	 */
+	IndividualNuPairMoveSet() {
+	};
+
 	IndividualNuPairMoveSet(int sep, int pairType, int clusterID, OrientationIndex* oi, BinaryBook* bb=nullptr);
+	/**
+	 * @brief dump object to binary cache
+	 * 
+	 * @return int 
+	 */
+	int dump();
+
+	/**
+	 * @brief load object from binary cache
+	 * 
+	 * @return int 
+	 */
+	int load();
+
 	CsMove getRandomMove(OrientationIndex* oi);
 
 	virtual ~IndividualNuPairMoveSet();
@@ -55,7 +77,15 @@ public:
 	vector<IndividualNuPairMoveSet*> nnbMoveList[16];
 	OrientationIndex* oi;
 
-	NuPairMoveSetLibrary(bool withBinary=true);
+	/**
+	 * @brief Construct a new NuPairMoveSetLibrary object. 
+	 * 
+	 * @param withBinary Bool, if true, read from binary; if false, read from txt parameter tables.
+	 * @param binaryMode Int, if 1, read dumped object; if 2, read BinaryTable
+	 */
+	NuPairMoveSetLibrary(bool withBinary=true, int binaryMode=2);
+	int dump();
+	int load();
 	virtual ~NuPairMoveSetLibrary();
 };
 

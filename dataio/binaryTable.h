@@ -25,7 +25,7 @@
 #define BINARY_FILE_VER_MINOR 0
 #define BINARY_COL_TYPE_INT 0
 #define BINARY_COL_TYPE_DOUBLE 1
-#define BINARY_TABLENAME_CHARS 24
+#define BINARY_TABLENAME_CHARS 48
 
 namespace NSPdataio {
     using namespace std;
@@ -227,6 +227,10 @@ namespace NSPdataio {
                     }
                 }
                 values = vec;
+            }
+
+            vector<T>& getVal() {
+                return values;
             }
 
             T& operator[] (int i) {

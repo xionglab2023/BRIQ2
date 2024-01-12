@@ -11,6 +11,7 @@
 
 #include "dataio/datapaths.h"
 #include "dataio/binaryTable.h"
+#include "dataio/dirOperations.h"
 #include "tools/CmdArgs.h"
 #include <dirent.h>
 #include <cstring>
@@ -22,50 +23,50 @@ using namespace NSPdataio;
 using namespace NSPtools;
 using namespace std;
 
-/**
- * @brief find all files in directory and fill fileNames (without path) to fileNames
- * 
- * @param path 
- * @param fileNames 
- */
-void findFilesInDir(string& path, vector<string>& fileNames) {
-    DIR* pDIR;
-    struct dirent* pDirent;
-    if(!(pDIR = opendir(path.c_str()))) {
-        throw("Fail to open " + path);
-    }
-    while(pDirent = readdir(pDIR)) {
-        if(strcmp(pDirent->d_name, ".") && strcmp(pDirent->d_name, "..")) {
-            fileNames.emplace_back(pDirent->d_name);
-        }
-    }
-    closedir(pDIR);
-}
+// /**
+//  * @brief find all files in directory and fill fileNames (without path) to fileNames
+//  * 
+//  * @param path 
+//  * @param fileNames 
+//  */
+// void findFilesInDir(string& path, vector<string>& fileNames) {
+//     DIR* pDIR;
+//     struct dirent* pDirent;
+//     if(!(pDIR = opendir(path.c_str()))) {
+//         throw("Fail to open " + path);
+//     }
+//     while(pDirent = readdir(pDIR)) {
+//         if(strcmp(pDirent->d_name, ".") && strcmp(pDirent->d_name, "..")) {
+//             fileNames.emplace_back(pDirent->d_name);
+//         }
+//     }
+//     closedir(pDIR);
+// }
 
-/**
- * @brief Iteratively create directories
- * 
- * @param dir full directory path
- * @return true Directories successfully created. 
- * @return false Creation of any of the directories failed.
- */
-bool makeDirs(string dir) {
-    string curPath, substr;
-    substr.reserve(dir.size());
-    for(auto it = dir.begin(); it != dir.end(); ++it) {
-        substr.push_back(*it);
-        if (*it == '/' || it == dir.end() -1) {
-            curPath.append(substr);
-            if(!opendir(curPath.c_str())) {  // curPath not exist
-                if(mkdir(curPath.c_str(), S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)) {  // create curPath fail
-                    return false;
-                }
-            }
-            substr.clear();
-        }
-    }
-    return true;
-}
+// /**
+//  * @brief Iteratively create directories
+//  * 
+//  * @param dir full directory path
+//  * @return true Directories successfully created. 
+//  * @return false Creation of any of the directories failed.
+//  */
+// bool makeDirs(string& dir) {
+//     string curPath, substr;
+//     substr.reserve(dir.size());
+//     for(auto it = dir.begin(); it != dir.end(); ++it) {
+//         substr.push_back(*it);
+//         if (*it == '/' || it == dir.end() -1) {
+//             curPath.append(substr);
+//             if(!opendir(curPath.c_str())) {  // curPath not exist
+//                 if(mkdir(curPath.c_str(), S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)) {  // create curPath fail
+//                     return false;
+//                 }
+//             }
+//             substr.clear();
+//         }
+//     }
+//     return true;
+// }
 
 
 int main(int argc, char** argv) {

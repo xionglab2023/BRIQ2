@@ -7,6 +7,7 @@
 
 #include <predNA/NuMoveSet.h>
 #include "tools/ThreadPool.h"
+#include "dataio/dirOperations.h"
 #ifdef TIMING
 #include <time.h>
 #endif
@@ -88,6 +89,19 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clus
 	}
 }
 
+int IndividualNuPairMoveSet::dump() {
+	//TODO
+	return EXIT_SUCCESS;
+}
+
+int IndividualNuPairMoveSet::load() {
+	int ListSize[] = {0};
+	for(int i=0; i<20; i++) {
+		moveIndexList[i].resize(ListSize[i]);
+	}
+	return EXIT_SUCCESS;
+}
+
 CsMove IndividualNuPairMoveSet::getRandomMove(OrientationIndex* oi){
 	int selectBin = rand()% 20;
 	int selectID = rand()% moveIndexList[selectBin].size();
@@ -99,6 +113,46 @@ IndividualNuPairMoveSet::~IndividualNuPairMoveSet() {
 	// TODO Auto-generated destructor stub
 }
 
+
+int NuPairMoveSetLibrary::dump() {
+	// TODO: design serialized dump method
+	string outpath = datapath() + "../binaryCache";
+	string fileName = "NuPairMoveSetLibrary";
+	if(! makeDirs(outpath)) {
+		throw("[Error]Unable to create " + outpath);
+	}
+	ofstream outs;
+	outs.open(outpath + "/" + fileName, ios::out|ios::binary);
+	if(!outs.is_open()) {
+		throw("[Error]Fail to open " + outpath + "/" + fileName);
+	}
+	// outs.write(reinterpret_cast<char*>(this), sizeof(*this));
+	// outs.write(reinterpret_cast<char*>(this->oi), sizeof(*(this->oi)));
+	// for(int i=0; i<16; i++) {
+	// 	int lv = this->nbMoveList[i].size();
+	// 	// outs.write(reinterpret_cast<char*>(&lv), sizeof(int));
+	// 	for(int j=0; j<lv; j++) {
+	// 		outs.write(reinterpret_cast<char*>(this->nbMoveList[i][j]), sizeof(IndividualNuPairMoveSet));
+	// 	}
+	// 	int lv = this->revNbMoveList[i].size();
+	// 	// outs.write(reinterpret_cast<char*>(&lv), sizeof(int));
+	// 	for(int j=0; j<lv; j++) {
+	// 		outs.write(reinterpret_cast<char*>(this->revNbMoveList[i][j]), sizeof(IndividualNuPairMoveSet));
+	// 	}
+	// 	int lv = this->nnbMoveList[i].size();
+	// 	// outs.write(reinterpret_cast<char*>(&lv), sizeof(int));
+	// 	for(int j=0; j<lv; j++) {
+	// 		outs.write(reinterpret_cast<char*>(this->nnbMoveList[i][j]), sizeof(IndividualNuPairMoveSet));
+	// 	}
+	// }
+	outs.close();
+	return EXIT_SUCCESS;
+}
+
+int NuPairMoveSetLibrary::load() {
+	//TODO
+	return EXIT_SUCCESS;
+}
 
 int runIndividualNuPairMoveSetMT(int sep, int pairType, int clusterID, 
 OrientationIndex* oi, BinaryBook* bb, vector<IndividualNuPairMoveSet*> * rvec) {
@@ -112,99 +166,117 @@ OrientationIndex* oi, BinaryBook* bb, vector<IndividualNuPairMoveSet*> * rvec) {
 	}
 }
 
-NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary){
+NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary, int binaryMode){
 
-	#ifdef TIMING
-	clock_t start, end;
-	start = clock(); 
-	#endif
-	BasePairLib* bpLib = new BasePairLib();
-	#ifdef TIMING
-	double bpLibTime = (double) (clock()-start)/CLOCKS_PER_SEC;
-	cout << "bpLib initialization time: " << bpLibTime << " seconds" << endl;
-	#endif
-	this->oi = new OrientationIndex();
-	#ifdef TIMING
-	double oiTime = (double) (clock()-start)/CLOCKS_PER_SEC - bpLibTime;
-	cout << "oi initialization time: " << oiTime << " seconds, total " <<
-	oiTime + bpLibTime << " seconds" << endl;
-	#endif
-
-	if(!withBinary) {
-		/* Read from TXT*/
-		for(int i=0;i<16;i++){
-			int clusterNum = bpLib->nbBasePairNum[i];
-			for(int j=0;j<clusterNum;j++){
-				nbMoveList[i].push_back(new IndividualNuPairMoveSet(1, i, j, oi));
-				revNbMoveList[i].push_back(new IndividualNuPairMoveSet(-1, i, j, oi));
-			}
-
-			clusterNum = bpLib->nnbBasePairNum[i];
-			for(int j=0;j<clusterNum;j++){
-				nnbMoveList[i].push_back(new IndividualNuPairMoveSet(2, i, j, oi));
-			}
-		}
-	} else {
-		/* Read from Binary */
+	if(withBinary && binaryMode == 1) {
+		// Read from binaryCache
 		ifstream ins;
-		string FileNb = NSPdataio::datapath()+"../binaryData/pairMove2/nb";
-		string FileNnb = NSPdataio::datapath()+"../binaryData/pairMove2/nnb";
- 	    ins.open(FileNb,ios::in | ios::binary);
- 	    auto* bbNb = new BinaryBook;
- 	    bbNb->read(ins);
-		ins.close();
-		ins.open(FileNnb,ios::in | ios::binary);
- 	    auto* bbNnb = new BinaryBook;
- 	    bbNnb->read(ins);
-		ins.close();
-
-		char *ntstr=std::getenv("OMP_NUM_THREADS");
-		int nt = *ntstr ? atoi(ntstr) : 1;
-		shared_ptr<ThreadPool> thrPool(new ThreadPool(nt));
-		size_t jid = 0;
-		for(int i=0;i<16;i++){
-			int clusterNum = bpLib->nbBasePairNum[i];
-			nbMoveList[i].resize(clusterNum);
-			revNbMoveList[i].resize(clusterNum);
-			for(int j=0;j<clusterNum;j++){
-				shared_ptr<IntFuncTask> request(new IntFuncTask);
-				request->asynBind(runIndividualNuPairMoveSetMT, 1, i, j, oi, bbNb, &nbMoveList[i]);
-                jid++;
-                thrPool->addTask(request);
-				shared_ptr<IntFuncTask> request2(new IntFuncTask);
-				request2->asynBind(runIndividualNuPairMoveSetMT, -1, i, j, oi, bbNb, &revNbMoveList[i]);
-                jid++;
-                thrPool->addTask(request2);
-				// nbMoveList[i].emplace_back(new IndividualNuPairMoveSet(1, i, j, oi, bbNb));
-				// revNbMoveList[i].emplace_back(new IndividualNuPairMoveSet(-1, i, j, oi, bbNb));
-			}
-
-			clusterNum = bpLib->nnbBasePairNum[i];
-			nnbMoveList[i].resize(clusterNum);
-			for(int j=0;j<clusterNum;j++){
-				shared_ptr<IntFuncTask> request(new IntFuncTask);
-				request->asynBind(runIndividualNuPairMoveSetMT, 2, i, j, oi, bbNnb, &nnbMoveList[i]);
-                jid++;
-                thrPool->addTask(request);
-				// nnbMoveList[i].emplace_back(new IndividualNuPairMoveSet(2, i, j, oi, bbNnb));
-			}
+		string fileName = datapath() + "../binaryCache/NuPairMoveSetLibrary";
+		ins.open(fileName, ios::in|ios::binary);
+		if(!ins.is_open()) {
+			throw("[Error]Fail to open " + fileName);
 		}
-        while(true) {
-            sleep(1);
-            if(thrPool->getTaskCount() == 0) {
-                break;
-            }
-        }
-		delete bbNb;
-		delete bbNnb;
-	}
-	#ifdef TIMING
-	double nuPairMoveSetTime = (double) (clock()-start)/CLOCKS_PER_SEC - bpLibTime - oiTime;
-	cout << "NuPairMoveSet initialization time: " << nuPairMoveSetTime << " seconds, total " <<
-	oiTime + bpLibTime + nuPairMoveSetTime << " seconds" << endl;
-	#endif
+		this->load();
+		ins.close();
+	} else {
+		#ifdef TIMING
+		clock_t start, end;
+		start = clock(); 
+		#endif
+		BasePairLib* bpLib = new BasePairLib();
+		#ifdef TIMING
+		double bpLibTime = (double) (clock()-start)/CLOCKS_PER_SEC;
+		cout << "bpLib initialization time: " << bpLibTime << " seconds" << endl;
+		#endif
+		this->oi = new OrientationIndex();
+		#ifdef TIMING
+		double oiTime = (double) (clock()-start)/CLOCKS_PER_SEC - bpLibTime;
+		cout << "oi initialization time: " << oiTime << " seconds, total " <<
+		oiTime + bpLibTime << " seconds" << endl;
+		#endif
 
-	delete bpLib;
+		if(!withBinary) {
+			/* Read from TXT*/
+			for(int i=0;i<16;i++){
+				int clusterNum = bpLib->nbBasePairNum[i];
+				for(int j=0;j<clusterNum;j++){
+					nbMoveList[i].push_back(new IndividualNuPairMoveSet(1, i, j, oi));
+					revNbMoveList[i].push_back(new IndividualNuPairMoveSet(-1, i, j, oi));
+				}
+
+				clusterNum = bpLib->nnbBasePairNum[i];
+				for(int j=0;j<clusterNum;j++){
+					nnbMoveList[i].push_back(new IndividualNuPairMoveSet(2, i, j, oi));
+				}
+			}
+		} else if(binaryMode == 2) {
+			/* Read from BinaryTable */
+			ifstream ins;
+			string FileNb = NSPdataio::datapath()+"../binaryData/pairMove2/nb";
+			string FileNnb = NSPdataio::datapath()+"../binaryData/pairMove2/nnb";
+ 		    ins.open(FileNb,ios::in | ios::binary);
+			if(!ins.is_open()) {
+            	throw("Unable to open " + FileNb);
+        	}
+ 		    auto* bbNb = new BinaryBook;
+ 		    bbNb->read(ins);
+			ins.close();
+			ins.open(FileNnb,ios::in | ios::binary);
+			if(!ins.is_open()) {
+            	throw("Unable to open " + FileNnb);
+        	}
+ 		    auto* bbNnb = new BinaryBook;
+ 		    bbNnb->read(ins);
+			ins.close();
+
+			char *ntstr=std::getenv("OMP_NUM_THREADS");
+			int nt = *ntstr ? atoi(ntstr) : 1;
+			shared_ptr<ThreadPool> thrPool(new ThreadPool(nt));
+			size_t jid = 0;
+			for(int i=0;i<16;i++){
+				int clusterNum = bpLib->nbBasePairNum[i];
+				nbMoveList[i].resize(clusterNum);
+				revNbMoveList[i].resize(clusterNum);
+				for(int j=0;j<clusterNum;j++){
+					shared_ptr<IntFuncTask> request(new IntFuncTask);
+					request->asynBind(runIndividualNuPairMoveSetMT, 1, i, j, oi, bbNb, &nbMoveList[i]);
+ 	               jid++;
+ 	               thrPool->addTask(request);
+					shared_ptr<IntFuncTask> request2(new IntFuncTask);
+					request2->asynBind(runIndividualNuPairMoveSetMT, -1, i, j, oi, bbNb, &revNbMoveList[i]);
+ 	               jid++;
+ 	               thrPool->addTask(request2);
+					// nbMoveList[i].emplace_back(new IndividualNuPairMoveSet(1, i, j, oi, bbNb));
+					// revNbMoveList[i].emplace_back(new IndividualNuPairMoveSet(-1, i, j, oi, bbNb));
+				}
+
+				clusterNum = bpLib->nnbBasePairNum[i];
+				nnbMoveList[i].resize(clusterNum);
+				for(int j=0;j<clusterNum;j++){
+					shared_ptr<IntFuncTask> request(new IntFuncTask);
+					request->asynBind(runIndividualNuPairMoveSetMT, 2, i, j, oi, bbNnb, &nnbMoveList[i]);
+ 	               jid++;
+ 	               thrPool->addTask(request);
+					// nnbMoveList[i].emplace_back(new IndividualNuPairMoveSet(2, i, j, oi, bbNnb));
+				}
+			}
+ 	       while(true) {
+ 	           sleep(1);
+ 	           if(thrPool->getTaskCount() == 0) {
+ 	               break;
+ 	           }
+ 	       }
+			delete bbNb;
+			delete bbNnb;
+		}
+		#ifdef TIMING
+		double nuPairMoveSetTime = (double) (clock()-start)/CLOCKS_PER_SEC - bpLibTime - oiTime;
+		cout << "NuPairMoveSet initialization time: " << nuPairMoveSetTime << " seconds, total " <<
+		oiTime + bpLibTime + nuPairMoveSetTime << " seconds" << endl;
+		#endif
+
+		delete bpLib;
+	}
 }
 
 NuPairMoveSetLibrary::~NuPairMoveSetLibrary(){
@@ -221,6 +293,7 @@ NuPairMoveSetLibrary::~NuPairMoveSetLibrary(){
 			delete nnbMoveList[i][j];
 		}
 	}
+	delete oi;
 }
 
 MixedNuPairCluster::MixedNuPairCluster(int sep, int pairType, NuPairMoveSetLibrary* lib){
