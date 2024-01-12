@@ -84,6 +84,8 @@ public:
 	double samplingFreq;
 
 	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamer* baseRot, RiboseRotamer* riboRot, AtomLib* atLib);
+	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamerCG* baseRot, RiboseRotamerCG* riboRot, AtomLib* atLib);
+	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamer* baseRot, BaseRotamerCG* baseRotCG, RiboseRotamer* riboRot, RiboseRotamerCG* riboRotCG, AtomLib* atLib);
 
 	void updateNodeInformation(NuTree* tree);
 	void updateNodeInformationCG(NuTree* tree);
@@ -246,6 +248,7 @@ public:
 		this->rms = rms;
 	}
 	double rmsd(graphInfo* other);
+	double rmsdCG(graphInfo* other);
 	void printPDB(const string& outputFile);
 	void printPDBCG(const string& outputFile);
 	void printAlignedPDB(graphInfo* alignTarget, const string& outputFile);
@@ -264,6 +267,10 @@ public:
 
 	vector<BaseRotamer*> initBaseRotList;
 	vector<RiboseRotamer*> initRiboseRotList;
+	vector<BaseRotamerCG*> initBaseRotCGList;
+	vector<RiboseRotamerCG*> initRiboseRotCGList;
+
+
 	NuNode** allNodes; //L nodes
 	NuEdge** allEdges; //L*L edges
 	vector<NuEdge*> geList; //L*(L-1)/2 edges
@@ -290,12 +297,15 @@ public:
 
 	double totalEnergy();
 	double totalEnergyCG();
+	double totalEnergyCGTmp();
 	
 	double totalEnergyTmp();
 	double totalEnergy2();
 	void printEnergy();
+	void printEnergyCG();
 
 	graphInfo* getGraphInfo();
+	graphInfo* getGraphInfoCG();
 
 	virtual ~NuGraph();
 };
