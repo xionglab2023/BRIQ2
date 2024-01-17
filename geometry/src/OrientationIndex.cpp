@@ -9,7 +9,10 @@
 
 namespace NSPgeometry {
 
-OrientationIndex::OrientationIndex() {
+OrientationIndex::OrientationIndex(bool withBinary) {
+	if(withBinary) {
+		return;
+	}
 	ifstream file;
 	int keyIndex;
 	int spIndex;
@@ -82,6 +85,138 @@ OrientationIndex::OrientationIndex() {
 	file.close();
 }
 
+int OrientationIndex::dump(ostream& outs) {
+	int mapSize500 = sphereKeyMap500.size();
+	int mapSize1000 = sphereKeyMap1000.size();
+	int mapSize2000 = sphereKeyMap2000.size();
+	outs.write(reinterpret_cast<char*>(&mapSize500), sizeof(int));
+	outs.write(reinterpret_cast<char*>(&mapSize1000), sizeof(int));
+	outs.write(reinterpret_cast<char*>(&mapSize2000), sizeof(int));
+	int vecSize500 = tList500.size();
+	int vecSize1000 = tList1000.size();
+	int vecSize2000 = tList2000.size();
+	outs.write(reinterpret_cast<char*>(&vecSize500), sizeof(int));
+	outs.write(reinterpret_cast<char*>(&vecSize1000), sizeof(int));
+	outs.write(reinterpret_cast<char*>(&vecSize2000), sizeof(int));
+	{	
+		int amap[mapSize500*2];
+		int ii = 0;
+		for(auto& it:sphereKeyMap500){
+			amap[ii] = it.first;
+			amap[ii+1] = it.second;
+			ii+=2;
+		}
+		outs.write(reinterpret_cast<char*>(amap), sizeof(int)*2*mapSize500);
+	}
+	{	
+		int amap[mapSize1000*2];
+		int ii = 0;
+		for(auto& it:sphereKeyMap1000){
+			amap[ii] = it.first;
+			amap[ii+1] = it.second;
+			ii+=2;
+		}
+		outs.write(reinterpret_cast<char*>(amap), sizeof(int)*2*mapSize1000);
+	}
+	{	
+		int amap[mapSize2000*2];
+		int ii = 0;
+		for(auto& it:sphereKeyMap2000){
+			amap[ii] = it.first;
+			amap[ii+1] = it.second;
+			ii+=2;
+		}
+		outs.write(reinterpret_cast<char*>(amap), sizeof(int)*2*mapSize2000);
+	}
+
+	{
+		double xyzArr[vecSize500*3];
+		for(int i=0;i<vecSize500;i++) {
+			int ndx = i*3;
+			xyzArr[ndx] = tList500[i].x_;
+			xyzArr[ndx+1] = tList500[i].y_;
+			xyzArr[ndx+2] = tList500[i].z_;
+		}
+		outs.write(reinterpret_cast<char*>(xyzArr), sizeof(double)*3*vecSize500);
+	}
+	{
+		double xyzArr[vecSize1000*3];
+		for(int i=0;i<vecSize1000;i++) {
+			int ndx = i*3;
+			xyzArr[ndx] = tList1000[i].x_;
+			xyzArr[ndx+1] = tList1000[i].y_;
+			xyzArr[ndx+2] = tList1000[i].z_;
+		}
+		outs.write(reinterpret_cast<char*>(xyzArr), sizeof(double)*3*vecSize1000);
+	}
+	{
+		double xyzArr[vecSize2000*3];
+		for(int i=0;i<vecSize2000;i++) {
+			int ndx = i*3;
+			xyzArr[ndx] = tList2000[i].x_;
+			xyzArr[ndx+1] = tList2000[i].y_;
+			xyzArr[ndx+2] = tList2000[i].z_;
+		}
+		outs.write(reinterpret_cast<char*>(xyzArr), sizeof(double)*3*vecSize2000);
+	}
+	return EXIT_SUCCESS;
+}
+
+int OrientationIndex::load(istream& ins) {
+	int sizes[6];
+	ins.read(reinterpret_cast<char*>(sizes), sizeof(int)*6);
+	// mapSize500, mapSize1000, mapSize2000, vecSize500, vecSize1000, vecSize2000 = sizes;
+	{	
+		int amap[sizes[0]*2];
+		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*2*sizes[0]);
+		for(int i=0; i<sizes[0]; i=i+2) {
+			sphereKeyMap500.emplace(amap[i], amap[i+1]);
+		}
+	}
+	{	
+		int amap[sizes[1]*2];
+		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*2*sizes[1]);
+		for(int i=0; i<sizes[1]; i=i+2) {
+			sphereKeyMap1000.emplace(amap[i], amap[i+1]);
+		}
+	}
+	{	
+		int amap[sizes[2]*2];
+		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*2*sizes[2]);
+		for(int i=0; i<sizes[2]; i=i+2) {
+			sphereKeyMap2000.emplace(amap[i], amap[i+1]);
+		}
+	}
+	{
+		int xyzArrSize = sizes[3]*3;
+		double xyzArr[xyzArrSize];
+		ins.read(reinterpret_cast<char*>(xyzArr), sizeof(double)*xyzArrSize);
+		tList500.reserve(sizes[3]);
+		for(int i=0; i<xyzArrSize; i=i+3) {
+			tList500.emplace_back(XYZ(xyzArr[i],xyzArr[i+1],xyzArr[i+2]));
+		}
+	}
+	{
+		int xyzArrSize = sizes[4]*3;
+		double xyzArr[xyzArrSize];
+		ins.read(reinterpret_cast<char*>(xyzArr), sizeof(double)*xyzArrSize);
+		tList1000.reserve(sizes[4]);
+		for(int i=0; i<xyzArrSize; i=i+3) {
+			tList1000.emplace_back(XYZ(xyzArr[i],xyzArr[i+1],xyzArr[i+2]));
+		}
+	}
+	{
+		int xyzArrSize = sizes[5]*3;
+		double xyzArr[xyzArrSize];
+		ins.read(reinterpret_cast<char*>(xyzArr), sizeof(double)*xyzArrSize);
+		tList2000.reserve(sizes[5]);
+		for(int i=0; i<xyzArrSize; i=i+3) {
+			tList2000.emplace_back(XYZ(xyzArr[i],xyzArr[i+1],xyzArr[i+2]));
+		}
+	}
+
+	return EXIT_SUCCESS;
+}
 
 CsMove OrientationIndex::index500ToCsMove(int index){
 	int idDist = index/10000000;
