@@ -54,16 +54,17 @@ public:
 	/**
 	 * @brief dump object to binary cache
 	 * 
+	 * @param outs: ostream object to dump to 
 	 * @return int 
 	 */
-	int dump();
+	int dump(ostream& outs);
 
 	/**
 	 * @brief load object from binary cache
 	 * 
 	 * @return int 
 	 */
-	int load();
+	int load(istream& ins);
 
 	CsMove getRandomMove(OrientationIndex* oi);
 
@@ -81,9 +82,9 @@ public:
 	 * @brief Construct a new NuPairMoveSetLibrary object. 
 	 * 
 	 * @param withBinary Bool, if true, read from binary; if false, read from txt parameter tables.
-	 * @param binaryMode Int, if 1, read dumped object; if 2, read BinaryTable
+	 * @param binaryMode Int, if 1, read dumped BinaryCache; if 2, read BinaryTable
 	 */
-	NuPairMoveSetLibrary(bool withBinary=true, int binaryMode=2);
+	NuPairMoveSetLibrary(bool withBinary=true, int binaryMode=1);
 	int dump();
 	int load();
 	virtual ~NuPairMoveSetLibrary();

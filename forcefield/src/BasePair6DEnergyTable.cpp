@@ -700,7 +700,8 @@ cm2Key(withBinary, binaryMode)
 				auto& eneCol = get<BinaryColumn<double>>(*(btab->cols[2]));
 				// nbKeysEnergy 在元素map中随机赋值，且各map size 未知，无法并行
 				for(int k=0;k<btab->nRow;k++) {
-					this->nbKeysEnergy[(i*4+j)*2250+indexACol[k]][indexBCol[k]] = eneCol[k];
+					// this->nbKeysEnergy[(i*4+j)*2250+indexACol[k]][indexBCol[k]] = eneCol[k];
+					this->nbKeysEnergy[(i*4+j)*2250+indexACol[k]].emplace(indexBCol[k],eneCol[k]);
 				}
 			}
 		}
@@ -722,7 +723,8 @@ cm2Key(withBinary, binaryMode)
 				auto& indexBCol = get<BinaryColumn<int>>(*(btab->cols[1]));
 				auto& eneCol = get<BinaryColumn<double>>(*(btab->cols[2]));
 				for(int k=0;k<btab->nRow;k++) {
-					this->nnbKeysEnergy[(i*4+j)*2250+indexACol[k]][indexBCol[k]] = eneCol[k];
+					// this->nnbKeysEnergy[(i*4+j)*2250+indexACol[k]][indexBCol[k]] = eneCol[k];
+					this->nnbKeysEnergy[(i*4+j)*2250+indexACol[k]].emplace(indexBCol[k], eneCol[k]);
 				}
 			}
 		}

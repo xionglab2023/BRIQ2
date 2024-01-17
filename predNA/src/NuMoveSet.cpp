@@ -8,6 +8,7 @@
 #include <predNA/NuMoveSet.h>
 #include "tools/ThreadPool.h"
 #include "dataio/dirOperations.h"
+#include <string.h>
 #ifdef TIMING
 #include <time.h>
 #endif
@@ -89,15 +90,44 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clus
 	}
 }
 
-int IndividualNuPairMoveSet::dump() {
-	//TODO
+int IndividualNuPairMoveSet::dump(ostream& outs) {
+	char z0[4] = {'\0'};
+	outs.write(reinterpret_cast<char*>(&sep), sizeof(int));
+	outs.write(reinterpret_cast<char*>(&pairType), sizeof(int));
+	outs.write(reinterpret_cast<char*>(&clusterID), sizeof(int));
+	outs.write(reinterpret_cast<char*>(z0), sizeof(int));
+	int vecSize[20];
+	for(int i=0;i<20;i++) {
+		vecSize[i] = moveIndexList[i].size();
+	}
+	outs.write(reinterpret_cast<char *>(vecSize), 20*sizeof(int));
+	for(int i=0;i<20;i++) {
+		outs.write(reinterpret_cast<char*>(&moveIndexList[i][0]), vecSize[i]*sizeof(int));
+		if(vecSize[i]%2) {
+			outs.write(reinterpret_cast<char*>(z0), sizeof(int));  // align Bytes
+		}
+	}
 	return EXIT_SUCCESS;
 }
 
-int IndividualNuPairMoveSet::load() {
-	int ListSize[] = {0};
-	for(int i=0; i<20; i++) {
-		moveIndexList[i].resize(ListSize[i]);
+int IndividualNuPairMoveSet::load(istream& ins) {
+	int tint[4];
+	ins.read(reinterpret_cast<char*>(tint), sizeof(int)*4);
+	sep = tint[0];
+	pairType = tint[1];
+	clusterID = tint[2];
+	int vecSize[20];
+	ins.read(reinterpret_cast<char*>(vecSize), sizeof(int)*20);
+	for(int i=0;i<20;i++) {
+		moveIndexList[i].resize(vecSize[i]);
+		if(vecSize[i]%2) {
+			int memSize = vecSize[i]+1;
+			int tint2[memSize];
+			ins.read(reinterpret_cast<char*>(tint2), memSize*sizeof(int));
+			memcpy(&moveIndexList[i][0], tint2, vecSize[i]*sizeof(int));
+		} else {
+			ins.read(reinterpret_cast<char*>(&moveIndexList[i][0]), vecSize[i]*sizeof(int));
+		}
 	}
 	return EXIT_SUCCESS;
 }
@@ -126,6 +156,22 @@ int NuPairMoveSetLibrary::dump() {
 	if(!outs.is_open()) {
 		throw("[Error]Fail to open " + outpath + "/" + fileName);
 	}
+	oi->dump(outs);
+	for(int i=0; i<16; i++) {
+		int lnb = nbMoveList[i].size();
+		outs.write(reinterpret_cast<char*>(&lnb), sizeof(int));
+		int lnnb = nnbMoveList[i].size();
+		outs.write(reinterpret_cast<char*>(&lnnb), sizeof(int));
+		for(int j=0;j<lnb;j++) {
+			nbMoveList[i][j]->dump(outs);
+		}
+		for(int j=0;j<lnb;j++) {
+			revNbMoveList[i][j]->dump(outs);
+		}
+		for(int j=0;j<lnnb;j++) {
+			nnbMoveList[i][j]->dump(outs);
+		}
+	}
 	// outs.write(reinterpret_cast<char*>(this), sizeof(*this));
 	// outs.write(reinterpret_cast<char*>(this->oi), sizeof(*(this->oi)));
 	// for(int i=0; i<16; i++) {
@@ -150,7 +196,36 @@ int NuPairMoveSetLibrary::dump() {
 }
 
 int NuPairMoveSetLibrary::load() {
-	//TODO
+	ifstream ins;
+	string fileName = datapath() + "../binaryCache/NuPairMoveSetLibrary";
+	ins.open(fileName, ios::in|ios::binary);
+	if(!ins.is_open()) {
+		throw("[Error]Fail to open " + fileName);
+	}
+	oi = new OrientationIndex(true);
+	oi->load(ins);
+	for(int i=0; i<16; i++) {
+		int lnb, lnnb, tmp[2];
+		ins.read(reinterpret_cast<char*>(&tmp), 2*sizeof(int));
+		lnb = tmp[0];
+		lnnb = tmp[1];
+		nbMoveList[i].reserve(lnb);
+		for(int j=0;j<lnb;j++) {
+			nbMoveList[i][j] = new IndividualNuPairMoveSet();
+			nbMoveList[i][j]->load(ins);
+		}
+		revNbMoveList[i].reserve(lnb);
+		for(int j=0;j<lnb;j++) {
+			revNbMoveList[i][j] = new IndividualNuPairMoveSet();
+			revNbMoveList[i][j]->load(ins);
+		}
+		nnbMoveList[i].reserve(lnnb);
+		for(int j=0;j<lnnb;j++) {
+			nnbMoveList[i][j] = new IndividualNuPairMoveSet();
+			nnbMoveList[i][j]->load(ins);
+		}
+	}
+
 	return EXIT_SUCCESS;
 }
 
@@ -170,14 +245,7 @@ NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary, int binaryMode){
 
 	if(withBinary && binaryMode == 1) {
 		// Read from binaryCache
-		ifstream ins;
-		string fileName = datapath() + "../binaryCache/NuPairMoveSetLibrary";
-		ins.open(fileName, ios::in|ios::binary);
-		if(!ins.is_open()) {
-			throw("[Error]Fail to open " + fileName);
-		}
 		this->load();
-		ins.close();
 	} else {
 		#ifdef TIMING
 		clock_t start, end;
