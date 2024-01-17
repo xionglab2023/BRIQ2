@@ -5,9 +5,11 @@
 
 #ifndef FORCEFIELD_BASEPAIR6DENERGYTABLE_H_
 #define FORCEFIELD_BASEPAIR6DENERGYTABLE_H_
+// #define TIMING
 
 
 #include "dataio/datapaths.h"
+#include "dataio/binaryTable.h"
 #include "forcefield/ForceFieldPara.h"
 #include "geometry/xyz.h"
 #include "geometry/localframe.h"
@@ -21,6 +23,7 @@ namespace NSPforcefield {
 
 using namespace std;
 using namespace NSPgeometry;
+using namespace NSPdataio;
 
 class CsMoveTo6DKey {
 
@@ -43,10 +46,14 @@ private:
 
 public:
 
-	CsMoveTo6DKey();
+	CsMoveTo6DKey(bool withBinary=true, int binaryMode=2);
 	void getIndexAndWeight(const LocalFrame& csA, const LocalFrame& csB, double len, int outIndex[5], double outWeights[4]);
 	void getIndexAndWeight6DInterpolation(const LocalFrame& csA, const LocalFrame& csB, double len, int outIndex[13], double outWeights[13]);
 	pair<int,int> toIndexPair(const LocalFrame& csA, const LocalFrame& csB, double len);
+	void printElem(int i) const {
+		cout << spIndex1[i] <<","<< spIndex2[i] <<","<< spIndex3[i]<<","<<
+				spWt1[i]<<","<<spWt2[i]<<","<< spWt3[i]<<endl;
+	}
 
 	/*
 	string toKey(const LocalFrame& csA, const LocalFrame& csB, double len);
@@ -69,7 +76,7 @@ public:
 
 	double wtNb, wtNnb;
 
-	BasePair6DEnergyTable(ForceFieldPara* para);
+	BasePair6DEnergyTable(ForceFieldPara* para, bool withBinary=true, int binaryMode=2);
 
 	double getEnergyBiInterpolation(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		//bilinear interpolation

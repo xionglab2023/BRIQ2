@@ -36,7 +36,7 @@ public:
 
 	double wtNb, wtNnb;
 
-	BasePair6DEnergyTableCG(ForceFieldPara* para);
+	BasePair6DEnergyTableCG(ForceFieldPara* para, bool withBinary=true, int binaryMode=2);
 
 	double getEnergy(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		if(sep > 1 && minDistance >= 5.0) return 0;

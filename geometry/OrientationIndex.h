@@ -37,7 +37,12 @@ private:
 
 
 public:
-	OrientationIndex();
+	OrientationIndex(bool withBinary=false);
+	int dump(ostream& outs);
+	int load(istream& ins);
+	const map<int, int>& getSKM1000() const {
+		return sphereKeyMap1000;
+	}
 	CsMove index500ToCsMove(int index);
 	CsMove index1000ToCsMove(int index);
 	CsMove index2000ToCsMove(int indexA, int indexB);
