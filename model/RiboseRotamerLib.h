@@ -22,6 +22,12 @@ public:
 	RiboseRotamer* rotLib[8][1500];
 	RiboseRotamerCG* rotLibCG[8][1500];
 
+	RiboseRotamer* rotLib100[8][100];
+	RiboseRotamerCG* rotLibCG100[8][100];
+
+	RiboseRotamer* rotLib20[8][20];
+	RiboseRotamerCG* rotLibCG20[8][20];
+
 	RiboseRotamerLib();
 	RiboseRotamerLib(ForceFieldPara* para);
 

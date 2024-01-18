@@ -7,7 +7,6 @@
 #define FORCEFIELD_BASEPAIR6DENERGYTABLE_H_
 // #define TIMING
 
-
 #include "dataio/datapaths.h"
 #include "dataio/binaryTable.h"
 #include "forcefield/ForceFieldPara.h"
@@ -16,6 +15,7 @@
 #include <time.h>
 #include <math.h>
 #include <map>
+#include <set>
 #include <fstream>
 #include <sstream>
 
@@ -73,7 +73,6 @@ public:
 	CsMoveTo6DKey cm2Key;
 	map<int,double>::iterator it;
 
-
 	double wtNb, wtNnb;
 
 	BasePair6DEnergyTable(ForceFieldPara* para, bool withBinary=true, int binaryMode=2);
@@ -123,7 +122,6 @@ public:
 		double e = weights[0]*ene[0]+weights[1]*ene[1]+weights[2]*ene[2]+weights[3]*ene[3];
 		return e;
 	}
-
 
 	double getEnergy(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		//6D interpolation
@@ -211,7 +209,79 @@ public:
 		}
 
 	}
+
 	virtual ~BasePair6DEnergyTable();
+};
+
+class NeighborPairEnergyTable{
+public:
+	map<int, double> nbKeysEnergy[2250];
+	CsMoveTo6DKey cm2Key;
+	map<int,double>::iterator it;
+
+	double wtNb, wtNnb;
+	int typeA, typeB;
+
+	NeighborPairEnergyTable(ForceFieldPara* para, int typeA, int typeB);
+
+	double getEnergy(const LocalFrame csA, const LocalFrame csB, int sep, double minDistance){
+		if(minDistance >= 5.0) return 0;
+		if(minDistance < 1.5) return 0;
+
+		double len = csA.origin_.distance(csB.origin_);
+		if(len >= 15.0)
+			return 0;
+
+	    pair<int,int> p = cm2Key.toIndexPair(csA, csB, len);
+		int pairType = typeA*4+typeB;
+		int mapIndex = p.first;
+
+			it = nbKeysEnergy[mapIndex].find(p.second);
+			if(it != nbKeysEnergy[mapIndex].end()){
+				//printf("indexA: %8d indexB: %8d\n", mapIndex, p.second);
+				return wtNb*it->second;
+			}
+			else
+				return 0.0;
+
+	}	
+};
+
+class MergeThreeNnbEnergyTable {
+public:
+
+	map<int, double> nnbKeysEnergy1[2250]; //DFT-weighted statistical energy
+	map<int, int> nnbKeysCluster1[2250]; //cluster id
+	set<int> fixedSet;
+
+	map<int, double> nnbKeysEnergy2[2250]; //XTB scanning energy
+	map<int, double> nnbKeysEnergy3[2250]; //hbond energy
+
+	map<int, double> finalEnergyMap[2250]; //merged energy
+
+	CsMoveTo6DKey cm2Key;
+	map<int,double>::iterator it;
+	set<int>::iterator it2;
+	map<int,int>::iterator it3;
+
+	MergeThreeNnbEnergyTable(int typeA, int typeB);
+	void mergeEnergy(const string& outfile);
+	virtual ~MergeThreeNnbEnergyTable();
+};
+
+class MergeTwoNbEnergyTable {
+public:
+
+	map<int, double> nbKeysEnergy1[2500];
+	map<int, double> nbKeysEnergy2[2500];
+	CsMoveTo6DKey cm2Key;
+	map<int,double>::iterator it;
+	set<int>::iterator it2;
+
+	MergeTwoNbEnergyTable(int typeA, int typeB);
+	void mergeEnergy(const string& outfile);
+	virtual ~MergeTwoNbEnergyTable();
+
 };
 
 } /* namespace NSPforcefield */

@@ -22,7 +22,7 @@ using namespace std;
 
 int main(int argc, char** argv){
 
-	clock_t start = clock();
+
 
 	string inputFile = string(argv[1]);
 	string output = string(argv[2]);
@@ -67,8 +67,12 @@ int main(int argc, char** argv){
 	tree->printNodeInfo();
 
 	cout << "run MC" << endl;
-	tree->runCoarseGrainedMC(output);
 
+	clock_t start = clock();
+
+	tree->runCoarseGrainedMC(output);
+	clock_t end1 = clock();
+	cout << "time1: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
 
 	delete pairLib;
 	delete rotLib;
@@ -78,9 +82,8 @@ int main(int argc, char** argv){
 	delete tree;
 	delete graph;
 
-    cout << "end" << endl;
-	clock_t end1 = clock();
-	cout << "time1: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
+
+
 }
 
 

@@ -102,7 +102,11 @@ public:
 	PO3Builder(ForceFieldPara* para);
 
 	void buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* riboConfB, PhosphateConformer* outPhoConf);
+
+
 	double getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboConfB);
+
+	double getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* riboConfB);
 
 
 	virtual ~PO3Builder();

@@ -145,11 +145,11 @@ vector<XYZ> RNABaseLib::getPolarAtomCoords(int baseType){
 
 RNABase* RNABaseLib::getBase(const string& baseID, const string& chainID, int baseType, LocalFrame& cs){
 	string augc = "AUGC";
-	RNABase* base = new RNABase(baseID, chainID, augc[baseType]);
-    vector<Atom*> list;
-    vector<string>* names = atLib.getRnaSidechainAtoms(baseType);
-    vector<XYZ> tList;
-    if(baseType == 0){
+        RNABase* base = new RNABase(baseID, chainID, augc[baseType]);
+        vector<Atom*> list;
+        vector<string>* names = atLib.getRnaSidechainAtoms(baseType);
+        vector<XYZ> tList;
+        if(baseType == 0){
             XYZ a = XYZ(1.468,   0.000,   0.000); //A-N9
             XYZ b = XYZ(2.306,  -1.084,   0.000); //A-C8
             XYZ c = XYZ(3.577,  -0.770,   0.000); //A-N7
@@ -170,8 +170,8 @@ RNABase* RNABaseLib::getBase(const string& baseID, const string& chainID, int ba
             tList.push_back(h);
             tList.push_back(i);
             tList.push_back(j);
-    }
-    else if(baseType == 1){
+        }
+        else if(baseType == 1){
             XYZ a = XYZ(1.478,   0.000,   0.000); //U-N1
             XYZ b = XYZ(2.122,   1.221,   0.000); //U-C2
             XYZ c = XYZ(1.528,   2.282,   0.000); //U-O2
@@ -188,8 +188,8 @@ RNABase* RNABaseLib::getBase(const string& baseID, const string& chainID, int ba
             tList.push_back(f);
             tList.push_back(g);
             tList.push_back(h);
-    }
-    else if(baseType == 2) {
+        }
+        else if(baseType == 2) {
             XYZ a = XYZ(1.468,   0.000,   0.000); //G-N9
             XYZ b = XYZ(2.295,  -1.094,   0.000); //G-C8
             XYZ c = XYZ(3.560,  -0.779,   0.000); //G-N7
@@ -212,8 +212,8 @@ RNABase* RNABaseLib::getBase(const string& baseID, const string& chainID, int ba
             tList.push_back(i);
             tList.push_back(j);
             tList.push_back(k);
-    }
-    else if(baseType == 3) {
+        }
+        else if(baseType == 3) {
             XYZ a = XYZ(1.478,   0.000,   0.000); //C-N1
             XYZ b = XYZ(2.151,   1.224,   0.000); //C-C2
             XYZ c = XYZ(1.490,   2.271,   0.000); //C-O2
@@ -230,12 +230,12 @@ RNABase* RNABaseLib::getBase(const string& baseID, const string& chainID, int ba
             tList.push_back(f);
             tList.push_back(g);
             tList.push_back(h);
-    }
+        }
 
-    for(int i=0;i<tList.size();i++){
-    	base->addAtom(new Atom(names->at(i), local2global(cs, tList[i])));
-    }
-    return base;
+        for(int i=0;i<tList.size();i++){
+    	        base->addAtom(new Atom(names->at(i), local2global(cs, tList[i])));
+        }
+        return base;
 }
 
 RNABase* RNABaseLib::getBase(const string& baseID, const string& chainID, int baseType, LocalFrame& cs, RiboseRotamer* rot){
