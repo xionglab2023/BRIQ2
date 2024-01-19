@@ -6,8 +6,12 @@
  */
 
 #include "forcefield/BasePair6DEnergyTableCG.h"
+#include "dataio/dirOperations.h"
+#include <string.h>
 
 namespace NSPforcefield {
+
+using namespace NSPdataio;
 
 BasePair6DEnergyTableCG::BasePair6DEnergyTableCG(ForceFieldPara* para, bool withBinary, int binaryMode):
 cm2Key(withBinary, binaryMode)
@@ -70,7 +74,7 @@ cm2Key(withBinary, binaryMode)
 		}
 		delete bb;		
 	} else if(withBinary && binaryMode == 1) {
-
+		return;
 	} else {
 		for(int i=0;i<4;i++){
 			for(int j=0;j<4;j++){
@@ -97,6 +101,113 @@ cm2Key(withBinary, binaryMode)
 			}
 		}
 	}
+}
+
+int BasePair6DEnergyTableCG::dump() {
+	// serialized dump method
+	string outpath = datapath() + "../binaryCache";
+	string fileName = "BasePair6DEnergyTableCG";
+	char z0[4] = {'\0'};
+	if(! makeDirs(outpath)) {
+		throw("[Error]Unable to create " + outpath);
+	}
+	ofstream outs;
+	outs.open(outpath + "/" + fileName, ios::out|ios::binary);
+	if(!outs.is_open()) {
+		throw("[Error]Fail to open " + outpath + "/" + fileName);
+	}
+	cm2Key.dump(outs);
+	outs.write(reinterpret_cast<char*>(&wtNb), sizeof(double));
+	outs.write(reinterpret_cast<char*>(&wtNnb), sizeof(double));
+	int nbMapSizes[36000], nnbMapSizes[36000];
+	for(int i=0; i<36000; i++) {
+		nbMapSizes[i] = nbKeysEnergy[i].size();
+		nnbMapSizes[i] = nnbKeysEnergy[i].size();
+	}
+	outs.write(reinterpret_cast<char*>(nbMapSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nbMapSizes[i]];
+		double vals[nbMapSizes[i]];
+		int j = 0;
+		for(auto& it1:nbKeysEnergy[i]) {
+			keys[j] = it1.first;
+			vals[j] = it1.second;
+			j++;
+		}
+		outs.write(reinterpret_cast<char*>(keys), sizeof(int)*nbMapSizes[i]);
+		if(nbMapSizes[i]%2) {
+			outs.write(reinterpret_cast<char*>(z0), sizeof(int));  // align Bytes
+		}
+		outs.write(reinterpret_cast<char*>(vals), sizeof(double)*nbMapSizes[i]);
+	}
+	outs.write(reinterpret_cast<char*>(nnbMapSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nnbMapSizes[i]];
+		double vals[nnbMapSizes[i]];
+		int j = 0;
+		for(auto& it1:nnbKeysEnergy[i]) {
+			keys[j] = it1.first;
+			vals[j] = it1.second;
+			j++;
+		}
+		outs.write(reinterpret_cast<char*>(keys), sizeof(int)*nnbMapSizes[i]);
+		if(nnbMapSizes[i]%2) {
+			outs.write(reinterpret_cast<char*>(z0), sizeof(int));  // align Bytes
+		}
+		outs.write(reinterpret_cast<char*>(vals), sizeof(double)*nnbMapSizes[i]);
+	}
+
+	return EXIT_SUCCESS;
+}
+
+int BasePair6DEnergyTableCG::load() {
+	ifstream ins;
+	string fileName = datapath() + "../binaryCache/BasePair6DEnergyTableCG";
+	ins.open(fileName, ios::in|ios::binary);
+	if(!ins.is_open()) {
+		throw("[Error]Fail to open " + fileName);
+	}
+	int tint[4];
+	cm2Key.load(ins);
+	ins.read(reinterpret_cast<char*>(&wtNb), sizeof(double));
+	ins.read(reinterpret_cast<char*>(&wtNnb), sizeof(double));
+	int nbMapSizes[36000], nnbMapSizes[36000];
+	ins.read(reinterpret_cast<char*>(nbMapSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nbMapSizes[i]];
+		double vals[nbMapSizes[i]];
+		if(nbMapSizes[i]%2) {
+			int memSize = nbMapSizes[i]+1;
+			int tint2[memSize];
+			ins.read(reinterpret_cast<char*>(tint2), sizeof(int)*memSize);
+			memcpy(keys, tint2, nbMapSizes[i]*sizeof(int));
+		} else {
+			ins.read(reinterpret_cast<char*>(keys), sizeof(int)*nbMapSizes[i]);
+		}
+		ins.read(reinterpret_cast<char*>(vals), sizeof(double)*nbMapSizes[i]);
+		for(int j=0; j<nbMapSizes[i]; j++) {
+			nbKeysEnergy[i].emplace(keys[j], vals[j]);
+		}
+	}
+	ins.read(reinterpret_cast<char*>(nnbMapSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nnbMapSizes[i]];
+		double vals[nnbMapSizes[i]];
+		if(nnbMapSizes[i]%2) {
+			int memSize = nnbMapSizes[i]+1;
+			int tint2[memSize];
+			ins.read(reinterpret_cast<char*>(tint2), sizeof(int)*memSize);
+			memcpy(keys, tint2, nnbMapSizes[i]*sizeof(int));
+		} else {
+			ins.read(reinterpret_cast<char*>(keys), sizeof(int)*nnbMapSizes[i]);
+		}
+		ins.read(reinterpret_cast<char*>(vals), sizeof(double)*nnbMapSizes[i]);
+		for(int j=0; j<nnbMapSizes[i]; j++) {
+			nnbKeysEnergy[i].emplace(keys[j], vals[j]);
+		}
+	}
+
+	return EXIT_SUCCESS;
 }
 
 BasePair6DEnergyTableCG::~BasePair6DEnergyTableCG() {

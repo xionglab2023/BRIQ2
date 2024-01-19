@@ -47,7 +47,7 @@ int main() {
 			ii++;
             if(ii>4) break;
 		}
-    // set1->dump();
+    set1->dump();
     delete set1;
     
     cout << "Creating NuMoveSet from binaryTable" << endl;

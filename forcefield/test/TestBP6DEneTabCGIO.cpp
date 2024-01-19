@@ -34,17 +34,30 @@ int main() {
     cout << "cm2Key[2233]: " << endl;
     set2->cm2Key.printElem(2333);
     cout << "BasePair6DEnergyTable nnbKeysEnergy AG 763 74 ene: " << set2->nnbKeysEnergy[2*2250+763][74] << endl;
+    set2->dump();
     delete set2;
 
-    cout << "Initializing BasePair6DEnergyTable from binary" << endl;
+    cout << "Initializing BasePair6DEnergyTable from binaryTable" << endl;
     gettimeofday(&start, NULL);
     set2 = new BasePair6DEnergyTableCG(para, true,2);
     gettimeofday(&end, NULL);
-    double timeBinary = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
-    cout << "time consumed: " << timeBinary << " seconds" << endl;
+    double timeBinaryTable = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
+    cout << "time consumed: " << timeBinaryTable << " seconds" << endl;
     cout << "cm2Key[2233]: " << endl;
     set2->cm2Key.printElem(2333);
-    cout << "BasePair6DEnergyTable nnbKeysEnergy AG 763 74 ene: " << set2->nnbKeysEnergy[2*2250+763][74] << endl;
+    cout << "BasePair6DEnergyTableCG nnbKeysEnergy AG 763 74 ene: " << set2->nnbKeysEnergy[2*2250+763][74] << endl;
+    delete set2;
+
+    cout << "Initializing BasePair6DEnergyTable from binaryCache" << endl;
+    gettimeofday(&start, NULL);
+    set2 = new BasePair6DEnergyTableCG(para, true,1);
+    set2->load();
+    gettimeofday(&end, NULL);
+    double timeBinaryCache = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
+    cout << "time consumed: " << timeBinaryCache << " seconds" << endl;
+    cout << "cm2Key[2233]: " << endl;
+    set2->cm2Key.printElem(2333);
+    cout << "BasePair6DEnergyTableCG nnbKeysEnergy AG 763 74 ene: " << set2->nnbKeysEnergy[2*2250+763][74] << endl;
     delete set2;
     delete para;
 }
