@@ -47,12 +47,12 @@ int main() {
 			ii++;
             if(ii>4) break;
 		}
-    // set1->dump();
+    set1->dump();
     delete set1;
     
     cout << "Creating NuMoveSet from binaryTable" << endl;
     gettimeofday(&start, NULL);
-    set1 = new NuPairMoveSetLibrary();
+    set1 = new NuPairMoveSetLibrary(true,2);
     gettimeofday(&end, NULL);
     timeBinaryTable = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
     cout << "time consumed: " << timeBinaryTable << " seconds" << endl;

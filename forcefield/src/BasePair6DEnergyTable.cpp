@@ -4,9 +4,12 @@
  */
 
 #include <forcefield/BasePair6DEnergyTable.h>
+#include "dataio/dirOperations.h"
 #include <string.h>
 
 namespace NSPforcefield {
+
+using namespace NSPdataio;
 
 CsMoveTo6DKey::CsMoveTo6DKey(bool withBinary, int binaryMode) {
 	// TODO Auto-generated constructor stub
@@ -104,6 +107,8 @@ CsMoveTo6DKey::CsMoveTo6DKey(bool withBinary, int binaryMode) {
 		memcpy(this->spWt2, &(get<BinaryColumn<double>>(*(btab->cols[5])).getVal()[0]), sizeof(double)*btab->nRow);
 		memcpy(this->spWt3, &(get<BinaryColumn<double>>(*(btab->cols[6])).getVal()[0]), sizeof(double)*btab->nRow);
 		delete bb;
+	} else if(binaryMode==1) {
+		return;
 	}
 
 
@@ -159,6 +164,78 @@ CsMoveTo6DKey::CsMoveTo6DKey(bool withBinary, int binaryMode) {
 	double othTime = (double) (end-start)/CLOCKS_PER_SEC - indexTime - indexN3PTime;
 	cout << "Other initialization time: " << othTime << " seconds" << endl;
 	#endif
+}
+
+int CsMoveTo6DKey::dump(ostream& outs) {
+	char tint[4] = {'\0'};
+	int skmSize = sphereKeyMap.size();
+	int ktlSize = keyIdToListID.size();
+	outs.write(reinterpret_cast<char*>(&skmSize), sizeof(int));
+	outs.write(reinterpret_cast<char*>(&ktlSize), sizeof(int));
+	outs.write(reinterpret_cast<char*>(&spherePointNum), sizeof(int));
+	outs.write(tint, sizeof(int));
+	{
+		int amap[skmSize*2];
+		int ii = 0;
+		for(auto& it:sphereKeyMap){
+			amap[ii] = it.first;
+			amap[ii+1] = it.second;
+			ii+=2;
+		}
+		outs.write(reinterpret_cast<char*>(amap), sizeof(int)*2*skmSize);
+	}
+	{
+		int amap[ktlSize*2];
+		int ii = 0;
+		for(auto& it:keyIdToListID){
+			amap[ii] = it.first;
+			amap[ii+1] = it.second;
+			ii+=2;
+		}
+		outs.write(reinterpret_cast<char*>(amap), sizeof(int)*2*ktlSize);
+	}
+	outs.write(reinterpret_cast<char*>(spIndex1), 753848*sizeof(int));
+	outs.write(reinterpret_cast<char*>(spIndex2), 753848*sizeof(int));
+	outs.write(reinterpret_cast<char*>(spIndex3), 753848*sizeof(int));
+	outs.write(reinterpret_cast<char*>(spWt1), 753848*sizeof(double));
+	outs.write(reinterpret_cast<char*>(spWt2), 753848*sizeof(double));
+	outs.write(reinterpret_cast<char*>(spWt3), 753848*sizeof(double));
+	outs.write(reinterpret_cast<char*>(biIndex), 900000*sizeof(int));
+	outs.write(reinterpret_cast<char*>(biWt), 900000*sizeof(double));
+
+	return EXIT_SUCCESS;
+}
+
+int CsMoveTo6DKey::load(istream& ins) {
+	int sizes[4]; // skmSize, ktlSize, spherePointNum and filled zeros
+	ins.read(reinterpret_cast<char*>(sizes), 4*sizeof(int));
+	spherePointNum = sizes[2];
+	{
+		int memSize = sizes[0]*2;
+		int amap[memSize];
+		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*memSize);
+		for(int i=0; i<memSize; i=i+2) {
+			sphereKeyMap.emplace(amap[i], amap[i+1]);
+		}
+	}
+	{
+		int memSize = sizes[1]*2;
+		int amap[memSize];
+		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*memSize);
+		for(int i=0; i<memSize; i=i+2) {
+			keyIdToListID.emplace(amap[i], amap[i+1]);
+		}
+	}
+	ins.read(reinterpret_cast<char*>(spIndex1), sizeof(int)*753848);
+	ins.read(reinterpret_cast<char*>(spIndex2), sizeof(int)*753848);
+	ins.read(reinterpret_cast<char*>(spIndex3), sizeof(int)*753848);
+	ins.read(reinterpret_cast<char*>(spWt1), sizeof(double)*753848);
+	ins.read(reinterpret_cast<char*>(spWt2), sizeof(double)*753848);
+	ins.read(reinterpret_cast<char*>(spWt3), sizeof(double)*753848);
+	ins.read(reinterpret_cast<char*>(biIndex), 900000*sizeof(int));
+	ins.read(reinterpret_cast<char*>(biWt), 900000*sizeof(double));
+
+	return EXIT_SUCCESS;
 }
 
 void CsMoveTo6DKey::getIndexAndWeight(const LocalFrame& csA, const LocalFrame& csB, double len, int outIndex[5], double outWeights[4]){
@@ -730,7 +807,7 @@ cm2Key(withBinary, binaryMode)
 		}
 		delete bb;		
 	} else if(withBinary && binaryMode == 1) {
-
+		return;
 	} else {
 		for(int i=0;i<4;i++){
 			for(int j=0;j<4;j++){
@@ -757,6 +834,113 @@ cm2Key(withBinary, binaryMode)
 			}
 		}
 	}
+}
+
+int BasePair6DEnergyTable::dump() {
+	// serialized dump method
+	string outpath = datapath() + "../binaryCache";
+	string fileName = "BasePair6DEnergyTable";
+	char z0[4] = {'\0'};
+	if(! makeDirs(outpath)) {
+		throw("[Error]Unable to create " + outpath);
+	}
+	ofstream outs;
+	outs.open(outpath + "/" + fileName, ios::out|ios::binary);
+	if(!outs.is_open()) {
+		throw("[Error]Fail to open " + outpath + "/" + fileName);
+	}
+	cm2Key.dump(outs);
+	outs.write(reinterpret_cast<char*>(&wtNb), sizeof(double));
+	outs.write(reinterpret_cast<char*>(&wtNnb), sizeof(double));
+	int nbMapSizes[36000], nnbMapSizes[36000];
+	for(int i=0; i<36000; i++) {
+		nbMapSizes[i] = nbKeysEnergy[i].size();
+		nnbMapSizes[i] = nnbKeysEnergy[i].size();
+	}
+	outs.write(reinterpret_cast<char*>(nbMapSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nbMapSizes[i]];
+		double vals[nbMapSizes[i]];
+		int j = 0;
+		for(auto& it1:nbKeysEnergy[i]) {
+			keys[j] = it1.first;
+			vals[j] = it1.second;
+			j++;
+		}
+		outs.write(reinterpret_cast<char*>(keys), sizeof(int)*nbMapSizes[i]);
+		if(nbMapSizes[i]%2) {
+			outs.write(reinterpret_cast<char*>(z0), sizeof(int));  // align Bytes
+		}
+		outs.write(reinterpret_cast<char*>(vals), sizeof(double)*nbMapSizes[i]);
+	}
+	outs.write(reinterpret_cast<char*>(nnbMapSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nnbMapSizes[i]];
+		double vals[nnbMapSizes[i]];
+		int j = 0;
+		for(auto& it1:nnbKeysEnergy[i]) {
+			keys[j] = it1.first;
+			vals[j] = it1.second;
+			j++;
+		}
+		outs.write(reinterpret_cast<char*>(keys), sizeof(int)*nnbMapSizes[i]);
+		if(nnbMapSizes[i]%2) {
+			outs.write(reinterpret_cast<char*>(z0), sizeof(int));  // align Bytes
+		}
+		outs.write(reinterpret_cast<char*>(vals), sizeof(double)*nnbMapSizes[i]);
+	}
+
+	return EXIT_SUCCESS;
+}
+
+int BasePair6DEnergyTable::load() {
+	ifstream ins;
+	string fileName = datapath() + "../binaryCache/BasePair6DEnergyTable";
+	ins.open(fileName, ios::in|ios::binary);
+	if(!ins.is_open()) {
+		throw("[Error]Fail to open " + fileName);
+	}
+	int tint[4];
+	cm2Key.load(ins);
+	ins.read(reinterpret_cast<char*>(&wtNb), sizeof(double));
+	ins.read(reinterpret_cast<char*>(&wtNnb), sizeof(double));
+	int nbMapSizes[36000], nnbMapSizes[36000];
+	ins.read(reinterpret_cast<char*>(nbMapSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nbMapSizes[i]];
+		double vals[nbMapSizes[i]];
+		if(nbMapSizes[i]%2) {
+			int memSize = nbMapSizes[i]+1;
+			int tint2[memSize];
+			ins.read(reinterpret_cast<char*>(tint2), sizeof(int)*memSize);
+			memcpy(keys, tint2, nbMapSizes[i]*sizeof(int));
+		} else {
+			ins.read(reinterpret_cast<char*>(keys), sizeof(int)*nbMapSizes[i]);
+		}
+		ins.read(reinterpret_cast<char*>(vals), sizeof(double)*nbMapSizes[i]);
+		for(int j=0; j<nbMapSizes[i]; j++) {
+			nbKeysEnergy[i].emplace(keys[j], vals[j]);
+		}
+	}
+	ins.read(reinterpret_cast<char*>(nnbMapSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nnbMapSizes[i]];
+		double vals[nnbMapSizes[i]];
+		if(nnbMapSizes[i]%2) {
+			int memSize = nnbMapSizes[i]+1;
+			int tint2[memSize];
+			ins.read(reinterpret_cast<char*>(tint2), sizeof(int)*memSize);
+			memcpy(keys, tint2, nnbMapSizes[i]*sizeof(int));
+		} else {
+			ins.read(reinterpret_cast<char*>(keys), sizeof(int)*nnbMapSizes[i]);
+		}
+		ins.read(reinterpret_cast<char*>(vals), sizeof(double)*nnbMapSizes[i]);
+		for(int j=0; j<nnbMapSizes[i]; j++) {
+			nnbKeysEnergy[i].emplace(keys[j], vals[j]);
+		}
+	}
+
+	return EXIT_SUCCESS;
 }
 
 BasePair6DEnergyTable::~BasePair6DEnergyTable() {
