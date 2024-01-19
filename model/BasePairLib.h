@@ -1,7 +1,7 @@
 /*
  * BasePairLib.h
  *
- *  Created on: 2023Äê8ÔÂ7ÈÕ
+ *  Created on: 2023ï¿½ï¿½8ï¿½ï¿½7ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -30,16 +30,16 @@ public:
 	int nbBasePairNum[16];
 	int nnbBasePairNum[16];
 
-	BaseDistanceMatrix nbDMClusterCenters[16][200]; //max cluster num < 200
-	BaseDistanceMatrix nnbDMClusterCenters[16][200];
+	BaseDistanceMatrix nbDMClusterCenters[16][2000]; //max cluster num < 2000
+	BaseDistanceMatrix nnbDMClusterCenters[16][2000];
 
-	double nbEnegy[16][200];
-	double nbEnergyWithOxy[16][200];
-	double nbProportion[16][200];
+	double nbEnegy[16][2000];
+	double nbEnergyWithOxy[16][2000];
+	double nbProportion[16][2000];
 
-	double nnbEnegy[16][200];
-	double nnbEnergyWithOxy[16][200];
-	double nnbProportion[16][200];
+	double nnbEnegy[16][2000];
+	double nnbEnergyWithOxy[16][2000];
+	double nnbProportion[16][2000];
 
 
 	BasePairLib();
