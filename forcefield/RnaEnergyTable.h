@@ -81,9 +81,17 @@ public:
 		bbcgET = NULL;
 	}
 
+	void loadEnergyWithout6D(){
+
+		acET = new AtomicClashEnergy(para);
+		roET = new RiboseOxygenEnergyTable(para);
+		pb = new PO3Builder(para);
+		hbET = new HbondEnergy(para);	
+	}
 
 	void loadAtomicEnergy(){
-		bpET = new BasePair6DEnergyTable(para);
+
+		bpET = new BasePair6DEnergyTable(para, false, 0);
 		acET = new AtomicClashEnergy(para);
 		roET = new RiboseOxygenEnergyTable(para);
 		pb = new PO3Builder(para);

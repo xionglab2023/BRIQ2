@@ -26,5 +26,5 @@ target_link_libraries (rnaEne briqx)
 target_link_libraries (testBP6DEneTabIO briqx)
 target_link_libraries (testBP6DEneTabCGIO briqx)
 
-install(TARGETS rnaEne testBBCG testHbEnergy testXtb6d testConnect testMerge testBP6DEneTabIO testBP6DEneTabCGIO
+install(TARGETS rnaEne testBBCG testHbEnergy testXtb6d testConnect testMerge testBP6DEneTabIO testBP6DEneTabCGIO basePairEnergy
     RUNTIME DESTINATION bin)
