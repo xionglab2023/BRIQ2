@@ -1,7 +1,7 @@
 /*
  * RotamerLib.h
  *
- *  Created on: 2023Äê8ÔÂ14ÈÕ
+ *  Created on: 2023ï¿½ï¿½8ï¿½ï¿½14ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -24,6 +24,7 @@ public:
 	ResBBRotamerLib* bbRotLib;
 	ResScRotamerLib* scRotLib;
 	ResPeptideRotamerLib* pepRotLib;
+	
 	BaseRotamerLib* baseRotLib;
 	RiboseRotamerLib* riboseRotLib;
 	PhosphateRotamerLib* phoRotLib;

@@ -947,4 +947,187 @@ BasePair6DEnergyTable::~BasePair6DEnergyTable() {
 	// TODO Auto-generated destructor stub
 }
 
+
+NeighborPairEnergyTable::NeighborPairEnergyTable(ForceFieldPara* para, int typeA, int typeB) {
+
+	this->wtNb = para->wtBp1;
+	this->wtNnb = para->wtBp2;
+	this->typeA = typeA;
+	this->typeB = typeB;
+
+	string path = NSPdataio::datapath();
+
+	int indexA, indexB, clusterID;
+	double ene;
+	ifstream file;
+	string augc = "AUGC";
+
+	int i = typeA;
+	int j = typeB;
+	string pairType = augc.substr(i,1) + augc.substr(j,1);
+	file.open(path + "pairEne/nb/"+pairType+".ene");
+
+	if(!file.is_open()) {
+		cout << "can't open file " << path + "pairEne/nb/" +pairType+".ene" << endl;
+	}
+	else {
+		cout << "load " << path + "pairEne/nb/" +pairType+".ene" << endl;
+	}
+			
+	while(file >> indexA >> indexB >> ene >> clusterID){
+		this->nbKeysEnergy[indexA][indexB] = ene;
+	}
+	file.close();
+}
+
+MergeThreeNnbEnergyTable::MergeThreeNnbEnergyTable(int typeA, int typeB) {
+
+	string path = NSPdataio::datapath();
+
+	int indexA, indexB, clusterID;
+	double ene;
+	ifstream file;
+	string augc = "AUGC";
+
+	string pairType = augc.substr(typeA,1) + augc.substr(typeB,1);
+	string s;
+	int hbNum;
+
+	cout << "start read file" << endl;
+	int n1=0;
+	int n2=0;
+	int n3=0;
+
+	file.open(path + "pairEne/nnb/"+pairType+".ene");
+	if(!file.is_open()) {
+		cout << "can't open file " << path + "pairEne/nnb/" +pairType+".ene" << endl;
+	}
+	while(file >> indexA >> indexB >> ene >> clusterID){
+		this->nnbKeysEnergy1[indexA][indexB] = ene;
+		this->nnbKeysCluster1[indexA][indexB] = clusterID;
+		n1++;
+	}
+	file.close();
+
+
+	file.open("/public/home/pengx/briqx/xtb/sp2000/stackingEne/"+ pairType + ".ene", ios::in);
+	if(!file.is_open()) {
+		cout << "can't open file " <<  "/public/home/pengx/briqx/xtb/sp2000/stackingEne/"+ pairType + ".ene" << endl;
+	}
+	while(file >> indexA >> indexB >> ene) {
+		this->nnbKeysEnergy2[indexA][indexB] = (ene+4.0)*0.3;
+		n2++;
+	}
+	file.close();
+
+
+	file.open("/public/home/pengx/briqx/basePair/hbPair/ene/"+ pairType + ".ene", ios::in);
+	if(!file.is_open()) {
+		cout << "can't open file " <<  "/public/home/pengx/briqx/basePair/hbPair/ene/"+ pairType + ".ene" << endl;
+	}
+	while(file >> indexA >> indexB >> ene >> hbNum) {
+		this->nnbKeysEnergy3[indexA][indexB] = ene;
+		n3++;
+	}
+	file.close();
+	
+	cout << n1 << endl;
+	cout << n2 << endl;
+	cout << n3 << endl;
+
+	file.open("/public/home/pengx/briqx/basePair/mergeBasePairEnergy/fixedNnb", ios::in);
+	if(!file.is_open()){
+		cout << "can't open /public/home/pengx/briqx/basePair/mergeBasePairEnergyfixedNnb" << endl;
+	}
+	while(file >> s >> clusterID) {
+		if(pairType == s) {
+			fixedSet.insert(clusterID);
+		}
+	}
+	file.close();
+}
+
+void MergeThreeNnbEnergyTable::mergeEnergy(const string& outfile){
+	 
+	double e1, e2, e3, em;
+	int clusterID;
+	int spB;
+	char xx[200];
+	ofstream out;
+	out.open(outfile.c_str(), ios::out);
+	if(!out.is_open()){
+		cout << "fail to open outfile: " << outfile << endl;
+	}
+
+	int pointNum = 0;
+
+	 for(int i=0;i<2250;i++){
+
+		set<int> keySet;
+		for(it = nnbKeysEnergy1[i].begin();it != nnbKeysEnergy1[i].end();++it){
+			keySet.insert(it->first);
+		}
+		for(it = nnbKeysEnergy2[i].begin();it != nnbKeysEnergy2[i].end();++it){
+			keySet.insert(it->first);
+		}
+		for(it = nnbKeysEnergy3[i].begin();it != nnbKeysEnergy3[i].end();++it){
+			keySet.insert(it->first);
+		}
+
+		pointNum += keySet.size();
+
+		for(it2 = keySet.begin();it2 != keySet.end();++it2){
+			e1 = 0.0;
+			e2 = 0.0;
+			e3 = 0.0;
+			clusterID = -1;
+			spB = *it2;
+
+			it = nnbKeysEnergy1[i].find(spB);
+			if(it!=nnbKeysEnergy1[i].end()){
+				e1 = it->second;
+				it3 = nnbKeysCluster1[i].find(spB);
+				clusterID = it3->second;
+			}
+
+			it = nnbKeysEnergy2[i].find(spB);
+			if(it!=nnbKeysEnergy2[i].end()){
+				e2 = it->second;
+			}
+
+			it = nnbKeysEnergy3[i].find(spB);
+			if(it!=nnbKeysEnergy3[i].end()){
+				e3 = it->second;
+			}
+
+			if(e1 > 0) e1 = 0;
+			if(e2 > 0) e2 = 0;
+			if(e3 > 0) e3 = 0;
+
+			if(clusterID >=0 && fixedSet.find(clusterID) != fixedSet.end()){
+				em = e1;
+			}
+			else if(e1 < e2 && e1 < e3)
+				em = e1;
+			else if(e2 < e1 && e2 < e3)
+				em = e2;
+			else 
+				em = e3;
+
+			em = em + 0.1;
+			if(em >= 0.0) continue;
+
+			sprintf(xx, "%d %d %8.4f", i, spB, em);
+			out << string(xx) << endl;			
+		}
+	 }
+
+	 cout << "total point num: " << pointNum << endl;
+	 out.close();
+}
+
+MergeThreeNnbEnergyTable::~MergeThreeNnbEnergyTable(){
+
+}
+
 } /* namespace NSPforcefield */

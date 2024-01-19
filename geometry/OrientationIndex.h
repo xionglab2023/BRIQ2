@@ -27,9 +27,16 @@ using namespace std;
 class OrientationIndex {
 
 private:
-	map<int, int> sphereKeyMap500;
-	map<int, int> sphereKeyMap1000;
-	map<int, int> sphereKeyMap2000;
+
+	/*
+	 * length: 0~15
+	 * dihedral angles: -180~180
+	 * sphereA:
+	 * sphereB:
+	 */
+	map<int, int> sphereKeyMap500; //50*40*500*500
+	map<int, int> sphereKeyMap1000; //50*40*1000*1000
+	map<int, int> sphereKeyMap2000; //50*45*2000*2000
 
 	vector<XYZ> tList500;
 	vector<XYZ> tList1000;

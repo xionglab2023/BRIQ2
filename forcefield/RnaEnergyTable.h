@@ -56,8 +56,6 @@ public:
 		bbcgET = NULL;
 	}
 
-
-
 	RnaEnergyTable(const string& paraFile){
 
 		this->para = new ForceFieldPara();

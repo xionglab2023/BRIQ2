@@ -2897,7 +2897,7 @@ void NuTree::runCoarseGrainedMC(const string& output){
 
 	randomInitCG();
 
-	int stepNum = 20000;
+	int stepNum = 1000000;
 
 	double T0 = 5.0;
 	double T1 = 0.01;
@@ -2916,6 +2916,8 @@ void NuTree::runCoarseGrainedMC(const string& output){
 
 	int len = graph->seqLen;
 
+	int count = 0;
+
 	for(T=T0;T>T1;T=T*anneal){
 
 		nAc = 0;
@@ -2924,6 +2926,8 @@ void NuTree::runCoarseGrainedMC(const string& output){
 		eTot = 0;
 
 		for(k=0;k<stepNum;k++){
+			count++;
+
 			randP = rand()*1.0/RAND_MAX;
 			if(randP < sampFreqNode){
 				/*
@@ -3030,6 +3034,8 @@ void NuTree::runCoarseGrainedMC(const string& output){
 		printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
 	}
 
+	cout << "total step num: " << count << endl;
+
 	graphInfo* gi = graph->getGraphInfoCG();
 	gi->setRMS(gi->rmsdCG(this->graph->initInfo));
 	gi->printPDBCG(output);
@@ -3037,24 +3043,34 @@ void NuTree::runCoarseGrainedMC(const string& output){
 }
 
 graphInfo::graphInfo(int seqLen, int* seq, bool* con, NuNode** nodes, double ene, AtomLib* atLib){
+
+
 	this->seqLen = seqLen;
 	this->seq = new int[seqLen];
 	this->connectToDownstream = new bool[seqLen];
 	this->nodes = new NuNode*[seqLen];
 	this->ene = ene;
 
+
+
 	for(int i=0;i<seqLen;i++){
 		this->seq[i] = seq[i];
 		this->connectToDownstream[i] = con[i];
 	}
 
+
 	for(int i=0;i<seqLen;i++){
 		NuNode* n = nodes[i];
-		NuNode* node = new NuNode(n->seqID, n->baseType,  n->baseConf->cs1, n->baseConf->rot, n->baseConfCG->rot, n->riboseConf->rot, n->riboseConfCG->rot, atLib);
+		NuNode* node = new NuNode(n->seqID, n->baseType,  n->baseConf->cs1, n->baseConf->rot, n->riboseConf->rot, atLib);
+
 		node->phoConf->copyValueFrom(n->phoConf);
+	
 		node->phoConfTmp->copyValueFrom(n->phoConfTmp);
+	
 		node->connectToNeighbor = connectToDownstream[i];
+	
 		this->nodes[i] = node;
+
 	}
 
 	this->atLib = atLib;

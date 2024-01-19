@@ -289,6 +289,7 @@ public:
 
 	XYZ& getCore() {return this->core;}
 	XYZ& getSupport() {return this->support;}
+	
 	bool hbondedTo(PolarAtom* other){
 		double d = this->core.distance(other->core);
 		if(d < 1.5) return false;

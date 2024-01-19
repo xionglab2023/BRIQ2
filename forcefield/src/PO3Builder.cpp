@@ -243,6 +243,8 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 	int indexDD;
 
 	int d1d2LibSize = this->d1d2Lib1A.size();
+	
+
 	int bestIndex1=0;
 
 
@@ -270,12 +272,10 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u<1 && u>-1)
-			e += u*u;
-		else if(u > 1)
-			e += (2*u-1);
+		if(u < 0)
+			e += -u;
 		else
-			e += (-2*u-1);
+			e += u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -345,7 +345,6 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[dihed1][dihed2], minE*para->wtPho);
 		return;
 	}
-
 
 
 	for(int i=0;i<d1d2LibSize;i++){
@@ -445,7 +444,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		}
 	}
 
-	if(d0 > 3.8){
+	if(d0 > 3.9){
 		//If the distance between atom O3' and C5' is larger than 3.8 angstrom, we use default dihedral angles to build PO3
 		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[bestDihed1][bestDihed2], minE*para->wtPho);
 		return;
@@ -474,12 +473,11 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u<1 && u>-1)
-			e += u*u;
-		else if(u > 1)
-			e += (2*u-1);
+		if(u < 0)
+			e += -u;
 		else
-			e += (-2*u-1);
+			e += u;
+
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
 			e += u*u;
@@ -577,12 +575,11 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 				if(xdihed5 < 0) xdihed5 += 360;
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u<1 && u>-1)
-					e += u*u;
-				else if(u > 1)
-					e += (2*u-1);
+				if(u < 0)
+					e += -u;
 				else
-					e += (-2*u-1);
+					e += u;
+
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -678,12 +675,10 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 				if(xdihed5 < 0) xdihed5 += 360;
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u<1 && u>-1)
-					e += u*u;
-				else if(u > 1)
-					e += (2*u-1);
+				if(u < 0)
+					e += -u;
 				else
-					e += (-2*u-1);
+					e += u;
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -828,12 +823,10 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u<1 && u>-1)
-			e += u*u;
-		else if(u > 1)
-			e += (2*u-1);
+		if(u < 0)
+			e += -u;
 		else
-			e += (-2*u-1);
+			e += u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -894,7 +887,7 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		e += eImpD4D5[impIndexB*32400 + ((int)(xdihed4*0.5))*180 + (int)(xdihed5*0.5)] + para->rnaDihedImpD4D5Shift[regionIndexB];
 		e += eD2D4D3[((int)(dihed2*0.166666666))*10800 + ((int)(xdihed4*0.166666666))*180 + (int)(xdihed3*0.5)] + para->rnaDihedD2D3D4Shift[regionIndexC];
 
-		return minE;
+		return minE*para->wtPho;
 	}
 
 
@@ -923,12 +916,10 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u<1 && u>-1)
-			e += u*u;
-		else if(u > 1)
-			e += (2*u-1);
+		if(u < 0)
+			e += -u;
 		else
-			e += (-2*u-1);
+			e += u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -997,9 +988,9 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		}
 	}
 
-	if(d0 > 3.8){
+	if(d0 > 3.9){
 		//If the distance between atom O3' and C5' is larger than 3.8 angstrom, we use default dihedral angles to build PO3
-		return minE;
+		return minE*para->wtPho;
 	}
 
 	for(int i=0;i<d1d2LibSize;i++){
@@ -1025,12 +1016,10 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u<1 && u>-1)
-			e += u*u;
-		else if(u > 1)
-			e += (2*u-1);
+		if(u < 0)
+			e += -u;
 		else
-			e += (-2*u-1);
+			e += u;
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
 			e += u*u;
@@ -1126,12 +1115,10 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 				if(xdihed5 < 0) xdihed5 += 360;
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u<1 && u>-1)
-					e += u*u;
-				else if(u > 1)
-					e += (2*u-1);
+				if(u < 0)
+					e += -u;
 				else
-					e += (-2*u-1);
+					e += u;
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -1199,7 +1186,7 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
-		return minE;
+		return minE*para->wtPho;
 
 	}
 	else {
@@ -1225,12 +1212,10 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 				if(xdihed5 < 0) xdihed5 += 360;
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u<1 && u>-1)
-					e += u*u;
-				else if(u > 1)
-					e += (2*u-1);
+				if(u < 0)
+					e += -u;
 				else
-					e += (-2*u-1);
+					e += u;
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -1298,8 +1283,269 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
-		return minE;
+		return minE*para->wtPho;
 	}
+}
+
+double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* riboConfB) {
+	XYZ c2,c3,o3,p,op1,op2,o5,c5,c4,o4;
+
+	LocalFrame cs2A = riboConfA->cs2;
+
+
+	//distance between atom O3' and C5'
+	double d0 = cs2A.origin_.distance(riboConfB->coords[6]);
+
+	LocalFrame cs0;
+	c5 = global2local(cs2A, riboConfB->coords[6]);
+	c4 = global2local(cs2A, riboConfB->coords[3]);
+	o4 = global2local(cs2A, riboConfB->coords[4]);
+	LocalFrame cs1;
+	LocalFrame cs2;
+
+
+	LocalFrame bestCs1, bestCs2;
+	int bestDihed1, bestDihed2;
+	int localBestD1, localBestD2;
+
+
+	double minE = 999999999.9;
+	double e, u;
+
+	int dihed1, dihed2;
+	int idA, idB;
+
+	double xd3, xang3, xang4, xdihed3, xdihed4, xdihed5;
+
+	int impIndexA = (int)((riboConfA->rot->improper+60)*0.166666667);
+	if(impIndexA < 0) impIndexA = 0;
+	if(impIndexA > 19) impIndexA = 19;
+
+	char impType = 'A';
+	if(riboConfA->rot->improper > 0) impType = 'B';
+
+	int impIndexB = (int)((riboConfB->rot->improper+60)*0.166666667);
+	if(impIndexB < 0) impIndexB = 0;
+	if(impIndexB > 19) impIndexB = 19;
+
+	int indexDD;
+
+	int d1d2LibSize = this->d1d2Lib1A.size();
+	int bestIndex1=0;
+
+
+	int regionIndexA;
+	int regionIndexB;
+	int regionIndexC;
+
+
+	if(d0 > 4.5){
+		//If the distance between atom O3' and C5' is larger than 4.5 angstrom, we use default dihedral angles to build PO3
+		dihed1 = 100;
+		dihed2 = 290;
+		indexDD = (dihed1 * 360) + dihed2;
+		p = this->pList[indexDD];
+		o5 = this->o5List[indexDD];
+
+		xd3 = o5.distance(c5);
+		xang3 = angleX(p, o5, c5);
+		xang4 = angleX(o5, c5, c4);
+		xdihed3 = dihedral(o3, p, o5, c5);
+		xdihed4 = dihedral(p, o5, c5, c4);
+		xdihed5 = dihedral(o5, c5, c4, o4);
+		if(xdihed3 < 0) xdihed3 += 360;
+		if(xdihed4 < 0) xdihed4 += 360;
+		if(xdihed5 < 0) xdihed5 += 360;
+		e = 0;
+		u = (xd3-len3)*para->rnaKBond;
+		if(u < 0)
+			e += -u;
+		else
+			e += u;
+
+		u = (xang3-ang3)*para->rnaKAng;
+		if(u<1 && u>-1)
+			e += u*u;
+		else if(u > 1)
+			e += (2*u-1);
+		else
+			e += (-2*u-1);
+		u = (xang4-ang4)*para->rnaKAng;
+		if(u<1 && u>-1)
+			e += u*u;
+		else if(u > 1)
+			e += (2*u-1);
+		else
+			e += (-2*u-1);
+
+		e += eImpD1D2[impIndexA*32400 + ((int)(dihed1*0.5))*180 + (int)(dihed2*0.5)];
+		e += eImpD4D5[impIndexB*32400 + ((int)(xdihed4*0.5))*180 + (int)(xdihed5*0.5)];
+		e += eD2D4D3[((int)(dihed2*0.166666666))*10800 + ((int)(xdihed4*0.166666666))*180 + (int)(xdihed3*0.5)];
+
+		return e;
+	}
+
+	for(int i=0;i<d1d2LibSize;i++){
+		if(impType == 'A') {
+			dihed1 = (int)d1d2Lib1A[i].x_;
+			dihed2 = (int)d1d2Lib1A[i].y_;
+		}
+		else {
+			dihed1 = (int)d1d2Lib1B[i].x_;
+			dihed2 = (int)d1d2Lib1B[i].y_;
+		}
+		indexDD = (dihed1 * 360) + dihed2;
+		p = this->pList[indexDD];
+		o5 = this->o5List[indexDD];
+
+		xd3 = o5.distance(c5);
+		xang3 = angleX(p, o5, c5);
+		xang4 = angleX(o5, c5, c4);
+		xdihed3 = dihedral(o3, p, o5, c5);
+		xdihed4 = dihedral(p, o5, c5, c4);
+		xdihed5 = dihedral(o5, c5, c4, o4);
+		if(xdihed3 < 0) xdihed3 += 360;
+		if(xdihed4 < 0) xdihed4 += 360;
+		if(xdihed5 < 0) xdihed5 += 360;
+		e = 0;
+
+		u = (xd3-len3)*para->rnaKBond;
+		if(u < 0)
+			e += -u;
+		else
+			e += u;
+
+		u = (xang3-ang3)*para->rnaKAng;
+		if(u<1 && u>-1)
+			e += u*u;
+		else if(u > 1)
+			e += (2*u-1);
+		else
+			e += (-2*u-1);
+
+		u = (xang4-ang4)*para->rnaKAng;
+		if(u<1 && u>-1)
+			e += u*u;
+		else if(u > 1)
+			e += (2*u-1);
+		else
+			e += (-2*u-1);
+
+		e += eImpD1D2[impIndexA*32400 + ((int)(dihed1*0.5))*180 + (int)(dihed2*0.5)];
+		e += eImpD4D5[impIndexB*32400 + ((int)(xdihed4*0.5))*180 + (int)(xdihed5*0.5)];
+		e += eD2D4D3[((int)(dihed2*0.166666666))*10800 + ((int)(xdihed4*0.166666666))*180 + (int)(xdihed3*0.5)];
+
+		if(e < minE){
+			bestDihed1 = dihed1;
+			bestDihed2 = dihed2;
+			bestIndex1 = i;
+			minE = e;
+		}	
+	}
+
+
+	if(d0 > 3.9){
+		//If the distance between atom O3' and C5' is larger than 3.8 angstrom, we use default dihedral angles to build PO3
+		return minE*para->wtPho;
+	}
+
+	for(int i=0;i<d1d2LibSize;i++){
+		if(impType == 'A') {
+			dihed1 = d1d2Lib2A[bestIndex1][i].x_;
+			dihed2 = d1d2Lib2A[bestIndex1][i].y_;
+		}
+		else {
+			dihed1 = d1d2Lib2B[bestIndex1][i].x_;
+			dihed2 = d1d2Lib2B[bestIndex1][i].y_;
+		}
+		indexDD = dihed1 * 360 + dihed2;
+		p = this->pList[indexDD];
+		o5 = this->o5List[indexDD];
+		xd3 = o5.distance(c5);
+		xang3 = angleX(p, o5, c5);
+		xang4 = angleX(o5, c5, c4);
+		xdihed3 = dihedral(o3, p, o5, c5);
+		xdihed4 = dihedral(p, o5, c5, c4);
+		xdihed5 = dihedral(o5, c5, c4, o4);
+		if(xdihed3 < 0) xdihed3 += 360;
+		if(xdihed4 < 0) xdihed4 += 360;
+		if(xdihed5 < 0) xdihed5 += 360;
+		e = 0;
+		u = (xd3-len3)*para->rnaKBond;
+		if(u < 0)
+			e += -u;
+		else
+			e += u;
+
+		u = (xang3-ang3)*para->rnaKAng;
+		if(u<1 && u>-1)
+			e += u*u;
+		else if(u > 1)
+			e += (2*u-1);
+		else
+			e += (-2*u-1);
+		u = (xang4-ang4)*para->rnaKAng;
+		if(u<1 && u>-1)
+			e += u*u;
+		else if(u > 1)
+			e += (2*u-1);
+		else
+			e += (-2*u-1);
+
+		if(impIndexA < 10 && dihed2 > 250)
+			regionIndexA = 0;
+		else if(impIndexA < 10 && dihed1 < 210)
+			regionIndexA = 1;
+		else if(impIndexA < 10)
+			regionIndexA = 2;
+		else if(dihed2 > 250)
+			regionIndexA = 3;
+		else if(dihed1 < 210)
+			regionIndexA = 4;
+		else
+			regionIndexA = 5;
+
+
+		if(impIndexB < 10 && xdihed5 > 240)
+			regionIndexB = 0;
+		else if(impIndexB < 10 && xdihed5 > 120)
+			regionIndexB = 1;
+		else if(impIndexB < 10)
+			regionIndexB = 2;
+		else if(xdihed5 > 240)
+			regionIndexB = 3;
+		else if(xdihed5 > 120)
+			regionIndexB = 4;
+		else
+			regionIndexB = 5;
+
+		if(dihed2 > 250 && xdihed3 > 240)
+			regionIndexC = 0;
+		else if(dihed2 > 250 && xdihed3 > 120)
+			regionIndexC = 1;
+		else if(dihed2 > 250)
+			regionIndexC = 2;
+		else if(xdihed3 > 240)
+			regionIndexC = 3;
+		else if(xdihed3 > 120)
+			regionIndexC = 4;
+		else
+			regionIndexC = 5;
+
+		e += eImpD1D2[impIndexA*32400 + ((int)(dihed1*0.5))*180 + (int)(dihed2*0.5)] + para->rnaDihedImpD1D2Shift[regionIndexA];
+		e += eImpD4D5[impIndexB*32400 + ((int)(xdihed4*0.5))*180 + (int)(xdihed5*0.5)] + para->rnaDihedImpD4D5Shift[regionIndexB];
+		e += eD2D4D3[((int)(dihed2*0.166666666))*10800 + ((int)(xdihed4*0.166666666))*180 + (int)(xdihed3*0.5)] + para->rnaDihedD2D3D4Shift[regionIndexC];
+
+		if(e < minE){
+			bestDihed1 = dihed1;
+			bestDihed2 = dihed2;
+			minE = e;
+		}
+
+	}
+
+	return minE*para->wtPho;
+
 }
 
 PO3Builder::~PO3Builder() {

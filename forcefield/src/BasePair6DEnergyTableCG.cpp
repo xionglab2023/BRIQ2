@@ -11,8 +11,11 @@
 
 namespace NSPforcefield {
 
+<<<<<<< HEAD
 using namespace NSPdataio;
 
+=======
+>>>>>>> 8afb5f1c001ab5420284969c78d40fa2c05df862
 BasePair6DEnergyTableCG::BasePair6DEnergyTableCG(ForceFieldPara* para, bool withBinary, int binaryMode):
 cm2Key(withBinary, binaryMode)
 {
@@ -74,6 +77,7 @@ cm2Key(withBinary, binaryMode)
 		}
 		delete bb;		
 	} else if(withBinary && binaryMode == 1) {
+<<<<<<< HEAD
 		return;
 	} else {
 		for(int i=0;i<4;i++){
@@ -89,6 +93,23 @@ cm2Key(withBinary, binaryMode)
 				}
 				file.close();
 
+=======
+
+	} else {
+		for(int i=0;i<4;i++){
+			for(int j=0;j<4;j++){
+				string pairType = augc.substr(i,1) + augc.substr(j,1);
+				file.open(path + "pairEneCG/nb/"+pairType+".ene");
+
+				if(!file.is_open()) {
+					cout << "can't open file " << path + "pairEneCG/nb/" +pairType+".ene" << endl;
+				}
+				while(file >> indexA >> indexB >> ene >> clusterID){
+					this->nbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
+				}
+				file.close();
+
+>>>>>>> 8afb5f1c001ab5420284969c78d40fa2c05df862
 				file.open(path + "pairEneCG/nnb/"+pairType+".ene");
 				if(!file.is_open()) {
 					cout << "can't open file " << path + "pairEneCG/nnb/" +pairType+".ene" << endl;
