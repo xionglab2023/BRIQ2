@@ -167,23 +167,26 @@ int OrientationIndex::load(istream& ins) {
 	ins.read(reinterpret_cast<char*>(sizes), sizeof(int)*6);
 	// mapSize500, mapSize1000, mapSize2000, vecSize500, vecSize1000, vecSize2000 = sizes;
 	{	
-		int amap[sizes[0]*2];
-		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*2*sizes[0]);
-		for(int i=0; i<sizes[0]; i=i+2) {
+		int memSize = sizes[0]*2;
+		int amap[memSize];
+		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*memSize);
+		for(int i=0; i<memSize; i=i+2) {
 			sphereKeyMap500.emplace(amap[i], amap[i+1]);
 		}
 	}
 	{	
-		int amap[sizes[1]*2];
-		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*2*sizes[1]);
-		for(int i=0; i<sizes[1]; i=i+2) {
+		int memSize = sizes[1]*2;
+		int amap[memSize];
+		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*memSize);
+		for(int i=0; i<memSize; i=i+2) {
 			sphereKeyMap1000.emplace(amap[i], amap[i+1]);
 		}
 	}
 	{	
-		int amap[sizes[2]*2];
-		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*2*sizes[2]);
-		for(int i=0; i<sizes[2]; i=i+2) {
+		int memSize = sizes[2]*2;
+		int amap[memSize];
+		ins.read(reinterpret_cast<char*>(&amap), sizeof(int)*memSize);
+		for(int i=0; i<memSize; i=i+2) {
 			sphereKeyMap2000.emplace(amap[i], amap[i+1]);
 		}
 	}

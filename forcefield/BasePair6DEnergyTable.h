@@ -47,6 +47,8 @@ private:
 public:
 
 	CsMoveTo6DKey(bool withBinary=true, int binaryMode=2);
+	int dump(ostream& outs);
+	int load(istream& ins);
 	void getIndexAndWeight(const LocalFrame& csA, const LocalFrame& csB, double len, int outIndex[5], double outWeights[4]);
 	void getIndexAndWeight6DInterpolation(const LocalFrame& csA, const LocalFrame& csB, double len, int outIndex[13], double outWeights[13]);
 	pair<int,int> toIndexPair(const LocalFrame& csA, const LocalFrame& csB, double len);
@@ -76,6 +78,8 @@ public:
 	double wtNb, wtNnb;
 
 	BasePair6DEnergyTable(ForceFieldPara* para, bool withBinary=true, int binaryMode=2);
+	int dump();
+	int load();
 
 	double getEnergyBiInterpolation(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		//bilinear interpolation

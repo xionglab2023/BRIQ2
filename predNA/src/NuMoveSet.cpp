@@ -145,7 +145,7 @@ IndividualNuPairMoveSet::~IndividualNuPairMoveSet() {
 
 
 int NuPairMoveSetLibrary::dump() {
-	// TODO: design serialized dump method
+	// serialized dump method
 	string outpath = datapath() + "../binaryCache";
 	string fileName = "NuPairMoveSetLibrary";
 	if(! makeDirs(outpath)) {
