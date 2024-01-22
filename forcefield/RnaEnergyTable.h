@@ -91,7 +91,8 @@ public:
 
 	void loadAtomicEnergy(){
 
-		bpET = new BasePair6DEnergyTable(para, false, 0);
+		bpET = new BasePair6DEnergyTable(para, true, 1);
+		bpET->load();
 		acET = new AtomicClashEnergy(para);
 		roET = new RiboseOxygenEnergyTable(para);
 		pb = new PO3Builder(para);
@@ -101,7 +102,8 @@ public:
 
 	void loadCoarseGrainedEnergy(){
 		pb = new PO3Builder(para);
-		bpcgET = new BasePair6DEnergyTableCG(para);
+		bpcgET = new BasePair6DEnergyTableCG(para, true, 1);
+		bpcgET->load();
 		acET = new AtomicClashEnergy(para);
 		bbcgET = new BackboneConnectionEnergyCG(para);
 	}	

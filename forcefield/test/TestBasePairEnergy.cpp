@@ -122,9 +122,9 @@ int main(int argc, char** argv){
 
 			double eBB;
 			if(sep == 1)
-				eBB = bpLib->nbEnegy[nodeA->baseType*4+nodeB->baseType][pairType];
+				eBB = bpLib->nbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];
 			else
-				eBB = bpLib->nnbEnegy[nodeA->baseType*4+nodeB->baseType][pairType];
+				eBB = bpLib->nnbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];
 			
 			//cout << "eBB" << endl;
 			//double eBB = getBaseBaseEnergy(nodeA, nodeB, sep, et, false);

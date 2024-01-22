@@ -10,7 +10,6 @@
 #include <time.h>
 #include <stdlib.h>
 #include <iostream>
-
 #include "model/StructureModel.h"
 #include "predNA/NuGraph.h"
 
@@ -21,8 +20,6 @@ using namespace std;
 
 
 int main(int argc, char** argv){
-
-
 
 	string inputFile = string(argv[1]);
 	string output = string(argv[2]);
@@ -61,7 +58,6 @@ int main(int argc, char** argv){
 		tree->geList[i]->printPartition();
 	}
 
-
 	cout << "update sampling info" << endl;
 	tree->updateSamplingInfo();
 	tree->printNodeInfo();
@@ -81,9 +77,6 @@ int main(int argc, char** argv){
 	delete et;
 	delete tree;
 	delete graph;
-
-
-
 }
 
 

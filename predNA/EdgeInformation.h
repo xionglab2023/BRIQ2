@@ -1,7 +1,7 @@
 /*
  * EdgeInformation.h
  *
- *  Created on: 2023Äê11ÔÂ30ÈÕ
+ *  Created on: 2023ï¿½ï¿½11ï¿½ï¿½30ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -30,9 +30,12 @@ public:
 	bool fixed;
 	CsMove cm;
 
+	string moveType; //"single", "multiple", "all"
+
 	EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pairLib);
 	void updatePCluster(double* pList, double pContact, BasePairLib* pairLib);
 	void setUniqueCluster(int clusterID, BasePairLib* pairLib);
+	void setClusterList(vector<int>& clusterList, vector<double>& pClusters, BasePairLib* pairLib);
 	void setFixed(CsMove& cm){
 		this->fixed = true;
 		this->cm = cm;

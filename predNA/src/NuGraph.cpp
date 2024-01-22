@@ -189,13 +189,7 @@ void NuNode::updateNodeInformation(NuTree* tree){
 	if(connectToNeighbor)
 		this->ene += phoConf->ene;
 
-	this->eneCG = riboseConfCG->rot->energy;
-	if(connectToNeighbor) {
-		this->eneCG += nuConnectionEnergyCG(this->riboseConfCG, graph->allNodes[seqID+1]->riboseConfCG, graph->et);
-	}
-
 	this->eneTmp = this->ene;
-	this->eneCGTmp = this->eneCG;
 }
 
 void NuNode::updateNodeInformationCG(NuTree* tree){
@@ -243,17 +237,7 @@ void NuNode::updateNodeInformationCG(NuTree* tree){
 	if(connectToNeighbor) {
 		this->eneCG += nuConnectionEnergyCG(this->riboseConfCG, graph->allNodes[seqID+1]->riboseConfCG, graph->et);
 	}
-
-	double cgRotEne = riboseConfCG->rot->energy;
-	double cgConnectEne = 0.0;
-	if(connectToNeighbor) {
-		cgConnectEne = nuConnectionEnergyCG(this->riboseConfCG, graph->allNodes[seqID+1]->riboseConfCG, graph->et);
-	}	
-	cout << "update node info cg: rotEne: " << cgRotEne << " Connect Ene: " << cgConnectEne << endl; 
-
 	this->eneCGTmp = this->eneCG;
-
-	cout << "node CG energy: " << this->eneCG << endl;
 }
 
 void NuNode::printNodeInfo(){
@@ -1042,8 +1026,27 @@ NuEdge::~NuEdge(){
 void NuEdge::initNativeMoveSet(){
 
 	BaseDistanceMatrix dm(nodeA->baseConf->cs1, nodeB->baseConf->cs1);
-	int clusterID = pairLib->getPairType(dm, nodeA->baseType, nodeB->baseType, sep);
-	this->ei->setUniqueCluster(clusterID, pairLib);
+	vector<int> neighborClusters;
+	vector<double> distanceToClusterCenters;
+
+	pairLib->getNeighborClusters(dm, nodeA->baseType, nodeB->baseType, sep, neighborClusters, distanceToClusterCenters);
+
+	vector<double> pList;
+
+	if(neighborClusters.size() > 0) {
+		double pSum = 0;
+		for(int i=0;i<distanceToClusterCenters.size();i++) {
+			double d = distanceToClusterCenters[i];
+			pSum += exp(-d*2);
+		}
+
+		for(int i=0;i<distanceToClusterCenters.size();i++) {
+			double d = distanceToClusterCenters[i];
+			pList.push_back(exp(-d*2)/pSum);
+		}
+	}
+
+	this->ei->setClusterList(neighborClusters, pList, pairLib);
 	this->moveSet->updateEdgeInformation(ei);
 	this->weight = this->ei->weight;
 	this->weightRand = this->weight;
@@ -2697,20 +2700,34 @@ void NuTree::randomInit(){
 		randNode->acceptRotMutation();
 	}
 	for(int i=0;i<geList.size();i++){
+
+		
 		randEdge = geList[i];
+		cout << "edge: " << randEdge->indexA << " " << randEdge->indexB << endl;
+
 
 		BaseDistanceMatrix dm0(randEdge->cm);
 
+		cout << "dm: " << dm0.toString() << endl;
+
+		randEdge->moveSet->printMoveSetInfo();
+
 		randMove = randEdge->moveSet->getRandomMove();
+
+		cout << "randMove" << endl;
 
 		BaseDistanceMatrix dm1(randMove);
 		int pairtype = graph->pairLib->getPairType(dm1, randEdge->nodeA->baseType, randEdge->nodeB->baseType, randEdge->sep);
+		cout << "pairType: " << pairtype << endl;
 
 		double dist = dm0.distanceTo(dm1);
 		printf("rand init edge %d-%d, distance = %5.3f\n", geList[i]->indexA, geList[i]->indexB, dist);
 
 		randEdge->updateCsMove(randMove);
+
+		cout << "update " << endl;
 		randEdge->acceptMutation();
+		cout << "accept" << endl;
 	}
 }
 
@@ -3307,19 +3324,16 @@ NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, Ba
 
 NuGraph::~NuGraph() {
 
-	cout << "deconstruct" << endl;
 	delete [] seq;
 	delete [] wcPairPosID;
 	delete [] connectToDownstream;
 	delete [] sepTable;
 
 
-	cout << "delete nodes" << endl;
 	for(int i=0;i<seqLen;i++){
 		delete allNodes[i];
 	}
 
-	cout << "delete edges" << endl;
 	for(int i=0;i<seqLen*seqLen;i++){
 		delete allEdges[i];
 	}
@@ -3329,12 +3343,10 @@ NuGraph::~NuGraph() {
 	delete [] allEdges;
 
 
-	cout << "delete rots" << endl;
 	for(int i=0;i<seqLen;i++){
 		delete initRiboseRotList[i];
 		delete initBaseRotList[i];
 	}
-	cout << "delete info" << endl;
 	if(initInfo != NULL)
 		delete initInfo;
 }

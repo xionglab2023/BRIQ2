@@ -66,7 +66,17 @@ public:
 	 */
 	int load(istream& ins);
 
+
 	CsMove getRandomMove(OrientationIndex* oi);
+	void printInfo(){
+		cout << "sep: " << sep << endl;
+		cout << "pair: " << pairType << endl;
+		cout << "clusterID: " << clusterID << endl;
+		for(int i=0;i<20;i++){
+			cout << i << " " << moveIndexList[i].size() << endl;
+		}
+	}
+
 
 	virtual ~IndividualNuPairMoveSet();
 };
@@ -87,6 +97,7 @@ public:
 	NuPairMoveSetLibrary(bool withBinary=true, int binaryMode=1);
 	int dump();
 	int load();
+	void printMoveLibInfo();
 	virtual ~NuPairMoveSetLibrary();
 };
 
@@ -102,8 +113,9 @@ public:
 
 	bool fixedNativeCM;
 	CsMove natCM;
+	string type;
 
-	int randPool[10000];
+	int randPool[100000];
 
 	MixedNuPairCluster(int sep, int pairType, NuPairMoveSetLibrary* lib);
 	void updateEdgeInformation(EdgeInformation* ei);
