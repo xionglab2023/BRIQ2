@@ -39,8 +39,6 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
 	moveLib->load();
 
-	moveLib->printMoveLibInfo();
-
 
 	RnaEnergyTable* et = new RnaEnergyTable();
 	et->loadAtomicEnergy();

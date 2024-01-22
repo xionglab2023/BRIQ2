@@ -134,12 +134,8 @@ int IndividualNuPairMoveSet::load(istream& ins) {
 
 CsMove IndividualNuPairMoveSet::getRandomMove(OrientationIndex* oi){
 	int selectBin = rand()% 20;
-	cout << "select bin: " << selectBin << endl;
-	cout << "size: " << moveIndexList[selectBin].size() << endl;
 	int selectID = rand()% moveIndexList[selectBin].size();
-	cout << "select ID: " << selectID << endl;
-	CsMove cm =  oi->index1000ToCsMove(moveIndexList[selectBin][selectID]);
-	cout << "select CM" << endl;
+	CsMove cm =  oi->index1000ToCsMoveWithRandPerturbation(moveIndexList[selectBin][selectID]);
 	return cm;
 }
 

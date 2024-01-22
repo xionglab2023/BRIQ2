@@ -52,6 +52,7 @@ public:
 	}
 	CsMove index500ToCsMove(int index);
 	CsMove index1000ToCsMove(int index);
+	CsMove index1000ToCsMoveWithRandPerturbation(int index);
 	CsMove index2000ToCsMove(int indexA, int indexB);
 
 
