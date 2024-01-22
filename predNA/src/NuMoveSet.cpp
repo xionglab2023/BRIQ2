@@ -209,17 +209,17 @@ int NuPairMoveSetLibrary::load() {
 		ins.read(reinterpret_cast<char*>(&tmp), 2*sizeof(int));
 		lnb = tmp[0];
 		lnnb = tmp[1];
-		nbMoveList[i].reserve(lnb);
+		nbMoveList[i].resize(lnb);
 		for(int j=0;j<lnb;j++) {
 			nbMoveList[i][j] = new IndividualNuPairMoveSet();
 			nbMoveList[i][j]->load(ins);
 		}
-		revNbMoveList[i].reserve(lnb);
+		revNbMoveList[i].resize(lnb);
 		for(int j=0;j<lnb;j++) {
 			revNbMoveList[i][j] = new IndividualNuPairMoveSet();
 			revNbMoveList[i][j]->load(ins);
 		}
-		nnbMoveList[i].reserve(lnnb);
+		nnbMoveList[i].resize(lnnb);
 		for(int j=0;j<lnnb;j++) {
 			nnbMoveList[i][j] = new IndividualNuPairMoveSet();
 			nnbMoveList[i][j]->load(ins);
