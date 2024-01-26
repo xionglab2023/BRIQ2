@@ -187,6 +187,9 @@ public:
 	void clearMutation();
 	bool checkEnergy();
 	bool checkReversePair();
+	bool isWC() {
+		return graph->wcPairPosID[indexA] == indexB;
+	};  // check if this is currently a Watson-Crick edge
 
 	void updateCsMoveCG(CsMove& cm);
 	double mutEnergyCG();
@@ -285,6 +288,7 @@ public:
 
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
+	NuGraph(NuGraph& graph0, NuNode** selNodes, int nNodes);  // create a new nuGraph object from a selection of Nodes
 
 	void init(const string& inputFile);
 	void initForMST(const string& inputFile);

@@ -9,8 +9,18 @@
  * 
  */
 
-#include "briqxmodule/WrapperInfomap.h"
+// #include "briqxmodule/WrapperInfomap.h"
+#include "briqxmodule/MotifAssigner.h"
+#include "model/AssignRNASS.h"
 
+using namespace NSPmodel;
+using namespace NSPbm;
+
+/**
+ * @brief Generate NuGraph Input and run MotifAssigner
+ * 
+ * @return int 
+ */
 int main() {
-    return 0;
+    return EXIT_SUCCESS;
 }
