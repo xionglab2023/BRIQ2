@@ -573,6 +573,7 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
 
 void printHelp() {
     cout << "Usage:" <<endl;
+    cout << "bmalign -h" << endl;
     cout << "bmalign -a PDBA -b PDBB -o outPath -op outPDBFileName -oa outAlignmentFileName" << endl;
     cout << "bmalign -n NumThreads -f PDBList -o outPath -op outPDBFileName -oa outAlignmentFileName"<<
             " -os outScoreFileName" << endl;
@@ -614,7 +615,7 @@ int main(int argc, char** argv) {
     }
     CmdArgs cmdArgs{argc, argv};
     string listFile, pdbA, pdbB, sel;
-    bool bmf = false;
+    bool bmf = false;  // match first
     filesystem::path outPath{};
     filesystem::path outfileAln{"align.aln"};
     filesystem::path outfilePDB{"alignedB.pdb"};

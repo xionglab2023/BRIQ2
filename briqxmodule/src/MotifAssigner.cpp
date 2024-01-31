@@ -127,43 +127,62 @@ namespace NSPbm {
 
         int nSeed = seedEdge.size();
         for(int i=0; i<nSeed; i++) {
-            set<int> selNode{seedEdge[i]->indexA, seedEdge[i]->indexB}, connectNode;
+            set<int> selNode{seedEdge[i]->indexA, seedEdge[i]->indexB};
+            set<int>* pCurConnect = new set<int>;
+            set<int>* pLastConnect = new set<int>, *ptmp;
             set<NuEdge*> selEdge = {seedEdge[i]};
             for(auto& it:selNode) {
                 // for(const int& it2: *(nnbNeighborMap[it])) {
                 //     connectNode.emplace(it2);
                 // }
-                set_union(connectNode.begin(), connectNode.end(), 
+                set_union(pCurConnect->begin(), pCurConnect->end(), 
                           nnbNeighborMap[it]->begin(), nnbNeighborMap[it]->end(),
-                          inserter(connectNode, connectNode.begin()));
+                          inserter(*pCurConnect, pCurConnect->begin()));
                 for(const int& it2: *(nbNeighborMap[it])) {
                     if(WCNodeSet.count(it2) && WCNodeSet.count(it)) {
                         continue;
                     }
-                    connectNode.emplace(it2);
+                    pCurConnect->emplace(it2);
                 }
             }
-            while(connectNode.size()) {
+            while(!includes(selNode.begin(), selNode.end(), pCurConnect->begin(), pCurConnect->end())) {
                 set_union(selNode.begin(), selNode.end(),
-                          connectNode.begin(), connectNode.end(),
+                          pCurConnect->begin(), pCurConnect->end(),
                           inserter(selNode, selNode.begin()));
                 //TODO selEdge
-                connectNode.clear();
-                for(auto& it:selNode) {
+                pLastConnect->clear();
+                for(auto& it:*pCurConnect) {
                     // for(const int& it2: *(nnbNeighborMap[it])) {
                     //     connectNode.emplace(it2);
                     // }
-                    set_union(connectNode.begin(), connectNode.end(), 
+                    set_union(pLastConnect->begin(), pLastConnect->end(), 
                               nnbNeighborMap[it]->begin(), nnbNeighborMap[it]->end(),
-                              inserter(connectNode, connectNode.begin()));
+                              inserter(*pLastConnect, pLastConnect->begin()));
                     for(const int& it2: *(nbNeighborMap[it])) {
                         if(WCNodeSet.count(it2) && WCNodeSet.count(it)) {
                             continue;
                         }
-                        connectNode.emplace(it2);
+                        pLastConnect->emplace(it2);
                     }
                 }
+                ptmp = pCurConnect;
+                pCurConnect = pLastConnect;
+                pLastConnect = ptmp;
             }
+            delete pCurConnect;
+            delete pLastConnect;
+            
+            // TODO: filter motifs by recheck compactness
+
+            vector<int> NodeIndexVec(selNode.begin(), selNode.end());
+
+            // TODO: compute ene
+            double ene = 0;
+
+            MotifGraph* pMotif = new MotifGraph(nuGraph, NodeIndexVec, ene);
+
+            // TODO: redundent reduction
+            motifs.emplace_back(pMotif);
             
         }
 
@@ -187,5 +206,8 @@ namespace NSPbm {
 
     MotifAssigner::~MotifAssigner() {
         //TODO
+        for(auto& it : motifs) {
+            delete it;
+        }
     }
 }

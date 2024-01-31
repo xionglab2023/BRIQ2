@@ -2528,6 +2528,10 @@ void NuEdge::printPartition(){
 	cout << endl;
 }
 
+bool NuEdge::isWC() {
+	return graph->wcPairPosID[indexA] == indexB;
+};  // check if this is currently a Watson-Crick edge
+
 NuTree::NuTree(NuGraph* graph){
 	this->graph = graph;
 	this->adjMtx = new bool[graph->seqLen*graph->seqLen];
