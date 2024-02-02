@@ -92,13 +92,12 @@ public:
 	void loadAtomicEnergy(){
 
 		bpET = new BasePair6DEnergyTable(para, true, 1);
-		bpET->load();
+		bpET->load(para);
 		acET = new AtomicClashEnergy(para);
 		roET = new RiboseOxygenEnergyTable(para);
 		pb = new PO3Builder(para);
 		hbET = new HbondEnergy(para);
 	}
-
 
 	void loadCoarseGrainedEnergy(){
 		pb = new PO3Builder(para);

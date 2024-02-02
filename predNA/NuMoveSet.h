@@ -38,9 +38,9 @@ public:
 
 	/*
 	 * Ust SP1000 move index, distance 50 bins, dihedral angle 40 bins, sphere 1000*1000
-	 * move set were divided into 20 groups, the total probability of each group is 5%
+	 * move set were divided into 50 groups, the total probability of each group is 2%
 	 */
-	vector<int> moveIndexList[20];
+	vector<int> moveIndexList[50];
 
 	/**
 	 * @brief Construct an empty IndividualNuPairMoveSet object 
@@ -68,6 +68,9 @@ public:
 
 
 	CsMove getRandomMove(OrientationIndex* oi);
+
+	CsMove getRandomMoveWithFixedSubCluster(OrientationIndex* oi, int subClusterID);
+	
 	void printInfo(){
 		cout << "sep: " << sep << endl;
 		cout << "pair: " << pairType << endl;
@@ -123,7 +126,11 @@ public:
 		this->natCM = cm;
 		this->fixedNativeCM = true;
 	}
+
 	CsMove getRandomMove();
+	CsMove getRandomMoveWithFixedCluster(CsMove& move);
+	CsMove getRandomMoveWithFixedSubCluster(CsMove& move);
+	CsMove getRandomMoveWithFixedSP1000Index(CsMove& move);
 
 	void printMoveSetInfo();
 

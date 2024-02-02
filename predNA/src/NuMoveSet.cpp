@@ -96,12 +96,12 @@ int IndividualNuPairMoveSet::dump(ostream& outs) {
 	outs.write(reinterpret_cast<char*>(&pairType), sizeof(int));
 	outs.write(reinterpret_cast<char*>(&clusterID), sizeof(int));
 	outs.write(reinterpret_cast<char*>(z0), sizeof(int));
-	int vecSize[20];
-	for(int i=0;i<20;i++) {
+	int vecSize[50];
+	for(int i=0;i<50;i++) {
 		vecSize[i] = moveIndexList[i].size();
 	}
-	outs.write(reinterpret_cast<char *>(vecSize), 20*sizeof(int));
-	for(int i=0;i<20;i++) {
+	outs.write(reinterpret_cast<char *>(vecSize), 50*sizeof(int));
+	for(int i=0;i<50;i++) {
 		outs.write(reinterpret_cast<char*>(&moveIndexList[i][0]), vecSize[i]*sizeof(int));
 		if(vecSize[i]%2) {
 			outs.write(reinterpret_cast<char*>(z0), sizeof(int));  // align Bytes
@@ -116,9 +116,9 @@ int IndividualNuPairMoveSet::load(istream& ins) {
 	sep = tint[0];
 	pairType = tint[1];
 	clusterID = tint[2];
-	int vecSize[20];
-	ins.read(reinterpret_cast<char*>(vecSize), sizeof(int)*20);
-	for(int i=0;i<20;i++) {
+	int vecSize[50];
+	ins.read(reinterpret_cast<char*>(vecSize), sizeof(int)*50);
+	for(int i=0;i<50;i++) {
 		moveIndexList[i].resize(vecSize[i]);
 		if(vecSize[i]%2) {
 			int memSize = vecSize[i]+1;
@@ -133,9 +133,22 @@ int IndividualNuPairMoveSet::load(istream& ins) {
 }
 
 CsMove IndividualNuPairMoveSet::getRandomMove(OrientationIndex* oi){
-	int selectBin = rand()% 20;
+	int selectBin = rand()% 50;
 	int selectID = rand()% moveIndexList[selectBin].size();
+	
 	CsMove cm =  oi->index1000ToCsMoveWithRandPerturbation(moveIndexList[selectBin][selectID]);
+	cm.subClusterID = selectBin;
+	return cm;
+}
+
+CsMove IndividualNuPairMoveSet::getRandomMoveWithFixedSubCluster(OrientationIndex* oi, int subClusterID){
+
+	if(subClusterID < 0 || subClusterID > 49)
+		subClusterID = rand()%50;
+	int selectID = rand()% moveIndexList[subClusterID].size();
+	
+	CsMove cm =  oi->index1000ToCsMoveWithRandPerturbation(moveIndexList[subClusterID][selectID]);
+	cm.subClusterID = subClusterID;
 	return cm;
 }
 
@@ -209,17 +222,17 @@ int NuPairMoveSetLibrary::load() {
 		ins.read(reinterpret_cast<char*>(&tmp), 2*sizeof(int));
 		lnb = tmp[0];
 		lnnb = tmp[1];
-		nbMoveList[i].reserve(lnb);
+		nbMoveList[i].resize(lnb);
 		for(int j=0;j<lnb;j++) {
 			nbMoveList[i][j] = new IndividualNuPairMoveSet();
 			nbMoveList[i][j]->load(ins);
 		}
-		revNbMoveList[i].reserve(lnb);
+		revNbMoveList[i].resize(lnb);
 		for(int j=0;j<lnb;j++) {
 			revNbMoveList[i][j] = new IndividualNuPairMoveSet();
 			revNbMoveList[i][j]->load(ins);
 		}
-		nnbMoveList[i].reserve(lnnb);
+		nnbMoveList[i].resize(lnnb);
 		for(int j=0;j<lnnb;j++) {
 			nnbMoveList[i][j] = new IndividualNuPairMoveSet();
 			nnbMoveList[i][j]->load(ins);
@@ -462,15 +475,88 @@ CsMove MixedNuPairCluster::getRandomMove(){
 	}
 
 	int cluster = randPool[rand()%100000];
-
+	
 	if(sep == 1)
-		return moveLib->nbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
+	{
+		CsMove cm = moveLib->nbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
+		cm.clusterID = cluster;
+		return cm;
+	}	
 	else if(sep == -1) {
-		return moveLib->revNbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
+		int typeA = pairType/4;
+		int typeB = pairType%4;
+		CsMove cm = moveLib->revNbMoveList[typeB*4+typeA][cluster]->getRandomMove(moveLib->oi);
+		cm.clusterID = cluster;
+		return cm;
 	}
-	else
-		return moveLib->nnbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
+	else {
+		CsMove cm = moveLib->nnbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
+		cm.clusterID = cluster;
+		return cm;
+	}
+}
 
+CsMove MixedNuPairCluster::getRandomMoveWithFixedCluster(CsMove& move){
+	if(fixedNativeCM){
+		return natCM;
+	}
+
+	int cluster = move.clusterID;
+	if(cluster < 0)
+		cluster = randPool[rand()%100000];
+	
+	if(sep == 1)
+	{
+		CsMove cm = moveLib->nbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
+		cm.clusterID = cluster;
+		return cm;
+	}	
+	else if(sep == -1) {
+		int typeA = pairType/4;
+		int typeB = pairType%4;
+		CsMove cm = moveLib->revNbMoveList[typeB*4+typeA][cluster]->getRandomMove(moveLib->oi);
+		cm.clusterID = cluster;
+		return cm;
+	}
+	else {
+		CsMove cm = moveLib->nnbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
+		cm.clusterID = cluster;
+		return cm;
+	}
+}
+
+CsMove MixedNuPairCluster::getRandomMoveWithFixedSubCluster(CsMove& move){
+	if(fixedNativeCM){
+		return natCM;
+	}
+
+	int cluster = move.clusterID;
+	if(cluster < 0)
+		cluster = randPool[rand()%100000];
+	int subCluster = move.subClusterID;
+	
+	if(sep == 1)
+	{
+		CsMove cm = moveLib->nbMoveList[pairType][cluster]->getRandomMoveWithFixedSubCluster(moveLib->oi, subCluster);
+		cm.clusterID = cluster;
+		return cm;
+	}	
+	else if(sep == -1) {
+		int typeA = pairType/4;
+		int typeB = pairType%4;
+		CsMove cm = moveLib->revNbMoveList[typeB*4+typeA][cluster]->getRandomMoveWithFixedSubCluster(moveLib->oi, subCluster);
+		cm.clusterID = cluster;
+		return cm;
+	}
+	else {
+		CsMove cm = moveLib->nnbMoveList[pairType][cluster]->getRandomMoveWithFixedSubCluster(moveLib->oi,subCluster);
+		cm.clusterID = cluster;
+		return cm;
+	}
+}
+
+CsMove MixedNuPairCluster::getRandomMoveWithFixedSP1000Index(CsMove& move) {
+	return moveLib->oi->fixIndex1000WithRandPerturbation(move);
 }
 
 void MixedNuPairCluster::printMoveSetInfo(){

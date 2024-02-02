@@ -9,6 +9,7 @@ namespace NSPpredna {
 
 BackboneModelingTemplate::BackboneModelingTemplate(const string& inputPDB, ForceFieldPara* para) {
 
+	cout << "init backbone modeling template: " << endl;
 	RNAPDB pdb(inputPDB, "xxxx");
 	vector<RNABase*> baseList0 = pdb.getBaseList();
 	vector<RNABase*> baseList;
@@ -30,15 +31,12 @@ BackboneModelingTemplate::BackboneModelingTemplate(const string& inputPDB, Force
 
 	this->para = para;
 
-	cout << "init energy table" << endl;
 	this->et = new RnaEnergyTableSimple(para);
 	this->rotLib = new RotamerLib(para);
 	this->pb = new PO3Builder(para);
 
-	cout << "init nodes" << endl;
 	for(int i=0;i<seqLen;i++){
 		this->seq[i] = baseList[i]->baseTypeInt;
-		cout << "pos: " << i << endl;
 		RiboseRotamer* rot;
 		if(!baseList[i]->backboneComplete())
 			rot = rotLib->riboseRotLib->getLowestEnergyRotamer(baseList[i]->baseTypeInt);
@@ -50,8 +48,6 @@ BackboneModelingTemplate::BackboneModelingTemplate(const string& inputPDB, Force
 		nodes[i]->riboseConfTmp->updateRotamer(rot);
 	}
 
-
-	cout << "init table" << endl;
 
 
 
@@ -87,11 +83,8 @@ BackboneModelingTemplate::BackboneModelingTemplate(const string& inputPDB, Force
 	nodes[seqLen-1]->connectToNeighbor = false;
 
 
-	cout << "init atom list" << endl;
-
 	vector<RiboseRotamer*> rotList;
 	for(int i=0;i<seqLen;i++){
-		cout << "pos " << i << endl;
 		RiboseRotamer* rot = nodes[i]->riboseConf->rot;
 		rotList.push_back(rot);
 		LocalFrame cs = nodes[i]->baseConf->cs1;
@@ -124,15 +117,11 @@ BackboneModelingTemplate::BackboneModelingTemplate(const string& inputPDB, Force
 
 	}
 
-	cout << "build pho" << endl;
-
 	for(int i=0;i<seqLen;i++){
 
 		buildPho(i, false);
 		acceptTmpRotamer(nodes[i], false);
 	}
-
-	cout << "update energy" << endl;
 
 	updateEnergy();
 
@@ -788,7 +777,7 @@ void BackboneModelingTemplate::debug(){
 
 double BackboneModelingTemplate::runMC(){
 
-	int stepNum = 800*seqLen;
+	int stepNum = 1000*seqLen;
 	double curEne = totEnergy(false);
 	double mutE;
 	srand(time(0));
@@ -799,7 +788,7 @@ double BackboneModelingTemplate::runMC(){
 	double minEne = 9999999999.9;
 	double minERMS = 99.9;
 
-	for(int n=0;n<3;n++){
+	for(int n=0;n<1;n++){
 		for(double T=10.0;T>0.01;T=T*0.9){
 			int acNum = 0;
 			for(int k=0;k<stepNum;k++){

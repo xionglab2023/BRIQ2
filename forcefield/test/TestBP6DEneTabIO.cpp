@@ -15,12 +15,15 @@
 using namespace NSPforcefield;
 using namespace std;
 
-int main() {
+int main(int argc, char** argv) {
     struct timeval start, end;
 
     cout << "Initializing  ForceFieldPara from txt" << endl;
     gettimeofday(&start, NULL);
     auto* para = new ForceFieldPara();
+    string tag = string(argv[1]);
+    para->bwTag = tag;
+
     gettimeofday(&end, NULL);
     double timeParaTxt = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
     cout << "time consumed: " << timeParaTxt << " seconds" << endl;
@@ -34,7 +37,7 @@ int main() {
     cout << "cm2Key[2233]: " << endl;
     set2->cm2Key.printElem(2333);
     cout << "BasePair6DEnergyTable nnbKeysEnergy AG 763 74 ene: " << set2->nnbKeysEnergy[2*2250+763][74] << endl;
-    set2->dump();
+    set2->dump(para);
     delete set2;
 
     /*
@@ -54,7 +57,7 @@ int main() {
     cout << "Initializing BasePair6DEnergyTable from binaryCache" << endl;
     gettimeofday(&start, NULL);
     set2 = new BasePair6DEnergyTable(para, true,1);
-    set2->load();
+    set2->load(para);
     gettimeofday(&end, NULL);
     double timeBinaryCache = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
     cout << "time consumed: " << timeBinaryCache << " seconds" << endl;

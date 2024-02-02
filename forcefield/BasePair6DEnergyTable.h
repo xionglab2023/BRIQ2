@@ -78,8 +78,8 @@ public:
 	double wtNb, wtNnb;
 
 	BasePair6DEnergyTable(ForceFieldPara* para, bool withBinary=true, int binaryMode=2);
-	int dump();
-	int load();
+	int dump(ForceFieldPara* para);
+	int load(ForceFieldPara* para);
 
 	double getEnergyBiInterpolation(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		//bilinear interpolation

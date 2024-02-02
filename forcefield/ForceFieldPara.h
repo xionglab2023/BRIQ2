@@ -1,7 +1,7 @@
 /*
  * ForceFieldPara.h
  *
- *  Created on: 2023Äê4ÔÂ25ÈÕ
+ *  Created on: 2023ï¿½ï¿½4ï¿½ï¿½25ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -53,15 +53,25 @@ public:
 	double wtClash;
 	double lamdaClash;
 //	double bbClash;
-
+	string bwTag;
+	
 	double T0;
 	double T1;
+	double T2;
+	double T3;
+
+	int kStepNum1;
+	int kStepNum2;
+	int kStepNum3;
+	double kNodeFreq;
+
+
 	double anneal;
 
 	double initShift;
 	double dShift;
 
-	int stepNum;
+
 
 	int outFreq;
 

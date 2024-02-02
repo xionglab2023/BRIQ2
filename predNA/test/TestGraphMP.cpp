@@ -24,11 +24,13 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const strin
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+    graph->initForMC(inputFile);
 	graph->initRandWeight();
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	tree->printEdges();
 	tree->updateNodeInfo();
+
 	for(int i=0;i<graph->seqLen;i++){
 		graph->allNodes[i]->printNodeInfo();
 	}
@@ -42,7 +44,10 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const strin
 	tree->printNodeInfo();
 
 	cout << "run MC" << endl;
-	tree->runAtomicMC(outFile);
+	graphInfo* gi = tree->runAtomicMC();
+    gi->printPDB(outFile);
+
+    delete gi;
     delete pairLib;
     delete rotLib;
     delete atLib;

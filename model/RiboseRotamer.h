@@ -22,17 +22,7 @@ using namespace NSPgeometry;
 class RiboseRotamer {
 
 	/*
-	 * Atom Order for RNA: (old order)
-	 * 0:  C1'
-	 * 1:  C2'
-	 * 2:  C3'
-	 * 3:  C4'
-	 * 4:  O4'
-	 * 5:  O2'
-	 * 6:  O3'
-	 * 7:  C5'
-	 *
-	 * Atom Order for RNA: (new order)
+	 * Atom Order for RNA: 
 	 * 0:  C1'
 	 * 1:  C2'
 	 * 2:  C3'

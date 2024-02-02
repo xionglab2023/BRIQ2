@@ -21,6 +21,7 @@ public:
 	int typeB;
 
 	int totalClusterNum;
+	int validClusterNum;
 
 	double* pCluster;
 	double pContact;
@@ -37,6 +38,7 @@ public:
 	void setUniqueCluster(int clusterID, BasePairLib* pairLib);
 	void setClusterList(vector<int>& clusterList, vector<double>& pClusters, BasePairLib* pairLib);
 	void setFixed(CsMove& cm){
+		this->validClusterNum = 0;
 		this->fixed = true;
 		this->cm = cm;
 		this->weight = -999.9;

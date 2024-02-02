@@ -760,6 +760,9 @@ cm2Key(withBinary, binaryMode)
 
 	if(withBinary && binaryMode==2) {
 		string fileName = path + "../binaryData/pairEne/nb";
+		if(para->bwTag != "default") {
+			fileName = path + "../binaryData/pairEne/nb-" + para->bwTag;
+		}
 		ifstream ins;
         ins.open(fileName,ios::in | ios::binary);
         if(!ins.is_open()) {
@@ -785,6 +788,9 @@ cm2Key(withBinary, binaryMode)
 		delete bb;
 
 		fileName = path + "../binaryData/pairEne/nnb";
+		if(para->bwTag != "default") {
+			fileName = path + "../binaryData/pairEne/nnb-" + para->bwTag;
+		}
         ins.open(fileName,ios::in | ios::binary);
         if(!ins.is_open()) {
             throw("Unable to open " + fileName);
@@ -812,19 +818,26 @@ cm2Key(withBinary, binaryMode)
 		for(int i=0;i<4;i++){
 			for(int j=0;j<4;j++){
 				string pairType = augc.substr(i,1) + augc.substr(j,1);
-				file.open(path + "pairEne/nb/"+pairType+".ene");
-
+				string fileName = path + "pairEne/nb/"+pairType+".ene";
+				if(para->bwTag != "default") {
+					fileName = path + "pairEne/nb/"+pairType+".ene-" + para->bwTag;
+				}
+				file.open(fileName.c_str());
 				if(!file.is_open()) {
-					cout << "can't open file " << path + "pairEne/nb/" +pairType+".ene" << endl;
+					cout << "can't open file " << fileName << endl;
 				}
 				while(file >> indexA >> indexB >> ene >> clusterID){
 					this->nbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
 				}
 				file.close();
 
-				file.open(path + "pairEne/nnb/"+pairType+".ene");
+				fileName = path + "pairEne/nnb/"+pairType+".ene";
+				if(para->bwTag != "default") {
+					fileName = path + "pairEne/nnb/"+pairType+".ene-" + para->bwTag;
+				}
+				file.open(fileName.c_str());
 				if(!file.is_open()) {
-					cout << "can't open file " << path + "pairEne/nnb/" +pairType+".ene" << endl;
+					cout << "can't open file " << fileName << endl;
 				}
 				while(file >> indexA >> indexB >> ene >> clusterID){
 					this->nnbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
@@ -836,10 +849,13 @@ cm2Key(withBinary, binaryMode)
 	}
 }
 
-int BasePair6DEnergyTable::dump() {
+int BasePair6DEnergyTable::dump(ForceFieldPara* para) {
 	// serialized dump method
 	string outpath = datapath() + "../binaryCache";
 	string fileName = "BasePair6DEnergyTable";
+	if(para->bwTag != "default") {
+		fileName = "BasePair6DEnergyTable-"+para->bwTag;
+	}
 	char z0[4] = {'\0'};
 	if(! makeDirs(outpath)) {
 		throw("[Error]Unable to create " + outpath);
@@ -893,9 +909,14 @@ int BasePair6DEnergyTable::dump() {
 	return EXIT_SUCCESS;
 }
 
-int BasePair6DEnergyTable::load() {
+int BasePair6DEnergyTable::load(ForceFieldPara* para) {
 	ifstream ins;
 	string fileName = datapath() + "../binaryCache/BasePair6DEnergyTable";
+	if(para->bwTag != "default") {
+		
+		fileName = datapath() + "../binaryCache/BasePair6DEnergyTable-"+para->bwTag;
+		cout << "load: " << fileName << endl;
+	}
 	ins.open(fileName, ios::in|ios::binary);
 	if(!ins.is_open()) {
 		throw("[Error]Fail to open " + fileName);

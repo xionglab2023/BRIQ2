@@ -36,15 +36,20 @@ int main(int argc, char** argv){
 	BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
+
+	cout << "load moveLib" << endl;
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
 	moveLib->load();
 
+	cout << "load energy table" << endl;
 
 	RnaEnergyTable* et = new RnaEnergyTable();
 	et->loadAtomicEnergy();
 
 	cout << "init graph" << endl;
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+	graph->initForMC(inputFile);
+	
 	graph->initRandWeight();
 	cout << "all edge" << endl;
 	graph->printAllEdge();
@@ -70,7 +75,9 @@ int main(int argc, char** argv){
 	tree->printNodeInfo();
 
 	cout << "run MC" << endl;
-	tree->runAtomicMC(output);
+	graphInfo* gi = tree->runAtomicMC();
+	gi->printPDB(output);
+	delete gi;
 //	graph->printEnergy();
 
 	delete pairLib;

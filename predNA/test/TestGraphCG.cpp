@@ -36,6 +36,7 @@ int main(int argc, char** argv){
 
 	cout << "init graph" << endl;
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+	graph->initForMC(inputFile);
 	graph->initRandWeight();
 	cout << "all edge" << endl;
 	graph->printAllEdge();

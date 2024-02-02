@@ -268,13 +268,36 @@ CsMove OrientationIndex::index1000ToCsMoveWithRandPerturbation(int index){
 	double dist = idDist*0.3 + (0.3*rand()/RAND_MAX - 0.15);
 	double ang = idAng*9 + (9.0*rand()/RAND_MAX - 4.5);
 
-	XYZ t1 = ~(tList1000[spIndexA] + XYZ(0.2*rand()/RAND_MAX - 0.1, 0.2*rand()/RAND_MAX - 0.1, 0.2*rand()/RAND_MAX - 0.1));
-	XYZ t2 = ~(tList1000[spIndexB] + XYZ(0.2*rand()/RAND_MAX - 0.1, 0.2*rand()/RAND_MAX - 0.1, 0.2*rand()/RAND_MAX - 0.1));
+	XYZ t1 = ~(tList1000[spIndexA] + XYZ(0.1*rand()/RAND_MAX - 0.05, 0.1*rand()/RAND_MAX - 0.05, 0.1*rand()/RAND_MAX - 0.05));
+	XYZ t2 = ~(tList1000[spIndexB] + XYZ(0.1*rand()/RAND_MAX - 0.05, 0.1*rand()/RAND_MAX - 0.05, 0.1*rand()/RAND_MAX - 0.05));
 	LocalFrame csA = getCsA(t1, ang, dist);
 	LocalFrame csB = getCsB(t2, ang, dist);
 
 	CsMove cm = csB - csA;
 	return cm;
+}
+
+CsMove OrientationIndex::fixIndex1000WithRandPerturbation(CsMove& move){
+	int index = moveToIndex1000(move);
+	
+	int idDist = index/40000000;
+	index = index%40000000;
+	int idAng = index/1000000;
+	index = index%1000000;
+	int spIndexA = index/1000;
+	int spIndexB = index%1000;
+
+	double dist = idDist*0.3 + (0.3*rand()/RAND_MAX - 0.15);
+	double ang = idAng*9 + (9.0*rand()/RAND_MAX - 4.5);
+
+	XYZ t1 = ~(tList1000[spIndexA] + XYZ(0.15*rand()/RAND_MAX - 0.075, 0.15*rand()/RAND_MAX - 0.075, 0.15*rand()/RAND_MAX - 0.075));
+	XYZ t2 = ~(tList1000[spIndexB] + XYZ(0.15*rand()/RAND_MAX - 0.075, 0.15*rand()/RAND_MAX - 0.075, 0.15*rand()/RAND_MAX - 0.075));
+	
+	LocalFrame csA = getCsA(t1, ang, dist);
+	LocalFrame csB = getCsB(t2, ang, dist);
+
+	CsMove cm = csB - csA;
+	return cm;	
 }
 
 CsMove OrientationIndex::index2000ToCsMove(int indexA, int indexB){

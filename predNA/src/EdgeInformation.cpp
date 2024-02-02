@@ -28,6 +28,7 @@ EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pai
 	for(int i=0;i<totalClusterNum;i++){
 		pCluster[i] = 1.0/totalClusterNum;
 	}
+	this->validClusterNum = totalClusterNum;
 
 	if(sep == 1 || sep == -1)
 		this->pContact = 1.0;
@@ -62,8 +63,11 @@ void EdgeInformation::updatePCluster(double* pList, double pContact, BasePairLib
 	if(sum == 0.0) sum = 1.0;
 
 	this->weight = 0;
+	this->validClusterNum = 0;
 	for(int i=0;i<totalClusterNum;i++){
 		this->pCluster[i] = pList[i]/sum;
+		if(pList[i] > 0) 
+			this->validClusterNum++;
 		double e = pairLib->getEnergy(i, typeA, typeB, sep);
 		this->weight += pCluster[i]*e;
 	}
@@ -76,6 +80,7 @@ void EdgeInformation::updatePCluster(double* pList, double pContact, BasePairLib
 void EdgeInformation::setUniqueCluster(int clusterID, BasePairLib* pairLib){
 
 	this->moveType = "single";
+	this->validClusterNum = 1;
 	if(clusterID < 0) {
 		for(int i=0;i<totalClusterNum;i++){
 			this->pCluster[i] = 1.0/totalClusterNum;
@@ -104,6 +109,7 @@ void EdgeInformation::setClusterList(vector<int>& clusterList, vector<double>& p
 		for(int i=0;i<totalClusterNum;i++){
 			this->pCluster[i] = 1.0/totalClusterNum;
 		}
+		this->validClusterNum = totalClusterNum;
 		this->pContact = 1.0;
 		this->weight = 999.9;
 		if(abs(this->sep) == 1 )
@@ -111,7 +117,8 @@ void EdgeInformation::setClusterList(vector<int>& clusterList, vector<double>& p
 		this->moveType = "all";	
 	}
 	else {
-
+		this->validClusterNum = clusterList.size();
+		
 		if(clusterList.size() == 1)
 			this->moveType = "single";
 		else 
@@ -141,3 +148,4 @@ void EdgeInformation::setClusterList(vector<int>& clusterList, vector<double>& p
 
 
 } /* namespace NSPpredNA */
+
