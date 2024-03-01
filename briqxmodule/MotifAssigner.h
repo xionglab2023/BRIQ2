@@ -50,6 +50,7 @@ namespace NSPbm {
             MotifGraph(NuGraph* GraphIn, vector<int>& NodeIndexVec, double ene=0.0);
             int writePDB(const string& outputFile);
             virtual ~MotifGraph() {
+                delete[] seq;
                 delete[] nodeIndex;
                 delete[] connectToDownstream;
                 delete[] allNodes;
@@ -66,6 +67,14 @@ namespace NSPbm {
             MotifAssigner(NuGraph* nuGraphIn) {
                 nuGraph = nuGraphIn;
             };
+            /**
+             * @brief Write edge weights in csv format, with 5 columns:
+             * nodeIndex1, nodeIndex2, weight, isWC, isNB
+             * 
+             * @param outCSV the output stream object, must in txt mode
+             * @return int execute state code
+             */
+            int writeEdgeWeight(ostream& outCSV);  // write edge weights in csv format, with feature columns 
             void bySeed();  // assign motif by greedy algorithm starting from seed BPs
             void byLouvain();
 

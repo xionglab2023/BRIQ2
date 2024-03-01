@@ -71,7 +71,14 @@ int test3() {
 
 }
 
-int main() {
-    test3();
-    return EXIT_SUCCESS;
+// int main() {
+//     test3();
+//     return EXIT_SUCCESS;
+// }
+
+int main(int argc, char** argv) {
+    if(argc == 1) {
+        cout<< "No arg given" << endl;
+        return EXIT_SUCCESS;
+    }
 }

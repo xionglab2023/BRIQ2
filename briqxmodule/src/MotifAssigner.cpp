@@ -17,10 +17,11 @@ namespace NSPbm {
     using namespace NSPpredNA;
     using namespace std;
 
-    MotifGraph::MotifGraph(NuGraph* graphIn, vector<int>& NodeIndexVec, double ene) {
+    MotifGraph::MotifGraph(NuGraph* graphIn, vector<int>& NodeIndexVec, double eneIn) {
         fullGraph = graphIn;
         nNode = NodeIndexVec.size();
-        ene = ene;
+        ene = eneIn;
+        seq = new int[nNode];
         nodeIndex = new int[nNode];
         memcpy(nodeIndex, &NodeIndexVec[0], sizeof(int)*nNode);
         connectToDownstream = new bool[nNode];
@@ -55,11 +56,34 @@ namespace NSPbm {
     }
 
 
+    int MotifAssigner::writeEdgeWeight(ostream& outCSV) {
+        int seqLen = nuGraph->seqLen;
+        outCSV << "nodeID1,nodeID2,Weight,isWC,isNeighbor" << endl;
+        for(int i=0; i<seqLen; i++) {
+            for(int j=i+1; j<seqLen; j++) {
+                NuEdge* curEdge = nuGraph->allEdges[i*seqLen+j];
+                NuEdge* revEdge = nuGraph->allEdges[j*seqLen+i];
+                outCSV << i << "," 
+                       << j << ","
+                       << curEdge->weight << ","
+                       << noboolalpha << curEdge->isWC() << ","
+                       << noboolalpha << (abs(i-j) == 1) << '\n';
+                outCSV << j << "," 
+                       << i << ","
+                       << revEdge->weight << ","
+                       << noboolalpha << revEdge->isWC() << ","
+                       << noboolalpha << (abs(i-j) == 1) << '\n';
+            }
+        }
+        return EXIT_SUCCESS;
+    }
+
+
     void MotifAssigner::bySeed() {
         vector<NuEdge*> seedEdge;
         int seqLen = nuGraph->seqLen;
         for(int i=0; i<seqLen; i++) {
-            for(int j=i+1; j<seqLen; j++) {
+            for(int j=i+2; j<seqLen; j++) {
                 NuEdge* curEdge = nuGraph->allEdges[i*seqLen+j];
                 NuEdge* revEdge = nuGraph->allEdges[j*seqLen+i];
 

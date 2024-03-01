@@ -69,9 +69,9 @@ int main(int argc, char** argv) {
             cout<<"[Warning][Main] OptionIgnored: Option -f is ignored when -i is specified." << endl;
         }
         pdbIn = cmdArgs.getValue("-i");
-        RNAPDB rnaPdb(pdbIn);
-        AtomLib atl;
-        AssignRNASS rss(&rnaPdb, &atl);
+        RNAPDB* rnaPdb = new RNAPDB(pdbIn);
+        AtomLib* atl = new AtomLib();
+        AssignRNASS rss(rnaPdb, atl);
         ofstream tmpInput;
         string tmpInputFileName = outPath.string() + "/tmpIn";
         tmpInput.open(tmpInputFileName, ios::out);
@@ -82,18 +82,34 @@ int main(int argc, char** argv) {
         tmpInput << "task assignMotif" <<endl;
         tmpInput << "pdb " << pdbIn << endl;
         tmpInput << "seq " << rss.seq << endl;
-        tmpInput << "sec" << rss.ssSeq << endl;
+        tmpInput << "sec " << rss.ssSeq << endl;
         tmpInput.close();
-        RotamerLib rtl;
-        BasePairLib bpl;
-        NuGraph* pNuGragh = new NuGraph(tmpInputFileName, &rtl, &atl, &bpl);
+        delete rnaPdb;
+        RotamerLib* rtl = new RotamerLib();
+        BasePairLib* bpl = new BasePairLib();
+        NuGraph* pNuGragh = new NuGraph(tmpInputFileName, rtl, atl, bpl);
         MotifAssigner* mtfa = new MotifAssigner(pNuGragh);
-        mtfa->bySeed();
+        if(cmdArgs.specifiedOption("-dev")) {
+            ofstream outCSV;
+            string csvFileName = outPath.string() + "/" + outPDBprefix.string() + "-EdgeWeights" + ".csv";
+            outCSV.open(csvFileName, ios::out);
+            if(!outCSV.is_open()) {
+                throw "[Error] Fail to open file" + csvFileName;
+            }
+            mtfa->writeEdgeWeight(outCSV);
+        } else {
+            mtfa->bySeed();
+        }
         int nMotif = mtfa->motifs.size();
         for(int i=0; i<nMotif; i++) {
             mtfa->motifs[i]->writePDB(
                 outPath.string() + "/" + outPDBprefix.string() + "-" + to_string(i) + ".pdb");
         }
+        delete atl;
+        delete rtl;
+        delete bpl;
+        delete pNuGragh;
+        delete mtfa;
     }
     return EXIT_SUCCESS;
 }
