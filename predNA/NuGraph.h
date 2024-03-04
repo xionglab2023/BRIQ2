@@ -79,10 +79,10 @@ public:
 	vector<int> neighborList;
 	vector<int> connectionBreakPoints;
 
-	vector<NuNode*> baseGroupA; //base coordinate not changed, without hidden nodes
-	vector<NuNode*> riboGroupA; //ribose coordinate not changed, without hidden nodes
+	vector<NuNode*> baseGroupA; //base coordinate not changed, without masked nodes
+	vector<NuNode*> riboGroupA; //ribose coordinate not changed, without masked nodes
 
-	vector<NuNode*> phoGroupA; //pho coordinate not changed, without hidden nodes
+	vector<NuNode*> phoGroupA; //pho coordinate not changed, without masked nodes
 	vector<NuNode*> phoGroupC; //pho coordinate rotamer changed
 
 	double samplingFreq;
@@ -207,7 +207,7 @@ public:
 
 	NuGraph* graph;
 
-	bool* hidden; //
+	bool* masked; //
 	bool* adjMtx; //adjacency matrix, N*N matrix, (N-1)*2 true points
 	vector<NuEdge*> geList; //edge list, (N-1)
 
@@ -250,7 +250,8 @@ public:
 	double rms;
 	AtomLib* atLib;
 
-	graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib);
+	//graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib);
+	graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib, int mode);
 
 	void setRMS(double rms){
 		this->rms = rms;
@@ -272,7 +273,7 @@ public:
 	int* wcPairPosID;
 	bool* connectToDownstream; //bonded to 5' residue
 	int* sepTable; //sequence seperation: -1, 0, 1, 2
-	bool* hidden; //hidden residues do not participate in energy calculation and structure sampling, do not exist in NuTree
+	bool* masked; //masked residues do not participate in energy calculation and structure sampling, do not exist in NuTree
 	bool* fixed; //fixed residues, do not used for rms calculation
 
 	vector<BaseRotamer*> initBaseRotList;
@@ -296,6 +297,7 @@ public:
 	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& cst, const string& chainBreak);
 	void initPho();
 	void initForMC(const string& inputFile);
+	void initForCGMC(const string& inputFile);
 	void initForMST(const string& inputFile);
 	void initForSingleResiduePrediction(const string& inputFile, int pos);
 	void initRandWeight();
@@ -310,6 +312,7 @@ public:
 	
 	double totalEnergyTmp();
 	double totalEnergy2();
+
 	void printEnergy();
 	void printEnergyCG();
 

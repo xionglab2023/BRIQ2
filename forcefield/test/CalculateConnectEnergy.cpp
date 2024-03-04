@@ -474,7 +474,7 @@ void single(int typeA, int typeB, int index1, int index2, const string& outfile)
             seq[1] = typeB;
 
             cout << "graph info" << endl;
-            graphInfo* gi = new graphInfo(2, seq, connectToDownstream, hidden, nodes, 0.0, atLib);
+            graphInfo* gi = new graphInfo(2, seq, connectToDownstream, hidden, nodes, 0.0, atLib, 0);
 
             cout << "print " << endl;
             gi->printPDB(outfile);
