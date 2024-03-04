@@ -244,13 +244,13 @@ public:
 	int seqLen;
 	int* seq;
 	bool* connectToDownstream;
-	bool* hidden;
+	bool* fixed;
 	NuNode** nodes;
 	double ene;
 	double rms;
 	AtomLib* atLib;
 
-	graphInfo(int seqLen, int* seq, bool* con, bool* hidden, NuNode** nodes, double ene, AtomLib* atLib);
+	graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib);
 
 	void setRMS(double rms){
 		this->rms = rms;
@@ -273,6 +273,7 @@ public:
 	bool* connectToDownstream; //bonded to 5' residue
 	int* sepTable; //sequence seperation: -1, 0, 1, 2
 	bool* hidden; //hidden residues do not participate in energy calculation and structure sampling, do not exist in NuTree
+	bool* fixed; //fixed residues, do not used for rms calculation
 
 	vector<BaseRotamer*> initBaseRotList;
 	vector<RiboseRotamer*> initRiboseRotList;
@@ -282,14 +283,11 @@ public:
 	NuNode** allNodes; //L nodes
 	NuEdge** allEdges; //L*L edges
 	vector<NuEdge*> geList; //L*(L-1)/2 edges
-
 	RotamerLib* rotLib;
 	AtomLib* atLib;
 	BasePairLib* pairLib;
-
 	NuPairMoveSetLibrary* moveLib;
 	RnaEnergyTable* et;
-
 	graphInfo* initInfo;
 
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et);

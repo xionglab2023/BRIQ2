@@ -28,6 +28,7 @@ public:
 
 	double hbLamda1;
 	double hbLamda2;
+	double kHbOri;
 	double wtHb;
 
 	double rnaKBond;
@@ -54,7 +55,7 @@ public:
 	double lamdaClash;
 //	double bbClash;
 	string bwTag;
-	
+
 	double T0;
 	double T1;
 	double T2;

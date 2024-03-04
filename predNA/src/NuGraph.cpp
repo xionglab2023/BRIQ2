@@ -2605,8 +2605,10 @@ void NuTree::updateNodeInfoCG(){
 }
 
 void NuTree::printNodeInfo(){
+	cout << "node sampling freq: " << endl;
 	for(int i=0;i<graph->seqLen;i++){
-		cout << graph->allNodes[i]->connectToNeighbor << endl;
+		cout << i << " " << graph->allNodes[i]->samplingFreq << endl;
+		//cout << graph->allNodes[i]->connectToNeighbor << endl;
 	}
 }
 
@@ -2741,6 +2743,7 @@ void NuTree::randomInit(){
 	CsMove randMove;
 
 	for(int i=0;i<graph->seqLen;i++){
+		if(graph->allNodes[i]->samplingFreq == 0) continue;
 		randNode = graph->allNodes[i];
 		randRot = graph->rotLib->riboseRotLib->getRandomRotamer(randNode->baseType);
 		randNode->updateRiboseRotamer(randRot);
@@ -2748,6 +2751,8 @@ void NuTree::randomInit(){
 	}
 	for(int i=0;i<geList.size();i++){
 		randEdge = geList[i];
+		if(randEdge->samplingFreq == 0) continue;
+
 		randMove = randEdge->moveSet->getRandomMove();
 
 		/*
@@ -2772,6 +2777,7 @@ void NuTree::randomInitCG(){
 	CsMove randMove;
 
 	for(int i=0;i<graph->seqLen;i++){
+		if(graph->allNodes[i]->samplingFreq == 0) continue;
 		randNode = graph->allNodes[i];
 		randRot = graph->rotLib->riboseRotLib->getRandomRotamerCG(randNode->baseType);
 		randNode->updateRiboseRotamerCG(randRot);
@@ -2779,6 +2785,7 @@ void NuTree::randomInitCG(){
 	}
 
 	for(int i=0;i<geList.size();i++){
+		if(randEdge->samplingFreq == 0) continue;
 		randEdge = geList[i];
 
 		BaseDistanceMatrix dm0(randEdge->cm);
@@ -3100,10 +3107,11 @@ graphInfo* NuTree::runAtomicMC(){
 
 void NuTree::runCoarseGrainedMC(const string& output){
 	
-	bool debug = false;
+	bool debug = true;
+	cout << "random init" << endl;
 	randomInitCG();
 
-	int stepNum = 1000000;
+	int stepNum = 100;
 
 	double T0 = 5.0;
 	double T1 = 0.01;
@@ -3125,7 +3133,7 @@ void NuTree::runCoarseGrainedMC(const string& output){
 	int count = 0;
 
 	for(T=T0;T>T1;T=T*anneal){
-
+		cout << "T: " << T << endl;
 		nAc = 0;
 		eAc = 0;
 		nTot = 0;
@@ -3233,10 +3241,17 @@ void NuTree::runCoarseGrainedMC(const string& output){
 			}
 		}
 
+		cout << "total energy: " << endl;
 		double totEne = graph->totalEnergyCG();
+
+		cout << "graph info" << endl;
 		graphInfo* gi = graph->getGraphInfoCG();
+
+		cout << "rms:" << endl;
 		double rms = gi->rmsdCG(this->graph->initInfo);
 		delete gi;
+
+		cout << "print:" << endl;
 		printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
 	}
 
@@ -3248,25 +3263,27 @@ void NuTree::runCoarseGrainedMC(const string& output){
 	delete gi;
 }
 
-graphInfo::graphInfo(int seqLen, int* seq, bool* con, bool* hidden, NuNode** nodes, double ene, AtomLib* atLib){
+graphInfo::graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib){
 
 
 	this->seqLen = seqLen;
 	this->seq = new int[seqLen];
 	this->connectToDownstream = new bool[seqLen];
-	this->hidden = new bool[seqLen];
+	this->fixed = new bool[seqLen];
 	this->nodes = new NuNode*[seqLen];
 	this->ene = ene;
 
 	for(int i=0;i<seqLen;i++){
 		this->seq[i] = seq[i];
 		this->connectToDownstream[i] = con[i];
-		this->hidden[i] = hidden[i];
+		this->fixed[i] = fixed[i];
 	}
 
 	for(int i=0;i<seqLen;i++){
 		NuNode* n = nodes[i];
 		NuNode* node = new NuNode(n->seqID, n->baseType,  n->baseConf->cs1, n->baseConf->rot, n->riboseConf->rot, atLib);
+		node->baseConfCG->copyValueFrom(n->baseConfCG);
+		node->riboseConfCG->copyValueFrom(n->riboseConfCG);
 
 		node->phoConf->copyValueFrom(n->phoConf);
 	
@@ -3285,6 +3302,7 @@ graphInfo::graphInfo(int seqLen, int* seq, bool* con, bool* hidden, NuNode** nod
 graphInfo::~graphInfo(){
 	delete [] seq;
 	delete [] connectToDownstream;
+	delete [] fixed;
 	for(int i=0;i<seqLen;i++)
 		delete nodes[i];
 	delete [] nodes;
@@ -3296,7 +3314,7 @@ double graphInfo::rmsd(graphInfo* other){
 
 	int seqID = 0;
 	for(unsigned int i=0;i<this->seqLen;i++) {
-		if(hidden[i]) continue;
+		if(fixed[i]) continue;
 		vector<Atom*> aList = nodes[i]->toAtomList(this->atLib);
 		for(int j=0;j<aList.size();j++)
 			tList1.push_back(aList[j]->coord);
@@ -3306,7 +3324,7 @@ double graphInfo::rmsd(graphInfo* other){
 	}
 
 	for(unsigned int i=0;i<this->seqLen;i++) {
-		if(hidden[i]) continue;
+		if(fixed[i]) continue;
 		vector<Atom*> aList = other->nodes[i]->toAtomList(this->atLib);
 		for(int j=0;j<aList.size();j++)
 			tList2.push_back(aList[j]->coord);
@@ -3321,10 +3339,15 @@ double graphInfo::rmsdCG(graphInfo* other){
 	vector<XYZ> tList1;
 	vector<XYZ> tList2;
 
+	cout << "calculate rmsd CG: " << endl;
+
 	int seqID = 0;
 	for(unsigned int i=0;i<this->seqLen;i++) {
-		if(hidden[i]) continue;
+		if(fixed[i]) continue;
+		cout << "to atom list" << endl;
 		vector<Atom*> aList = nodes[i]->toAtomListCG(this->atLib);
+		cout << aList.size() << endl;
+
 		for(int j=0;j<aList.size();j++)
 			tList1.push_back(aList[j]->coord);
 		for(int k=0;k<aList.size();k++){
@@ -3332,8 +3355,10 @@ double graphInfo::rmsdCG(graphInfo* other){
 		}
 	}
 
+	cout << "rmsd cg: " << tList1.size() << endl;
+
 	for(unsigned int i=0;i<this->seqLen;i++) {
-		if(hidden[i]) continue;
+		if(fixed[i]) continue;
 		vector<Atom*> aList = other->nodes[i]->toAtomListCG(this->atLib);
 		for(int j=0;j<aList.size();j++)
 			tList2.push_back(aList[j]->coord);
@@ -3341,6 +3366,10 @@ double graphInfo::rmsdCG(graphInfo* other){
 			delete aList[k];
 		}
 	}
+
+	cout << "rmsd cg: " << tList2.size() << endl;
+
+	cout << "rmsd cg: " << NSPgeometry::simpleRMSD(tList1, tList2) << endl;
 	return NSPgeometry::simpleRMSD(tList1, tList2);
 }
 
@@ -3516,6 +3545,8 @@ NuGraph::~NuGraph() {
 	delete [] seq;
 	delete [] wcPairPosID;
 	delete [] connectToDownstream;
+	delete [] hidden;
+	delete [] fixed;
 	delete [] sepTable;
 
 	for(int i=0;i<seqLen;i++){
@@ -3566,6 +3597,7 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	this->allNodes = new NuNode*[seqLen];
 	this->allEdges = new NuEdge*[seqLen*seqLen];
 	this->hidden = new bool[seqLen];
+	this->fixed = new bool[seqLen];
 
 
 	cout << "read chain break" << endl;
@@ -3648,6 +3680,17 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	for(i=0;i<seqLen;i++){
 		LocalFrame cs1 = baseList[i]->getCoordSystem();
 		this->allNodes[i] = new NuNode(i, baseList[i]->baseTypeInt, cs1, initBaseRotList[i], initBaseRotCGList[i], initRiboseRotList[i], initRiboseRotCGList[i], atLib);
+
+		if(i==0 && connectToDownstream[i] == false){
+			this->allNodes[i]->samplingFreq = 0;
+		}
+		else if(i==seqLen-1 && connectToDownstream[i-1] == false){
+			this->allNodes[i]->samplingFreq = 0;
+		}
+		else if(i>0 && i<seqLen-1 && connectToDownstream[i-1] == false && connectToDownstream[i] == false){
+			this->allNodes[i]->samplingFreq = 0;
+		}
+		cout << "pos: " << i << " sampFreq: " << this->allNodes[i]->samplingFreq << endl;
 		this->allNodes[i]->connectToNeighbor = connectToDownstream[i];
 		this->allNodes[i]->graph = this;
 	}
@@ -3745,15 +3788,19 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 		char c = cst[i];
 		if(c == '-') {
 			this->hidden[i] = true;
+			this->fixed[i] = true;
 			this->allNodes[i]->samplingFreq = 0.0;
 			if(i > 0)
 				this->connectToDownstream[i-1] = false;
 		}
-		else if(c >= 'A' && c <= 'Z') {
-			this->allNodes[i]->samplingFreq = 0.0;
-		}
-		else 
+		else if(c == 'F') {
 			this->hidden[i] = false;
+			this->fixed[i] = true;
+		}
+		else {
+			this->hidden[i] = false;
+			this->fixed[i] = false;
+		}
 	}
 
 	for(i=0;i<seqLen;i++){
@@ -3915,21 +3962,28 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 		}
 	}
 
+
 	for(i=0;i<seqLen;i++) {
 		char c = cst[i];
 		if(c == '-') {
 			this->hidden[i] = true;
+			this->fixed[i] = true;
 			this->allNodes[i]->samplingFreq = 0.0;
 			if(i > 0)
 				this->connectToDownstream[i-1] = false;
 		}
 		else if(c >= 'A' && c <= 'Z') {
 			this->hidden[i] = false;
-			this->allNodes[i]->samplingFreq = 0.5;
+			this->fixed[i] = true;
+			if(this->allNodes[i]->samplingFreq != 0)
+				this->allNodes[i]->samplingFreq = 0.5;
 		}
-		else 
+		else {
 			this->hidden[i] = false;
+			this->fixed[i] = false;
+		}
 	}
+
 
 
 }

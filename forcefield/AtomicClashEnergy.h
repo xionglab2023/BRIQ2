@@ -99,9 +99,11 @@ public:
 		if(dd >= 16.00) return 0;
 		int uniqueIDA = baseAtomUniqueID[baseTypeA][atomTypeA];
 		int uniqueIDB = baseAtomUniqueID[baseTypeB][atomTypeB];
-		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) return 0.0;
-		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
+		
+		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) d0 = 2.8;
+		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) d0 = 2.8;
+		
 		if(abs(sep) == 1)
 			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
 		else

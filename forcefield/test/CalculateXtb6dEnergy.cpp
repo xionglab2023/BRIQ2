@@ -23,8 +23,11 @@ int main(int argc, char** argv){
 
     int typeA = atoi(argv[1]);
     int typeB = atoi(argv[2]);
+    int idTag = atoi(argv[3]);
 
-    string outfile = string(argv[3]);
+
+    string outfile = string(argv[4]);
+
     char xx[100];
     OrientationIndex x;
 
@@ -49,6 +52,8 @@ int main(int argc, char** argv){
     int index1, index2;
     for(index1=0;index1<2250;index1++) {
         cout << index1 << endl;
+        if(index1 % 50 != idTag) continue;
+
         for(index2=0;index2<4000000;index2++){
             cm = oi.index2000ToCsMove(index1, index2);
             int id500 = oi.moveToIndex500(cm);
@@ -70,7 +75,7 @@ int main(int argc, char** argv){
             else
                 ene = et->getEnergy(csB, csA, typeB, typeA, minD);
 
-            if(ene < -3.5) {
+            if(ene < -2.5) {
                 out << index1 << " " << index2 << " " << ene << endl;
             }
             delete confA;

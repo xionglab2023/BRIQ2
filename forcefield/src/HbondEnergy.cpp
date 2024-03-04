@@ -172,10 +172,8 @@ double HbondEnergy::getEnergy(int uniqueA, LocalFrame& csA, int uniqueB, LocalFr
 		cout << "invalid sphere index: " << idX1 << " " << idY1 << " " << idZ1 << endl;
 		exit(1);
 	}
-	//int spIndexA = it->second;
+
 	double logDensityA = donorSphereLogDensity[donorIndex][acceptorIndex][it->second];
-
-
 
 	it = sphereKeyMap.find(idX2*160000+idY2*400+idZ2);
 	if(it == sphereKeyMap.end()){
@@ -184,16 +182,12 @@ double HbondEnergy::getEnergy(int uniqueA, LocalFrame& csA, int uniqueB, LocalFr
 		cout << "invalid sphere index: " << idX2 << " " << idY2 << " " << idZ2 << endl;
 		exit(1);
 	}
-	//int spIndexB = it->second;
+
 	double logDensityB = acceptorSphereLogDensity[donorIndex][acceptorIndex][it->second];
-
-	//log(1000) = 6.9077
-	//need to be verified
-    double kOrientation = (logDensityA+logDensityB+log(1000.0))/log(1000.0);
-
-  //  printf("logDenA: %7.3f logDenB: %7.3f kOrientation: %6.4f\n", logDensityA, logDensityB, kOrientation);
+    double kOrientation = (logDensityA+logDensityB+7.0)*0.14286;
 
     if(kOrientation < 0) return 0.0;
+	kOrientation = sqrt(kOrientation);
     return e*kOrientation*para->wtHb;
 }
 

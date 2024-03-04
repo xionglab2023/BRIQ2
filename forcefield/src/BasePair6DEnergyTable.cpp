@@ -544,7 +544,6 @@ pair<int,int> CsMoveTo6DKey::toIndexPair(const LocalFrame& csA, const LocalFrame
 }
 
 /*
-
 string CsMoveTo6DKey::toKey(const LocalFrame& csA, const LocalFrame& csB, double len){
 	double xLen = 1.0/len;
 
@@ -747,7 +746,6 @@ CsMoveTo6DKey::~CsMoveTo6DKey() {
 BasePair6DEnergyTable::BasePair6DEnergyTable(ForceFieldPara* para, bool withBinary, int binaryMode):
 cm2Key(withBinary, binaryMode) 
 {
-
 	this->wtNb = para->wtBp1;
 	this->wtNnb = para->wtBp2;
 
@@ -763,6 +761,7 @@ cm2Key(withBinary, binaryMode)
 		if(para->bwTag != "default") {
 			fileName = path + "../binaryData/pairEne/nb-" + para->bwTag;
 		}
+		cout << "fileName" << endl;
 		ifstream ins;
         ins.open(fileName,ios::in | ios::binary);
         if(!ins.is_open()) {
@@ -843,7 +842,6 @@ cm2Key(withBinary, binaryMode)
 					this->nnbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
 				}
 				file.close();
-
 			}
 		}
 	}

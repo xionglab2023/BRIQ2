@@ -60,7 +60,6 @@ public:
 	CsMoveTo6DKeySP500 cm2Key;
 	map<int,double>::iterator it;
 
-	double wtNb, wtNnb;
 
 	Xtb6dEnergy(ForceFieldPara* para);
 
@@ -88,7 +87,7 @@ public:
 
 				it = nnbKeysEnergy[pairIndex].find(fullIndex);
 				if(it != nnbKeysEnergy[pairIndex].end()){
-					ene[i*9+j] = wtNnb*it->second;
+					ene[i*9+j] = it->second;
 				}
 				else
 					ene[i*9+j] = 0.0;

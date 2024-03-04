@@ -399,13 +399,9 @@ CsMoveTo6DKeySP500::~CsMoveTo6DKeySP500() {
 
 Xtb6dEnergy::Xtb6dEnergy(ForceFieldPara* para) {
 
-    cout << "init " << endl;
-	this->wtNb = para->wtBp1;
-	this->wtNnb = para->wtBp2;
 
 	string path = NSPdataio::datapath();
 
-    cout << path << endl;
 
 	int index, clusterID;
 	double ene;
