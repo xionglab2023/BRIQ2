@@ -301,7 +301,6 @@ public:
 	void initForMC(const string& inputFile);
 	void initForCGMC(const string& inputFile);
 	void initForMST(const string& inputFile);
-	void initForMotif(const string& inputFile);
 	void initForSingleResiduePrediction(const string& inputFile, int pos);
 	void initRandWeight();
 	void MST_kruskal(NuTree* output);

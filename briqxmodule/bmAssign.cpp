@@ -83,6 +83,7 @@ int main(int argc, char** argv) {
         tmpInput << "pdb " << pdbIn << endl;
         tmpInput << "seq " << rss.seq << endl;
         tmpInput << "sec " << rss.ssSeq << endl;
+        tmpInput << "cst " << '.'*rss.seq.size() << endl;
         tmpInput.close();
         delete rnaPdb;
         RotamerLib* rtl = new RotamerLib();
