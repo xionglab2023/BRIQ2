@@ -294,7 +294,7 @@ public:
 
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
-	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, int InitMode);
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int InitMode);
 
 	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& cst, const string& chainBreak);
 	void initPho();

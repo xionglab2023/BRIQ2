@@ -35,6 +35,7 @@ namespace NSPbm {
             int* seq;
             int* nodeIndex;  // fullGraph index of the NuNodes in MotifGraph
             bool* connectToDownstream;
+            bool* fixed;  // for compatiblity with graphInfo
             NuNode** allNodes;  // L nodes
             NuEdge** allEdges;  // L*L edges
             vector<NuEdge*> geList;  //L*(L-1)/2 edges

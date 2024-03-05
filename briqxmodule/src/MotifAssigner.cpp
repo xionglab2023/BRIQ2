@@ -25,6 +25,7 @@ namespace NSPbm {
         nodeIndex = new int[nNode];
         memcpy(nodeIndex, &NodeIndexVec[0], sizeof(int)*nNode);
         connectToDownstream = new bool[nNode];
+        fixed = new bool[nNode];
         allNodes = new NuNode*[nNode];
         allEdges = new NuEdge*[nNode*nNode];
         geList.reserve(nNode*(nNode-1)/2);
@@ -37,6 +38,7 @@ namespace NSPbm {
             } else {
                 connectToDownstream[i] = false;  // the original downstream node is not included in subgraph
             }
+            fixed[i] = graphIn->fixed[nodeIndex[i]];
             for(int j=0; j<nNode; j++) {
                 allEdges[i*nNode+j] = graphIn->allEdges[nodeIndex[i]*graphIn->seqLen+nodeIndex[j]];
             }
@@ -49,7 +51,7 @@ namespace NSPbm {
 
     int MotifGraph::writePDB(const string& outputFile) {
         if(!motifInfo) {
-            motifInfo = new graphInfo(nNode, seq, connectToDownstream, allNodes, ene, fullGraph->atLib);
+            motifInfo = new graphInfo(nNode, seq, connectToDownstream, fixed, allNodes, ene, fullGraph->atLib, 0);
         }
         motifInfo->printPDB(outputFile);
         return EXIT_SUCCESS;

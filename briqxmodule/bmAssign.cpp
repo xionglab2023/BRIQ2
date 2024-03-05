@@ -79,16 +79,20 @@ int main(int argc, char** argv) {
         {
             throw "[Error] Fail to open file " + tmpInputFileName;
         }
-        tmpInput << "task assignMotif" <<endl;
+        tmpInput << "task analysis" <<endl;
         tmpInput << "pdb " << pdbIn << endl;
         tmpInput << "seq " << rss.seq << endl;
         tmpInput << "sec " << rss.ssSeq << endl;
-        tmpInput << "cst " << '.'*rss.seq.size() << endl;
+        string cstStr = ".";
+        cstStr.resize(rss.seq.size(),'.');
+        tmpInput << "cst " << cstStr << endl;
         tmpInput.close();
         delete rnaPdb;
         RotamerLib* rtl = new RotamerLib();
         BasePairLib* bpl = new BasePairLib();
-        NuGraph* pNuGragh = new NuGraph(tmpInputFileName, rtl, atl, bpl, 1);
+        RnaEnergyTable* et = new RnaEnergyTable();
+        et->loadEnergyWithout6D();
+        NuGraph* pNuGragh = new NuGraph(tmpInputFileName, rtl, atl, bpl, et, 1);
         MotifAssigner* mtfa = new MotifAssigner(pNuGragh);
         if(cmdArgs.specifiedOption("-dev")) {
             ofstream outCSV;

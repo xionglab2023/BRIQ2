@@ -55,7 +55,7 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inp
 
 	clock_t start = clock();
 
-	tree->runCoarseGrainedMC(output);
+	tree->runCoarseGrainedMC(outFile);
 	clock_t end1 = clock();
 	cout << "time1: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
 

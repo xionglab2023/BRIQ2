@@ -3535,12 +3535,12 @@ NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, Ba
 	initForMST(inputFile);
 }
 
-NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, int initMode){
+NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int initMode){
 	this->pairLib = pairLib;
 	this->rotLib = rotLib;
 	this->atLib = atLib;
 	this->moveLib = NULL;
-	this->et = NULL;
+	this->et = et;
 	this->initInfo = NULL;
 	switch (initMode) {
 		case 1:
