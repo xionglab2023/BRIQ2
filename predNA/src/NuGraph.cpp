@@ -3747,7 +3747,13 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 				this->allEdges[i*seqLen+j]->initNearNativeMoveSet();
 			}
 			else if(task == "analysis") {
-				//this->allEdges[i*seqLen+j]->weight = xxx; to be modified
+				NuNode* nodeA = this->allEdges[i*seqLen+j]->nodeA;
+				NuNode* nodeB = this->allEdges[i*seqLen+j]->nodeB;
+				BaseDistanceMatrix dm(nodeA->baseConf->cs1, nodeB->baseConf->cs1);
+				int clusterID = pairLib->getPairType(dm, nodeA->baseType, nodeB->baseType, this->sepTable[i*seqLen+j]);
+				this->allEdges[i*seqLen+j]->ei->setUniqueCluster(clusterID, pairLib);
+				this->allEdges[i*seqLen+j]->weight = this->allEdges[i*seqLen+j]->ei->weight;
+				this->allEdges[i*seqLen+j]->weightRand = this->allEdges[i*seqLen+j]->weight;
 			}
 		}
 	}
