@@ -779,7 +779,7 @@ void NuNode::updateRiboseRotamerCG(RiboseRotamerCG* rot){
 	 * base-ribose energy
 	 * ribose-ribose energy
 	 */
-	
+
 	for(i=0;i<baseGroupA.size();i++){
 
 		sep = graph->sepTable[baseGroupA[i]->seqID*len+seqID];
@@ -3812,6 +3812,15 @@ void NuGraph::initPho(){
 	}
 
 	
+}
+
+void NuGraph::initPho(PO3Builder* pb) {
+	for(int i=0;i<seqLen;i++){
+		if(connectToDownstream[i]){
+			pb->buildPhosphate(allNodes[i]->riboseConf, allNodes[i]->riboseConf, allNodes[i]->phoConf);
+			allNodes[i]->phoConfTmp->copyValueFrom(allNodes[i]->phoConf);
+		}
+	}
 }
 
 void NuGraph::initForMC(const string& inputFile){

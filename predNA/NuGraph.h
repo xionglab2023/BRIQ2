@@ -296,6 +296,7 @@ public:
 
 	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& cst, const string& chainBreak);
 	void initPho();
+	void initPho(PO3Builder* pb);
 	void initForMC(const string& inputFile);
 	void initForCGMC(const string& inputFile);
 	void initForMST(const string& inputFile);
