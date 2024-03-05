@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
         delete rnaPdb;
         RotamerLib* rtl = new RotamerLib();
         BasePairLib* bpl = new BasePairLib();
-        NuGraph* pNuGragh = new NuGraph(tmpInputFileName, rtl, atl, bpl);
+        NuGraph* pNuGragh = new NuGraph(tmpInputFileName, rtl, atl, bpl, 1);
         MotifAssigner* mtfa = new MotifAssigner(pNuGragh);
         if(cmdArgs.specifiedOption("-dev")) {
             ofstream outCSV;

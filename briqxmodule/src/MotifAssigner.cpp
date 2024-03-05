@@ -56,6 +56,19 @@ namespace NSPbm {
     }
 
 
+    bool MotifGraph::operator==(const MotifGraph& other) {
+        if(nNode != other.nNode || fullGraph != other.fullGraph) {
+            return false;
+        }
+        for(int i=0; i<nNode; i++) {
+            if(nodeIndex[i] != other.nodeIndex[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     int MotifAssigner::writeEdgeWeight(ostream& outCSV) {
         int seqLen = nuGraph->seqLen;
         outCSV << "nodeID1,nodeID2,Weight,isWC,isNeighbor" << endl;
@@ -80,7 +93,7 @@ namespace NSPbm {
 
 
     void MotifAssigner::bySeed() {
-        vector<NuEdge*> seedEdge;
+        vector<NuEdge*> seedEdge;  // take non-neighboring nonWC pairs as seed
         int seqLen = nuGraph->seqLen;
         for(int i=0; i<seqLen; i++) {
             for(int j=i+2; j<seqLen; j++) {
@@ -121,7 +134,8 @@ namespace NSPbm {
             }
         }
 
-        map<int, set<int>*> nbNeighborMap, nnbNeighborMap;
+        // map from nodes to the set of nodes that connect to the key node by an edge
+        map<int, set<int>*> nbNeighborMap, nnbNeighborMap; 
         for(int i=0;i<seqLen;i++) {
             nbNeighborMap.emplace(i,new set<int>);
             nnbNeighborMap.emplace(i,new set<int>);
@@ -206,7 +220,15 @@ namespace NSPbm {
             MotifGraph* pMotif = new MotifGraph(nuGraph, NodeIndexVec, ene);
 
             // TODO: redundent reduction
-            motifs.emplace_back(pMotif);
+            int nmtf =  motifs.size();
+            bool dup = false;
+            for(int i=0; i<nmtf; i++) {
+                if(*motifs[i] == *pMotif) {
+                    dup = true;
+                    break;
+                }
+            }
+            dup || motifs.emplace_back(pMotif);
             
         }
 

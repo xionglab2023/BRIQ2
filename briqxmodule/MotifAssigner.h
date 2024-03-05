@@ -14,9 +14,9 @@
  
 #include "predNA/NuGraph.h"
 
-#define MOTIFASSIGNER_SEED_CUTOFF 0.5
-#define MOTIFASSIGNER_GROW_CUTOFF 0.5
-#define MOTIFASSIGNER_RECALL_CUTOFF 0.25
+#define MOTIFASSIGNER_SEED_CUTOFF -9.0
+#define MOTIFASSIGNER_GROW_CUTOFF -5.5
+#define MOTIFASSIGNER_RECALL_CUTOFF -7.0
 
 namespace NSPbm {
     using namespace NSPpredNA;
@@ -49,6 +49,25 @@ namespace NSPbm {
              */
             MotifGraph(NuGraph* GraphIn, vector<int>& NodeIndexVec, double ene=0.0);
             int writePDB(const string& outputFile);
+            
+            /**
+             * @brief Test if **this** is identical to **other**, where identical means same **fullGraph**,
+             * same **nNode** and **same** nodeIndex
+             * 
+             * @param other 
+             * @return true **this** is identical to **other**
+             * @return false 
+             */
+            bool operator==(const MotifGraph& other);
+
+            /**
+             * @brief Test if **other** is included in **this**
+             * 
+             * @param other 
+             * @return true 
+             * @return false 
+             */
+            bool includes(const MotifGraph& other);
             virtual ~MotifGraph() {
                 delete[] seq;
                 delete[] nodeIndex;

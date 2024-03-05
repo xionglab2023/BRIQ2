@@ -3309,6 +3309,22 @@ NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, Ba
 	initForMST(inputFile);
 }
 
+NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, int initMode){
+	this->pairLib = pairLib;
+	this->rotLib = rotLib;
+	this->atLib = atLib;
+	this->moveLib = NULL;
+	this->et = NULL;
+	this->initInfo = NULL;
+	switch (initMode) {
+		case 1:
+			initForMotif(inputFile);
+			break;
+		default:
+			cerr << "Unknown initMode " << initMode << endl;
+	}
+}
+
 NuGraph::~NuGraph() {
 
 	cout << "deconstruct" << endl;
@@ -3692,6 +3708,194 @@ void NuGraph::initForMST(const string& inputFile){
 			}
 		}
 	}
+
+	for(i=0;i<seqLen;i++){
+		for(j=i+1;j<seqLen;j++){
+			this->geList.push_back(allEdges[i*seqLen+j]);
+		}
+	}
+
+}
+
+
+void NuGraph::initForMotif(const string& inputFile){
+	int i,j,k;
+
+	NSPtools::InputParser input(inputFile);
+
+	input.printOptions();
+
+	/*
+	 * task:
+	 * 		predict: ab initial prediction
+	 * 		refinement: fixed cluster type refinement
+	 */
+
+	string task = input.getValue("task");
+	string pdbFile = input.getValue("pdb");
+	string baseSeq = input.getValue("seq");
+	string baseSec = input.getValue("sec");
+	// string cst = input.getValue("cst");
+	string chainBreak = input.getValue("break");
+	vector<string> templates = input.getMultiValues("template");
+	vector<string> templatesAlignA = input.getMultiValues("alignNat");
+	vector<string> templatesAlignB = input.getMultiValues("alignTmp");
+	vector<string> templatesType = input.getMultiValues("tempType");
+
+	seqLen = baseSeq.length();
+
+	cout << "sequence length: " <<  seqLen << endl;
+
+	this->seq = new int[seqLen];
+	this->wcPairPosID = new int[seqLen];
+	this->connectToDownstream = new bool[seqLen];
+	this->sepTable = new int[seqLen*seqLen];
+	this->allNodes = new NuNode*[seqLen];
+	this->allEdges = new NuEdge*[seqLen*seqLen];
+
+	cout << "read chain break" << endl;
+
+	/*
+	 * read chain break points
+	 */
+	for(i=0;i<seqLen;i++){
+		connectToDownstream[i] = true;
+	}
+	connectToDownstream[seqLen-1] = false;
+
+	vector<string> spt;
+	splitString(chainBreak, " ", &spt);
+	for(i=0;i<spt.size();i++){
+		int pos = atoi(spt[i].c_str());
+		if(pos >= baseSeq.length() || pos < 0){
+			cout << "invalid chain break position: " << pos << endl;
+			exit(0);
+		}
+		connectToDownstream[atoi(spt[i].c_str())] = false;
+	}
+
+	for(i=0;i<seqLen;i++){
+		for(j=0;j<seqLen;j++){
+			int ij = i*seqLen+j;
+			if(i==j) sepTable[ij] = 0;
+			else if(j == i+1 && connectToDownstream[i]) sepTable[ij] = 1;
+			else if(j == i-1 && connectToDownstream[j]) sepTable[ij] = -1;
+			else sepTable[ij] = 2;
+		}
+	}
+
+	cout << "init nodes" << endl;
+
+	/*
+	 * init NuNodes
+	 */
+	RNAPDB pdb(pdbFile, "pdbid");
+	vector<RNABase*> baseList = pdb.getBaseList();
+
+	for(i=0;i<seqLen;i++){
+		this->seq[i] = baseList[i]->baseTypeInt;
+		this->wcPairPosID[i] = -1;
+		RiboseRotamer* rot = new RiboseRotamer();
+		this->initRiboseRotList.push_back(rot);
+		this->initBaseRotList.push_back(new BaseRotamer(seq[i], atLib));
+	}
+
+
+	for(i=0;i<seqLen;i++){
+		LocalFrame cs1 = baseList[i]->getCoordSystem();
+		this->allNodes[i] = new NuNode(i, baseList[i]->baseTypeInt, cs1, initBaseRotList[i], initRiboseRotList[i], atLib);
+		this->allNodes[i]->connectToNeighbor = connectToDownstream[i];
+		this->allNodes[i]->graph = this;
+	}
+
+	cout << "parse secondary structure" << endl;
+	/*
+	 * parse secondary structure information
+	 */
+
+	char ss[seqLen];
+	for(int i=0;i<seqLen;i++){
+		ss[i] = baseSec[i];
+	}
+
+	map<char,char> brackets;
+	brackets[')'] = '(';
+	brackets[']'] = '[';
+	brackets['}'] = '{';
+	brackets['>'] = '<';
+	brackets['a'] = 'A';
+	brackets['b'] = 'B';
+	brackets['c'] = 'C';
+	brackets['d'] = 'D';
+	brackets['e'] = 'E';
+	brackets['f'] = 'F';
+	brackets['g'] = 'G';
+	brackets['h'] = 'H';
+	brackets['i'] = 'I';
+	brackets['j'] = 'J';
+	map<char,char>::iterator it;
+
+	for(i=0;i<seqLen;i++) {
+		char c = ss[i];
+		it = brackets.find(c);
+		if(it == brackets.end()) continue;
+		int preIndex = -1;
+		for(j=i-1;j>=0;j--) {
+			if(ss[j] == it->second) {
+				preIndex = j;
+				break;
+			}
+		}
+		if(preIndex < 0) {
+			cout << "invalid ssSeq: " << baseSec << endl;
+			exit(1);
+		}
+		ss[i] = '.';
+		ss[preIndex] = '.';
+		wcPairPosID[i] = preIndex;
+		wcPairPosID[preIndex] = i;
+	}
+
+	cout << "init edges" << endl;
+	/*
+	 * init NuEdges
+	 */
+	for(int i=0;i<seqLen;i++){
+		for(int j=0;j<seqLen;j++){
+			this->allEdges[i*seqLen+j] = new NuEdge(allNodes[i], allNodes[j], this);
+			this->allEdges[i*seqLen+j]->graph = this;
+			this->allEdges[i*seqLen+j]->weight = 0.0;
+
+			NuNode* nodeA = this->allEdges[i*seqLen+j]->nodeA;
+			NuNode* nodeB = this->allEdges[i*seqLen+j]->nodeB;
+			BaseDistanceMatrix dm(nodeA->baseConf->cs1, nodeB->baseConf->cs1);
+			int clusterID = pairLib->getPairType(dm, nodeA->baseType, nodeB->baseType, this->sepTable[i*seqLen+j]);
+			this->allEdges[i*seqLen+j]->ei->setUniqueCluster(clusterID, pairLib);
+			this->allEdges[i*seqLen+j]->weight = this->allEdges[i*seqLen+j]->ei->weight;
+			this->allEdges[i*seqLen+j]->weightRand = this->allEdges[i*seqLen+j]->weight;
+		}
+	}
+
+	/*
+	string cstString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	for(i=0;i<seqLen;i++){
+		char c = cst[i];
+		for(j=0;j<cstString.length();j++){
+			if(c == cstString[j]) {
+				for(k=i+1;k<seqLen;k++){
+					char d = cst[k];
+					if(c == d){
+						cout << "fix edge: " << i << " " << k << endl;
+						this->allEdges[i*seqLen+k]->weight = -999.9;
+						this->allEdges[k*seqLen+i]->weight = -999.9;
+						this->allEdges[i*seqLen+k]->weightRand = -999.9;
+						this->allEdges[k*seqLen+i]->weightRand = -999.9;
+					}
+				}
+			}
+		}
+	}
+	*/
 
 	for(i=0;i<seqLen;i++){
 		for(j=i+1;j<seqLen;j++){

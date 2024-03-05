@@ -286,9 +286,11 @@ public:
 
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, int InitMode);
 
 	void init(const string& inputFile);
 	void initForMST(const string& inputFile);
+	void initForMotif(const string& inputFile);
 	void initRandWeight();
 	void MST_kruskal(NuTree* output);
 	void printAllEdge();
