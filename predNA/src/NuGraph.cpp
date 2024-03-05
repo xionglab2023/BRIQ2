@@ -779,7 +779,7 @@ void NuNode::updateRiboseRotamerCG(RiboseRotamerCG* rot){
 	 * base-ribose energy
 	 * ribose-ribose energy
 	 */
-	
+
 	for(i=0;i<baseGroupA.size();i++){
 
 		sep = graph->sepTable[baseGroupA[i]->seqID*len+seqID];
@@ -3766,6 +3766,15 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 			if(task == "refinement"){
 				this->allEdges[i*seqLen+j]->initNearNativeMoveSet();
 			}
+			else if(task == "analysis") {
+				NuNode* nodeA = this->allEdges[i*seqLen+j]->nodeA;
+				NuNode* nodeB = this->allEdges[i*seqLen+j]->nodeB;
+				BaseDistanceMatrix dm(nodeA->baseConf->cs1, nodeB->baseConf->cs1);
+				int clusterID = pairLib->getPairType(dm, nodeA->baseType, nodeB->baseType, this->sepTable[i*seqLen+j]);
+				this->allEdges[i*seqLen+j]->ei->setUniqueCluster(clusterID, pairLib);
+				this->allEdges[i*seqLen+j]->weight = this->allEdges[i*seqLen+j]->ei->weight;
+				this->allEdges[i*seqLen+j]->weightRand = this->allEdges[i*seqLen+j]->weight;
+			}
 		}
 	}
 
@@ -3834,6 +3843,16 @@ void NuGraph::initPho(){
 	
 }
 
+void NuGraph::initPho(PO3Builder* pb) {
+	for(int i=0;i<seqLen;i++){
+		if(connectToDownstream[i]){
+			pb->buildPhosphate(allNodes[i]->riboseConf, allNodes[i]->riboseConf, allNodes[i]->phoConf);
+			allNodes[i]->phoConfTmp->copyValueFrom(allNodes[i]->phoConf);
+		}
+	}
+}
+
+
 void NuGraph::initForMC(const string& inputFile){
 
 	NSPtools::InputParser input(inputFile);
@@ -3888,6 +3907,7 @@ void NuGraph::initForMST(const string& inputFile){
 	 * task:
 	 * 		predict: ab initial prediction
 	 * 		refinement: fixed cluster type refinement
+	 *      
 	 */
 
 	string task = input.getValue("task");
