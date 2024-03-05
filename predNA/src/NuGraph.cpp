@@ -3746,6 +3746,9 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 			if(task == "refinement"){
 				this->allEdges[i*seqLen+j]->initNearNativeMoveSet();
 			}
+			else if(task == "analysis") {
+				//this->allEdges[i*seqLen+j]->weight = xxx; to be modified
+			}
 		}
 	}
 
@@ -3823,6 +3826,7 @@ void NuGraph::initPho(PO3Builder* pb) {
 	}
 }
 
+
 void NuGraph::initForMC(const string& inputFile){
 
 	NSPtools::InputParser input(inputFile);
@@ -3877,6 +3881,7 @@ void NuGraph::initForMST(const string& inputFile){
 	 * task:
 	 * 		predict: ab initial prediction
 	 * 		refinement: fixed cluster type refinement
+	 *      
 	 */
 
 	string task = input.getValue("task");
