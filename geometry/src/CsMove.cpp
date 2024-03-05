@@ -13,6 +13,8 @@ CsMove::CsMove() {
 CsMove::CsMove(const XYZ& oriMove, const TransMatrix& tm){
 	this->oriMove = oriMove;
 	this->tm = tm;
+	int clusterID = -1;
+	int subClusterID = -1;
 }
 
 CsMove::CsMove(const string& s){
@@ -37,6 +39,9 @@ CsMove::CsMove(const string& s){
 	this->tm.mtx[2][0] = tx.z_;
 	this->tm.mtx[2][1] = ty.z_;
 	this->tm.mtx[2][2] = tz.z_;
+
+	int clusterID = -1;
+	int subClusterID = -1;
 }
 
 CsMove CsMove::reverse(){

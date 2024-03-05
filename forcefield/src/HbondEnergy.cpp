@@ -1,7 +1,7 @@
 /*
  * HbondEnergy.cpp
  *
- *  Created on: 2023Äê8ÔÂ11ÈÕ
+ *  Created on: 2023ï¿½ï¿½8ï¿½ï¿½11ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -118,10 +118,13 @@ double HbondEnergy::getEnergy(int uniqueA, LocalFrame& csA, int uniqueB, LocalFr
 		return 0.0;
 	}
 
+	double len = csDonor.origin_.distance(csAcceptor.origin_);
+	if(len > 5.0) return 0.0;
+
 	double e;
 	double d0 = hbDist[donorIndex][acceptorIndex];
 	double wd = hbEne[donorIndex][acceptorIndex];
-	double len = csDonor.origin_.distance(csAcceptor.origin_);
+
 	if(len < d0)
 	{
 		double u = (len-d0)/d0/para->hbLamda1;
@@ -169,10 +172,8 @@ double HbondEnergy::getEnergy(int uniqueA, LocalFrame& csA, int uniqueB, LocalFr
 		cout << "invalid sphere index: " << idX1 << " " << idY1 << " " << idZ1 << endl;
 		exit(1);
 	}
-	//int spIndexA = it->second;
+
 	double logDensityA = donorSphereLogDensity[donorIndex][acceptorIndex][it->second];
-
-
 
 	it = sphereKeyMap.find(idX2*160000+idY2*400+idZ2);
 	if(it == sphereKeyMap.end()){
@@ -181,24 +182,20 @@ double HbondEnergy::getEnergy(int uniqueA, LocalFrame& csA, int uniqueB, LocalFr
 		cout << "invalid sphere index: " << idX2 << " " << idY2 << " " << idZ2 << endl;
 		exit(1);
 	}
-	//int spIndexB = it->second;
+
 	double logDensityB = acceptorSphereLogDensity[donorIndex][acceptorIndex][it->second];
-
-	//log(1000) = 6.9077
-	//need to be verified
-    double kOrientation = (logDensityA+logDensityB+log(1000.0))/log(1000.0);
-
-  //  printf("logDenA: %7.3f logDenB: %7.3f kOrientation: %6.4f\n", logDensityA, logDensityB, kOrientation);
+    double kOrientation = (logDensityA+logDensityB+7.0)*0.14286;
 
     if(kOrientation < 0) return 0.0;
+	kOrientation = sqrt(kOrientation);
     return e*kOrientation*para->wtHb;
-
 }
 
 double HbondEnergy::getO4O2C2Energy(double distance, int sep) {
 
+	if(distance > 5.0) return 0.0;
 	double e = -1.5*exp(-12.5*(distance-3.4)*(distance-3.4));
-	if(sep == 1)
+	if(abs(sep) == 1)
 		return para->wtO4O2C2Nb * e;
 	else
 		return para->wtO4O2C2Nnb * e;

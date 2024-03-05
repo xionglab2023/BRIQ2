@@ -20,7 +20,6 @@ using namespace std;
 
 int main(int argc, char** argv){
 
-
 	clock_t start = clock();
 
 	string inputFile = string(argv[1]);

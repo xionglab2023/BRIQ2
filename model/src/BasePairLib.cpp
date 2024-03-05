@@ -35,10 +35,10 @@ BasePairLib::BasePairLib() {
 		this->nbBasePairNum[i] = 0;
 		this->nnbBasePairNum[i] = 0;
 		for(int j=0;j<200;j++){
-			this->nbEnegy[i][j] = 0.0;
+			this->nbEnergy[i][j] = 0.0;
 			this->nbEnergyWithOxy[i][j] = 0.0;
 			this->nbProportion[i][j] = 0.0;
-			this->nnbEnegy[i][j] = 0.0;
+			this->nnbEnergy[i][j] = 0.0;
 			this->nnbEnergyWithOxy[i][j] = 0.0;
 			this->nnbProportion[i][j] = 0.0;
 		}
@@ -87,7 +87,7 @@ BasePairLib::BasePairLib() {
 		else
 			currentIndex++;
 		splitString(s, " ", &spt);
-		this->nbEnegy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
+		this->nbEnergy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
 		this->nbProportion[typeA*4+typeB][currentIndex] = atof(spt[3].c_str());
 		this->nbEnergyWithOxy[typeA*4+typeB][currentIndex] = atof(spt[4].c_str());
 		lastType = currentType;
@@ -139,7 +139,7 @@ BasePairLib::BasePairLib() {
 		else
 			currentIndex++;
 		splitString(s, " ", &spt);
-		this->nnbEnegy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
+		this->nnbEnergy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
 		this->nnbProportion[typeA*4+typeB][currentIndex] = atof(spt[3].c_str());
 		this->nnbEnergyWithOxy[typeA*4+typeB][currentIndex] = atof(spt[4].c_str());
 
@@ -207,10 +207,75 @@ int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int se
 		}
 	}
 
-	if(minD < 1.5)
+	if(minD < 1.2)
 		return minIndex;
 	else
 		return -1;
+}
+
+void BasePairLib::getNeighborClusters(BaseDistanceMatrix dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters){
+	if(typeA > 3)
+		typeA = typeA - 4;
+
+	if(typeB > 3)
+		typeB = typeB - 4;
+
+	
+	neighborClusters.clear();
+	distanceToClusterCenters.clear();
+
+
+	if(typeA < 0 || typeA > 3) {
+		cout << "invalid base type: " << typeA << endl;
+		return;
+	}
+
+	if(typeB < 0 || typeB > 3) {
+		cout << "invalid base type: " << typeB << endl;
+		return;
+	}
+
+
+	double minD = 999.9;
+	int minIndex = -1;
+	int pairType = typeA*4+typeB;
+	double d;
+
+	if(sep == 1) { //neighbor base pair
+		int pairNum = nbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < 1.2){
+				neighborClusters.push_back(i);
+				distanceToClusterCenters.push_back(d);
+			}	
+		}
+	}
+	else if(sep == -1){
+		int revPairType = typeB*4+typeA;
+		BaseDistanceMatrix revDM = dm.reverse();
+		int pairNum = nbBasePairNum[revPairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
+			if(d < 1.2){
+				neighborClusters.push_back(i);
+				distanceToClusterCenters.push_back(d);
+			}	
+		}
+	}
+	else if(sep == 0) {
+		return;
+	}
+	else { //non-neighbor base pair
+		int pairNum = nnbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nnbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < 1.2){
+				neighborClusters.push_back(i);
+				distanceToClusterCenters.push_back(d);
+			}	
+		}
+	}
 }
 
 double BasePairLib::distanceToClusterCenter(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
@@ -328,9 +393,9 @@ double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int s
 	}
 	double ene = 0.0;
 
-	if(sep == 1 && minD < 1.5) {
+	if(sep == 1 && minD < 1.2) {
 		int revPairType = typeB*4+typeA;
-		double e = this->nbEnegy[revPairType][minIndex];
+		double e = this->nbEnergy[revPairType][minIndex];
 		double p = this->nbProportion[revPairType][minIndex];
 		if(p < 0.001) p = 0.001;
 		if(p > 0.3) p = 0.3;
@@ -338,8 +403,8 @@ double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int s
 		if(ene > -0.01)
 			ene = -0.01;
 	}
-	else if(sep == -1 && minD < 1.5){
-		double e = this->nbEnegy[typeA*4+typeB][minIndex];
+	else if(sep == -1 && minD < 1.2){
+		double e = this->nbEnergy[typeA*4+typeB][minIndex];
 		double p = this->nbProportion[typeA*4+typeB][minIndex];
 		if(p < 0.001) p = 0.001;
 		if(p > 0.3) p = 0.3;
@@ -347,8 +412,8 @@ double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int s
 		if(ene > -0.01)
 			ene = -0.01;
 	}
-	else if(sep == 2 && minD < 1.5) {
-		ene = (this->nnbEnegy[typeA*4+typeB][minIndex]-2.0)*0.25;
+	else if(sep == 2 && minD < 1.2) {
+		ene = (this->nnbEnergy[typeA*4+typeB][minIndex]-2.0)*0.25;
 	}
 
 	if(ene > 0)
@@ -509,12 +574,12 @@ double BasePairLib::getEnergyWithOxy(BaseDistanceMatrix dm, int typeA, int typeB
 	double ene = 0.0;
 
 	if(sep == 1) {
-		double e = this->nbEnegy[typeA*4+typeB][minIndex];
+		double e = this->nbEnergy[typeA*4+typeB][minIndex];
 		ene = e*0.25;
 
 	}
-	else if(minD < 1.5) {
-		ene = this->nnbEnegy[typeA*4+typeB][minIndex]*0.25;
+	else if(minD < 1.2) {
+		ene = this->nnbEnergy[typeA*4+typeB][minIndex]*0.25;
 	}
 
 	if(ene > 0)

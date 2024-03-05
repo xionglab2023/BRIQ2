@@ -52,6 +52,8 @@ public:
 	}
 	CsMove index500ToCsMove(int index);
 	CsMove index1000ToCsMove(int index);
+	CsMove index1000ToCsMoveWithRandPerturbation(int index);
+	CsMove fixIndex1000WithRandPerturbation(CsMove& cm);
 	CsMove index2000ToCsMove(int indexA, int indexB);
 
 
@@ -67,10 +69,20 @@ inline LocalFrame getCsA(XYZ t, double dihed, double dist){
 	double y = t.y_;
 	double z;
 	z = sqrt(1-x*x-y*y);
+	if(1-x*x-y*y <= 0)
+		z = 0.0000001;
 	if(t.z_ < 0) z = -z;
 	double sx = sqrt(1-x*x);
 	double sy = sqrt(1-y*y);
 	double sz = sqrt(1-z*z);
+
+	if(1-x*x <= 0)
+		sx = 0.0000001;
+	if(1-y*y <= 0)
+		sy = 0.0000001;
+	if(1-z*z <= 0)
+		sz = 0.0000001;
+
 	double sinD1, cosD1, sinD2, cosD2;
 	sinD1 = z/sx/sy;
 	cosD1 = -x*y/sx/sy;
@@ -101,10 +113,21 @@ inline LocalFrame getCsB(XYZ t, double dihed, double dist){
 	double y = t.y_;
 	double z;
 	z = sqrt(1-x*x-y*y);
+	
+	if(1-x*x-y*y <= 0)
+		z = 0.0000001;
+	
 	if(t.z_ < 0) z = -z;
 	double sx = sqrt(1-x*x);
 	double sy = sqrt(1-y*y);
 	double sz = sqrt(1-z*z);
+
+	if(1-x*x <= 0)
+		sx = 0.0000001;
+	if(1-y*y <= 0)
+		sy = 0.0000001;
+	if(1-z*z <= 0)
+		sz = 0.0000001;
 
 	double sinD1, cosD1, sinD2, cosD2;
 
@@ -115,6 +138,7 @@ inline LocalFrame getCsB(XYZ t, double dihed, double dist){
 	double ang1 = atan2(sinD1, cosD1);
 
 	double ang0 = -dihed*0.008726646;
+
 	double tm[3][3];
 	tm[0][0] = x;
 	tm[0][1] = y;

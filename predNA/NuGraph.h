@@ -37,6 +37,7 @@ class NuEdge;
 class EdgeInformation;
 class NuTree;
 class NuGraph;
+class graphInfo;
 
 using namespace std;
 using namespace NSPmodel;
@@ -78,7 +79,10 @@ public:
 	vector<int> neighborList;
 	vector<int> connectionBreakPoints;
 
-	vector<NuNode*> phoGroupA; //pho coordinate not changed
+	vector<NuNode*> baseGroupA; //base coordinate not changed, without masked nodes
+	vector<NuNode*> riboGroupA; //ribose coordinate not changed, without masked nodes
+
+	vector<NuNode*> phoGroupA; //pho coordinate not changed, without masked nodes
 	vector<NuNode*> phoGroupC; //pho coordinate rotamer changed
 
 	double samplingFreq;
@@ -175,7 +179,7 @@ public:
 	NuEdge(NuNode* nodeA, NuNode* nodeB, NuGraph* graph);
 	NuEdge(NuNode* nodeA, NuNode* nodeB, int sep, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib);
 
-	void initNativeMoveSet();
+	void initNearNativeMoveSet();
 	void fixNaiveMove();
 
 	void updateEdgeInfo(NuTree* tree);
@@ -203,14 +207,17 @@ class NuTree {
 public:
 
 	NuGraph* graph;
-	bool* adjMtx; //adjacency matrix, L*L matrix, (L-1)*2 true points
-	vector<NuEdge*> geList; //edge list, (L-1)
+
+	bool* masked; //
+	bool* adjMtx; //adjacency matrix, N*N matrix, (N-1)*2 true points
+	vector<NuEdge*> geList; //edge list, (N-1)
 
 	int poolSize = 100000;
 	double sampFreqNode;
 	int randPoolNode[100000];
 	double sampFreqEdge;
 	int randPoolEdge[100000];
+	double totalSamp;
 
 
 	NuTree(NuGraph* graph);
@@ -226,8 +233,9 @@ public:
 
 	void printEdges();
 	void printEdgeInfo(const string& output);
+	void printEdgeInfo();
 
-	void runAtomicMC(const string& output);
+	graphInfo* runAtomicMC();
 	void runCoarseGrainedMC(const string& output);
 	virtual ~NuTree();
 };
@@ -237,12 +245,14 @@ public:
 	int seqLen;
 	int* seq;
 	bool* connectToDownstream;
+	bool* fixed;
 	NuNode** nodes;
 	double ene;
 	double rms;
 	AtomLib* atLib;
 
-	graphInfo(int seqLen, int* seq, bool* con, NuNode** nodes, double ene, AtomLib* atLib);
+	//graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib);
+	graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib, int mode);
 
 	void setRMS(double rms){
 		this->rms = rms;
@@ -262,35 +272,37 @@ public:
 	int seqLen; //L
 	int* seq; //sequenceType: 0~7
 	int* wcPairPosID;
-	bool* connectToDownstream;
+	bool* connectToDownstream; //bonded to 5' residue
 	int* sepTable; //sequence seperation: -1, 0, 1, 2
+	bool* masked; //masked residues do not participate in energy calculation and structure sampling, do not exist in NuTree
+	bool* fixed; //fixed residues, do not used for rms calculation
 
 	vector<BaseRotamer*> initBaseRotList;
 	vector<RiboseRotamer*> initRiboseRotList;
 	vector<BaseRotamerCG*> initBaseRotCGList;
 	vector<RiboseRotamerCG*> initRiboseRotCGList;
 
-
 	NuNode** allNodes; //L nodes
 	NuEdge** allEdges; //L*L edges
 	vector<NuEdge*> geList; //L*(L-1)/2 edges
-
 	RotamerLib* rotLib;
 	AtomLib* atLib;
 	BasePairLib* pairLib;
-
 	NuPairMoveSetLibrary* moveLib;
 	RnaEnergyTable* et;
-
 	graphInfo* initInfo;
 
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, int InitMode);
 
-	void init(const string& inputFile);
+	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& cst, const string& chainBreak);
+	void initPho();
+	void initForMC(const string& inputFile);
+	void initForCGMC(const string& inputFile);
 	void initForMST(const string& inputFile);
 	void initForMotif(const string& inputFile);
+	void initForSingleResiduePrediction(const string& inputFile, int pos);
 	void initRandWeight();
 	void MST_kruskal(NuTree* output);
 	void printAllEdge();
@@ -303,6 +315,7 @@ public:
 	
 	double totalEnergyTmp();
 	double totalEnergy2();
+
 	void printEnergy();
 	void printEnergyCG();
 

@@ -19,18 +19,21 @@ class CsMove {
 public:
 	TransMatrix tm;
 	XYZ oriMove;
+	int clusterID;
+	int subClusterID;
 
 	CsMove();
-
 	CsMove(const XYZ& oriMove, const TransMatrix& tm);
 	CsMove(const string& s);
 
 	CsMove& operator=(const CsMove& other){
 		this->tm = other.tm;
 		this->oriMove = other.oriMove;
+		this->clusterID = other.clusterID;
+		this->subClusterID = other.subClusterID;
 		return *this;
 	}
-
+	
 	CsMove reverse();
 	CsMove add(CsMove& other);
 	CsMove substract(CsMove& other);

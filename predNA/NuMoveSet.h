@@ -38,9 +38,9 @@ public:
 
 	/*
 	 * Ust SP1000 move index, distance 50 bins, dihedral angle 40 bins, sphere 1000*1000
-	 * move set were divided into 20 groups, the total probability of each group is 5%
+	 * move set were divided into 50 groups, the total probability of each group is 2%
 	 */
-	vector<int> moveIndexList[20];
+	vector<int> moveIndexList[50];
 
 	/**
 	 * @brief Construct an empty IndividualNuPairMoveSet object 
@@ -66,7 +66,20 @@ public:
 	 */
 	int load(istream& ins);
 
+
 	CsMove getRandomMove(OrientationIndex* oi);
+
+	CsMove getRandomMoveWithFixedSubCluster(OrientationIndex* oi, int subClusterID);
+	
+	void printInfo(){
+		cout << "sep: " << sep << endl;
+		cout << "pair: " << pairType << endl;
+		cout << "clusterID: " << clusterID << endl;
+		for(int i=0;i<20;i++){
+			cout << i << " " << moveIndexList[i].size() << endl;
+		}
+	}
+
 
 	virtual ~IndividualNuPairMoveSet();
 };
@@ -87,6 +100,7 @@ public:
 	NuPairMoveSetLibrary(bool withBinary=true, int binaryMode=1);
 	int dump();
 	int load();
+	void printMoveLibInfo();
 	virtual ~NuPairMoveSetLibrary();
 };
 
@@ -102,8 +116,9 @@ public:
 
 	bool fixedNativeCM;
 	CsMove natCM;
+	string type;
 
-	int randPool[10000];
+	int randPool[100000];
 
 	MixedNuPairCluster(int sep, int pairType, NuPairMoveSetLibrary* lib);
 	void updateEdgeInformation(EdgeInformation* ei);
@@ -111,7 +126,11 @@ public:
 		this->natCM = cm;
 		this->fixedNativeCM = true;
 	}
+
 	CsMove getRandomMove();
+	CsMove getRandomMoveWithFixedCluster(CsMove& move);
+	CsMove getRandomMoveWithFixedSubCluster(CsMove& move);
+	CsMove getRandomMoveWithFixedSP1000Index(CsMove& move);
 
 	void printMoveSetInfo();
 

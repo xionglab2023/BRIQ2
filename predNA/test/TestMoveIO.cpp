@@ -48,8 +48,10 @@ int main() {
             if(ii>4) break;
 		}
     set1->dump();
+    set1->printMoveLibInfo();
     delete set1;
     
+    /*
     cout << "Creating NuMoveSet from binaryTable" << endl;
     gettimeofday(&start, NULL);
     set1 = new NuPairMoveSetLibrary(true,2);
@@ -80,6 +82,7 @@ int main() {
 	}
     cout << "Reading BinaryTable is " << timeTxt/timeBinaryTable << "x boosting than reading txt." << endl;
     delete set1;
+    */
 
     cout << "Creating NuMoveSet from binaryCache" << endl;
     gettimeofday(&start, NULL);
@@ -110,5 +113,7 @@ int main() {
         if(ii>4) break;
 	}
     cout << "Reading BinaryTable is " << timeTxt/timeBinaryCache << "x boosting than reading txt." << endl;
+    
+    set1->printMoveLibInfo();
     delete set1;
 }

@@ -466,28 +466,23 @@ void single(int typeA, int typeB, int index1, int index2, const string& outfile)
             bool connectToDownstream[2];
             connectToDownstream[0] = true;
             connectToDownstream[1] = false;
+
+            bool hidden[2];
+
             int seq[2];
             seq[0] = typeA;
             seq[1] = typeB;
 
             cout << "graph info" << endl;
-            graphInfo* gi = new graphInfo(2, seq, connectToDownstream, nodes, 0.0, atLib);
+            graphInfo* gi = new graphInfo(2, seq, connectToDownstream, hidden, nodes, 0.0, atLib, 0);
 
             cout << "print " << endl;
             gi->printPDB(outfile);
 
-
-
             delete confA;
             delete confB;
-
-            
-
-
         }
     }
-
-
 
     delete atLib;
     delete rotA;
@@ -519,8 +514,6 @@ int main(int argc, char** argv){
         string outfile = string(argv[6]);
         single(typeA, typeB, index1, index2, outfile);
     }
-
-
 }
 
 

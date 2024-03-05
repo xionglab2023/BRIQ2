@@ -23,7 +23,6 @@ int main(int argc, char** argv){
      *  usage: xtbEnergy $GROUP_TYPE_A $GROUP_TYPE_B $OI_TYPE $OI_INDEX ($OI_INDEX2) 
      */
 
-
     string groupA = string(argv[1]);
     string groupB = string(argv[2]);
     string cmListFile = string(argv[3]);
@@ -34,6 +33,7 @@ int main(int argc, char** argv){
     ifstream f;
     f.open(cmListFile, ios::in);
     string m;
+    int id = 0;
     while(getline(f, m)){
         CsMove cm(m);
         LocalFrame csA;
@@ -43,7 +43,11 @@ int main(int argc, char** argv){
 
         ofstream out;
         char xx[100];
-        out.open(comFile, ios::out);
+
+        sprintf(xx, "%s-%d.com", comFile.substr(0, comFile.length()-4).c_str(), id);
+        id++;
+        string outFile = string(xx);
+        out.open(outFile, ios::out);
 
 
         out << "%NProc=32" << endl;

@@ -37,6 +37,7 @@ int main() {
     set2->dump();
     delete set2;
 
+/*
     cout << "Initializing BasePair6DEnergyTable from binaryTable" << endl;
     gettimeofday(&start, NULL);
     set2 = new BasePair6DEnergyTableCG(para, true,2);
@@ -47,6 +48,7 @@ int main() {
     set2->cm2Key.printElem(2333);
     cout << "BasePair6DEnergyTableCG nnbKeysEnergy AG 763 74 ene: " << set2->nnbKeysEnergy[2*2250+763][74] << endl;
     delete set2;
+*/
 
     cout << "Initializing BasePair6DEnergyTable from binaryCache" << endl;
     gettimeofday(&start, NULL);

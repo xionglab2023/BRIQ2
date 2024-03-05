@@ -1,9 +1,3 @@
-/*
- * TestGraph.cpp
- *
- *  Created on: 2024,3,4
- *      Author: pengx
- */
 
 #include "geometry/localframe.h"
 #include "model/BaseDistanceMatrix.h"
@@ -23,45 +17,40 @@ using namespace NSPtools;
 using namespace NSPthread;
 
 
-int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
+int runRefinement(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
 
- 	srand(randSeed);
-	BasePairLib* pairLib = new BasePairLib();
+    srand(randSeed);
+    BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-    et->loadCoarseGrainedEnergy();
-
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
-	graph->initForCGMC(inputFile);
+    graph->initForMC(inputFile);
 	graph->initRandWeight();
-	graph->printAllEdge();
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	tree->printEdges();
-	tree->updateNodeInfoCG();
-    
+	tree->updateNodeInfo();
+
 	for(int i=0;i<graph->seqLen;i++){
 		graph->allNodes[i]->printNodeInfo();
 	}
-
-	tree->updateEdgeInfoCG();
-
+	tree->updateEdgeInfo();
 	for(int i=0;i<tree->geList.size();i++){
+		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
 		tree->geList[i]->printPartition();
 	}
 
 	tree->updateSamplingInfo();
 	tree->printNodeInfo();
 
-	clock_t start = clock();
+	cout << "run MC" << endl;
+	graphInfo* gi = tree->runAtomicMC();
+    gi->printPDB(outFile);
 
-	tree->runCoarseGrainedMC(output);
-	clock_t end1 = clock();
-	cout << "time1: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
-
-	delete pairLib;
-	delete rotLib;
-	delete atLib;
+    delete gi;
+    delete pairLib;
+    delete rotLib;
+    delete atLib;
 	delete tree;
 	delete graph;
 
@@ -69,11 +58,11 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inp
 }
 
 void printHelp(){
-    cout << "testGraphCG -in $INPUTFILE -out $OUTPUTFILE -mp 64" << endl;
+    cout << "testGraph -in $INPUTFILE -out $OUTPUTFILE -mp 64" << endl;
 }
 
 int main(int argc, char** argv){
-
+        
     if(argc == 1) {
         printHelp();
         return EXIT_SUCCESS;
@@ -108,7 +97,7 @@ int main(int argc, char** argv){
         shared_ptr<IntFuncTask> request(new IntFuncTask);
         sprintf(xx, "%s-%d.pdb", outputFile.substr(0, outputFile.length()-4).c_str(), i);
         string outFile2 = string(xx);
-        request->asynBind(runCGMC, moveLib, et, inputFile, outFile2, time(0)+i);
+        request->asynBind(runRefinement, moveLib, et, inputFile, outFile2, time(0)+i);
         jid++;
         thrPool->addTask(request);
     }
@@ -125,5 +114,3 @@ int main(int argc, char** argv){
     delete moveLib;
     delete et;
 }
-
-

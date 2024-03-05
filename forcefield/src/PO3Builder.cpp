@@ -200,10 +200,10 @@ PO3Builder::PO3Builder(ForceFieldPara* para) {
 
 void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* riboConfB, PhosphateConformer* outPhoConf){
 
-	XYZ c2,c3,o3,p,op1,op2,o5,c5,c4,o4;
-
+	XYZ o3,p,op1,op2,o5,c5,c4,o4;
 	LocalFrame cs2A = riboConfA->cs2;
 
+	o3 = global2local(cs2A, riboConfA->coords[5]);
 
 	//distance between atom O3' and C5'
 	double d0 = cs2A.origin_.distance(riboConfB->coords[6]);
@@ -212,6 +212,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 	c5 = global2local(cs2A, riboConfB->coords[6]);
 	c4 = global2local(cs2A, riboConfB->coords[3]);
 	o4 = global2local(cs2A, riboConfB->coords[4]);
+
 	LocalFrame cs1;
 	LocalFrame cs2;
 
@@ -247,11 +248,9 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 	int bestIndex1=0;
 
-
 	int regionIndexA;
 	int regionIndexB;
 	int regionIndexC;
-
 
 	if(d0 > 4.5){
 		//If the distance between atom O3' and C5' is larger than 4.5 angstrom, we use default dihedral angles to build PO3
@@ -270,6 +269,35 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		if(xdihed3 < 0) xdihed3 += 360;
 		if(xdihed4 < 0) xdihed4 += 360;
 		if(xdihed5 < 0) xdihed5 += 360;
+
+		if(xdihed3 < 0 || xdihed3 >= 360 || isnan(xdihed3)) {
+			cout << "xdihed3: " << xdihed3 << endl;
+			cout << "o3: " << o3.toString() << endl;
+			cout << "p: " << p.toString() << endl;
+			cout << "o5: " << o5.toString() << endl;
+			cout << "c5: " << c5.toString() << endl;
+			exit(0);
+		}
+
+		if(xdihed4 < 0 || xdihed4 >= 360 || isnan(xdihed4)) {
+			cout << "xdihed4: " << xdihed4 << endl;
+			cout << "p: " << p.toString() << endl;
+			cout << "o5: " << o5.toString() << endl;
+			cout << "c5: " << c5.toString() << endl;
+			cout << "c4: " << c4.toString() << endl;
+			exit(0);
+		}
+
+		if(xdihed5 < 0 || xdihed5 >= 360 || isnan(xdihed5)) {
+			cout << "xdihed5: " << xdihed5 << endl;
+		
+			cout << "o5: " << o5.toString() << endl;
+			cout << "c5: " << c5.toString() << endl;
+			cout << "c4: " << c4.toString() << endl;
+			cout << "o4: " << o4.toString() << endl;
+			exit(0);
+		}
+
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
 		if(u < 0)
@@ -346,7 +374,6 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		return;
 	}
 
-
 	for(int i=0;i<d1d2LibSize;i++){
 		if(impType == 'A') {
 			dihed1 = (int)d1d2Lib1A[i].x_;
@@ -357,6 +384,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			dihed2 = (int)d1d2Lib1B[i].y_;
 		}
 		indexDD = (dihed1 * 360) + dihed2;
+		//cout << "indexDD: " << indexDD << endl;
 		p = this->pList[indexDD];
 		o5 = this->o5List[indexDD];
 
@@ -369,6 +397,35 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		if(xdihed3 < 0) xdihed3 += 360;
 		if(xdihed4 < 0) xdihed4 += 360;
 		if(xdihed5 < 0) xdihed5 += 360;
+
+		if(xdihed3 < 0 || xdihed3 >= 360 || isnan(xdihed3)) {
+			cout << "xdihed3: " << xdihed3 << endl;
+			cout << "o3: " << o3.toString() << endl;
+			cout << "p: " << p.toString() << endl;
+			cout << "o5: " << o5.toString() << endl;
+			cout << "c5: " << c5.toString() << endl;
+			exit(0);
+		}
+
+		if(xdihed4 < 0 || xdihed4 >= 360 || isnan(xdihed4)) {
+			cout << "xdihed4: " << xdihed4 << endl;
+			cout << "p: " << p.toString() << endl;
+			cout << "o5: " << o5.toString() << endl;
+			cout << "c5: " << c5.toString() << endl;
+			cout << "c4: " << c4.toString() << endl;
+			exit(0);
+		}
+
+		if(xdihed5 < 0 || xdihed5 >= 360 || isnan(xdihed5)) {
+			cout << "xdihed5: " << xdihed5 << endl;
+		
+			cout << "o5: " << o5.toString() << endl;
+			cout << "c5: " << c5.toString() << endl;
+			cout << "c4: " << c4.toString() << endl;
+			cout << "o4: " << o4.toString() << endl;
+			exit(0);
+		}
+
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
 		if(u < 0)
@@ -432,6 +489,17 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		else
 			regionIndexC = 5;
 
+		
+		/*
+			cout << "impIndexA: " << impIndexA << endl;
+			cout << "impIndexB: " << impIndexB << endl;
+			cout << "dihed1: " << dihed1 << endl;
+			cout << "dihed2: " << dihed2 << endl;
+			cout << "dihed3: " << xdihed3 << endl;
+			cout << "dihed4: " << xdihed4 << endl;
+			cout << "dihed5: " << xdihed5 << endl;
+		*/
+
 		e += eImpD1D2[impIndexA*32400 + ((int)(dihed1*0.5))*180 + (int)(dihed2*0.5)] + para->rnaDihedImpD1D2Shift[regionIndexA];
 		e += eImpD4D5[impIndexB*32400 + ((int)(xdihed4*0.5))*180 + (int)(xdihed5*0.5)] + para->rnaDihedImpD4D5Shift[regionIndexB];
 		e += eD2D4D3[((int)(dihed2*0.166666666))*10800 + ((int)(xdihed4*0.166666666))*180 + (int)(xdihed3*0.5)] + para->rnaDihedD2D3D4Shift[regionIndexC];
@@ -443,6 +511,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			minE = e;
 		}
 	}
+
 
 	if(d0 > 3.9){
 		//If the distance between atom O3' and C5' is larger than 3.8 angstrom, we use default dihedral angles to build PO3
@@ -546,6 +615,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 	}
 
+
 	double libErr;
 	if(impType == 'A')
 		libErr = lib2ErrorA[bestDihed1*d1d2LibSize+bestDihed2];
@@ -573,6 +643,37 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 				if(xdihed3 < 0) xdihed3 += 360;
 				if(xdihed4 < 0) xdihed4 += 360;
 				if(xdihed5 < 0) xdihed5 += 360;
+
+				
+			if(xdihed3 < 0 || xdihed3 >= 360 || isnan(xdihed3)) {
+				cout << "xdihed3: " << xdihed3 << endl;
+				cout << "o3: " << o3.toString() << endl;
+				cout << "p: " << p.toString() << endl;
+				cout << "o5: " << o5.toString() << endl;
+				cout << "c5: " << c5.toString() << endl;
+				exit(0);
+			}
+
+			if(xdihed4 < 0 || xdihed4 >= 360 || isnan(xdihed4)) {
+				cout << "xdihed4: " << xdihed4 << endl;
+				cout << "p: " << p.toString() << endl;
+				cout << "o5: " << o5.toString() << endl;
+				cout << "c5: " << c5.toString() << endl;
+				cout << "c4: " << c4.toString() << endl;
+				exit(0);
+			}
+
+			if(xdihed5 < 0 || xdihed5 >= 360 || isnan(xdihed5)) {
+				cout << "xdihed5: " << xdihed5 << endl;
+		
+				cout << "o5: " << o5.toString() << endl;
+				cout << "c5: " << c5.toString() << endl;
+				cout << "c4: " << c4.toString() << endl;
+				cout << "o4: " << o4.toString() << endl;
+				exit(0);
+			}
+
+
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
 				if(u < 0)
@@ -673,6 +774,35 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 				if(xdihed3 < 0) xdihed3 += 360;
 				if(xdihed4 < 0) xdihed4 += 360;
 				if(xdihed5 < 0) xdihed5 += 360;
+
+				if(xdihed3 < 0 || xdihed3 >= 360 || isnan(xdihed3)) {
+					cout << "xdihed3: " << xdihed3 << endl;
+					cout << "o3: " << o3.toString() << endl;
+					cout << "p: " << p.toString() << endl;
+					cout << "o5: " << o5.toString() << endl;
+					cout << "c5: " << c5.toString() << endl;
+					exit(0);
+				}
+
+				if(xdihed4 < 0 || xdihed4 >= 360 || isnan(xdihed4)) {
+					cout << "xdihed4: " << xdihed4 << endl;
+					cout << "p: " << p.toString() << endl;
+					cout << "o5: " << o5.toString() << endl;
+					cout << "c5: " << c5.toString() << endl;
+					cout << "c4: " << c4.toString() << endl;
+					exit(0);
+				}
+
+				if(xdihed5 < 0 || xdihed5 >= 360 || isnan(xdihed5)) {
+					cout << "xdihed5: " << xdihed5 << endl;
+		
+					cout << "o5: " << o5.toString() << endl;
+					cout << "c5: " << c5.toString() << endl;
+					cout << "c4: " << c4.toString() << endl;
+					cout << "o4: " << o4.toString() << endl;
+					exit(0);
+				}
+
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
 				if(u < 0)
@@ -750,13 +880,15 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[bestDihed1][bestDihed2], minE*para->wtPho);
 		return;
 	}
+
 }
 
 double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboConfB){
-	XYZ c2,c3,o3,p,op1,op2,o5,c5,c4,o4;
+	XYZ o3,p,op1,op2,o5,c5,c4,o4;
 
 	LocalFrame cs2A = riboConfA->cs2;
 
+	o3 = global2local(cs2A, riboConfA->coords[5]);
 
 	//distance between atom O3' and C5'
 	double d0 = cs2A.origin_.distance(riboConfB->coords[6]);
@@ -1288,10 +1420,10 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 }
 
 double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* riboConfB) {
-	XYZ c2,c3,o3,p,op1,op2,o5,c5,c4,o4;
+	XYZ o3,p,op1,op2,o5,c5,c4,o4;
 
 	LocalFrame cs2A = riboConfA->cs2;
-
+	o3 = global2local(cs2A, riboConfA->coords[5]);
 
 	//distance between atom O3' and C5'
 	double d0 = cs2A.origin_.distance(riboConfB->coords[6]);

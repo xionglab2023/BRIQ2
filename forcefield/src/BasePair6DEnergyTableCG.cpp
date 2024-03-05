@@ -16,7 +16,6 @@ using namespace NSPdataio;
 BasePair6DEnergyTableCG::BasePair6DEnergyTableCG(ForceFieldPara* para, bool withBinary, int binaryMode):
 cm2Key(withBinary, binaryMode)
 {
-
 	this->wtNb = para->wtBp1;
 	this->wtNnb = para->wtBp2;
 

@@ -1,7 +1,7 @@
 /*
  * AssembleMultipleFragments.cpp
  *
- *  Created on: 2022Äê6ÔÂ14ÈÕ
+ *  Created on: 2022ï¿½ï¿½6ï¿½ï¿½14ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -26,7 +26,6 @@ int main(int argc, char** argv){
 		cout << "Usage: rna_assemble_multiFragments $INPUTFILE $OUTPUT" << endl;
 		exit(0);
 	}
-
 
 	string inputFile = string(argv[1]);
 	string output = string(argv[2]);
@@ -193,7 +192,6 @@ int main(int argc, char** argv){
 
 	cout << "read coordinate system" << endl;
 
-
 	for(int k=1;k<fragmentNum+1;k++){
 		id = 0;
 		char fragID = '0'+k;
@@ -247,7 +245,6 @@ int main(int argc, char** argv){
 
 		node->riboseConf->updateLocalFrame(csListA[i]);
 		node->riboseConf->updateRotamer(rot);
-
 		nodeList[i] = node;
 	}
 
@@ -261,7 +258,6 @@ int main(int argc, char** argv){
 		nodeA->connectToNeighbor = true;
 		pb->buildPhosphate(nodeA->riboseConf, nodeB->riboseConf, nodeA->phoConf);
 	}
-
 
 	bool* connectToNeighbor = new bool[seqLen];
 	for(int i=0;i<seqLen;i++){

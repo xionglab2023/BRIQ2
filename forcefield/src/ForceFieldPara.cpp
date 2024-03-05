@@ -1,7 +1,7 @@
 /*
  * ForceFieldPara.cpp
  *
- *  Created on: 2023Äê4ÔÂ25ÈÕ
+ *  Created on: 2023ï¿½ï¿½4ï¿½ï¿½25ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -14,12 +14,13 @@ ForceFieldPara::ForceFieldPara() {
 	this->clashLamdaNb = 2.5;
 	this->clashLamdaNnb = 2.5;
 
-	this->hbLamda1 = 0.1;
-	this->hbLamda2 = 0.15;
+	this->hbLamda1 = 0.15;
+	this->hbLamda2 = 0.3;
+	this->kHbOri = 1.0;
 	this->wtHb = 1.0;
 
 	this->rnaKAng = 0.1;
-	this->rnaKBond = 7.0;
+	this->rnaKBond = 9.0;
 
 	this->wtPho = 0.7;
 	this->wtRibose = 1.0;
@@ -29,6 +30,9 @@ ForceFieldPara::ForceFieldPara() {
 		rnaDihedImpD4D5Shift[i] = 0.0;
 		rnaDihedD2D3D4Shift[i] = 0.0;
 	}
+
+	rnaDihedImpD4D5Shift[0] = -1.0;
+	rnaDihedImpD4D5Shift[3] = -1.0;
 
 	for(int i=0;i<16;i++){
 		rnaRiboseRotamerShift[i] = 0.0;
@@ -45,20 +49,28 @@ ForceFieldPara::ForceFieldPara() {
 		wtRiboseOxy[i] = 1.0;
 	}
 
+	this->bwTag = "default";
 
 	this->wtBp1 = 1.0;
 	this->wtBp2 = 1.0;
 //	this->bbClash = 0.4;
 
 	this->wtO4O2C2Nb = 0.7;
-	this->wtO4O2C2Nnb = 0.7;
+	this->wtO4O2C2Nnb = 0.3;
 
 	this->wtClash = 1.0;
 
-	this->T0 = 2.5;
-	this->T1 = 0.1;
+	this->T0 = 15.0;
+	this->T1 = 1.5;
+	this->T2 = 0.15;
+	this->T3 = 0.015;
+
 	this->anneal = 0.95;
-	this->stepNum = 10;
+	this->kStepNum1 = 1280;
+	this->kStepNum2 = 1280;
+	this->kStepNum3 = 1280;
+	this->kNodeFreq = 1.0;
+
 	this->outFreq = 1000;
 
 	this->lamdaClash = 2.8;
@@ -83,20 +95,22 @@ ForceFieldPara::ForceFieldPara() {
 
 }
 
-
 ForceFieldPara::ForceFieldPara(const string& paraFile){
 	this->clashLamdaNb = 2.5;
 	this->clashLamdaNnb = 2.5;
 
-	this->hbLamda1 = 0.1;
-	this->hbLamda2 = 0.15;
+	this->hbLamda1 = 0.15;
+	this->hbLamda2 = 0.3;
+	this->kHbOri = 1.0;
 	this->wtHb = 1.0;
 
 	this->rnaKAng = 0.1;
-	this->rnaKBond = 7.0;
+	this->rnaKBond = 9.0;
 
 	this->wtPho = 0.7;
 	this->wtRibose = 1.0;
+
+	string bwTag = "default";
 
 	for(int i=0;i<6;i++){
 		rnaDihedImpD1D2Shift[i] = 0.0;
@@ -104,9 +118,13 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 		rnaDihedD2D3D4Shift[i] = 0.0;
 	}
 
+	rnaDihedImpD4D5Shift[0] = -1.0;
+	rnaDihedImpD4D5Shift[3] = -1.0;
+
 	for(int i=0;i<16;i++){
 		rnaRiboseRotamerShift[i] = 0.0;
 	}
+
 
 	rnaRiboseRotamerShift[0] = 1.3;   rnaRiboseRotamerShift[1] = -1.8;
 	rnaRiboseRotamerShift[4] = 1.4;   rnaRiboseRotamerShift[5] = -2.0;
@@ -119,18 +137,28 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	}
 
 
-	this->wtBp1 = 1.0;
-	this->wtBp2 = 1.0;
+	this->wtBp1 = 2.0;
+	this->wtBp2 = 2.0;
+//	this->bbClash = 0.4;
 
 	this->wtO4O2C2Nb = 0.7;
-	this->wtO4O2C2Nnb = 0.7;
+	this->wtO4O2C2Nnb = 0.3;
 
 	this->wtClash = 1.0;
 
-	this->T0 = 2.5;
-	this->T1 = 0.1;
+	this->T0 = 15.0;
+	this->T1 = 1.5;
+	this->T2 = 0.15;
+	this->T3 = 0.015;
+
+
+
 	this->anneal = 0.95;
-	this->stepNum = 10;
+	this->kStepNum1 = 1280;
+	this->kStepNum2 = 1280;
+	this->kStepNum3 = 1280;
+	this->kNodeFreq = 0.8;
+
 	this->outFreq = 1000;
 
 	this->lamdaClash = 2.8;
