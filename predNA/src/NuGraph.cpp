@@ -3832,7 +3832,6 @@ void NuGraph::initPho(PO3Builder* pb) {
 	}
 }
 
-
 void NuGraph::initForMC(const string& inputFile){
 
 	NSPtools::InputParser input(inputFile);
@@ -4184,7 +4183,7 @@ double NuGraph::totalEnergyCG(){
 }
 
 double NuGraph::totalEnergyCGTmp(){
-		double ene = 0.0;
+	double ene = 0.0;
 	int i,j,k, sep, sepR;
 	for(i=0;i<seqLen;i++){
 		if(masked[i]) continue;

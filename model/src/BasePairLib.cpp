@@ -15,8 +15,8 @@ BasePairLib::BasePairLib() {
 	string nbCenter = path+"basePair/nb.center.dm";
 	string nbCenterInfo = path+"basePair/nb.center.info";
 
-	string nnbCenter = path+"basePair/mergedBasePair/nnb.merge.dm";
-	string nnbCenterInfo = path+"basePair/mergedBasePair/nnb.merge.info";
+	string nnbCenter = path+"basePair/bpDensityNnb/nnb.center.dm";
+	string nnbCenterInfo = path+"basePair/bpDensityNnb/nnb.center.info";
 
 	ifstream file;
 	string s;
