@@ -14,9 +14,10 @@
  
 #include "predNA/NuGraph.h"
 
-#define MOTIFASSIGNER_SEED_CUTOFF -9.0
+#define MOTIFASSIGNER_SEED_CUTOFF -8.5
 #define MOTIFASSIGNER_GROW_CUTOFF -5.5
 #define MOTIFASSIGNER_RECALL_CUTOFF -7.0
+#define DEBUG
 
 namespace NSPbm {
     using namespace NSPpredNA;

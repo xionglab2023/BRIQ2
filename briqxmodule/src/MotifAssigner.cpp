@@ -108,8 +108,10 @@ namespace NSPbm {
                 }
                 
                 if(curEdge->weight <= revEdge->weight && curEdge->weight <= MOTIFASSIGNER_SEED_CUTOFF) {
+                    cout << "get seed " << i << "-" << j << ", weight=" << curEdge->weight << endl;
                     seedEdge.emplace_back(curEdge);
                 } else if(revEdge->weight < curEdge->weight && revEdge->weight <= MOTIFASSIGNER_SEED_CUTOFF) {
+                    cout << "get seed " << j << "-" << i << ", weight=" << revEdge->weight << endl;
                     seedEdge.emplace_back(revEdge);
                 }
             }
@@ -168,6 +170,9 @@ namespace NSPbm {
         int nSeed = seedEdge.size();
         for(int i=0; i<nSeed; i++) {
             set<int> selNode{seedEdge[i]->indexA, seedEdge[i]->indexB};
+            #ifdef DEBUG
+                cout << "seed node: " << seedEdge[i]->indexA << "," << seedEdge[i]->indexB << endl;
+            #endif
             set<int>* pCurConnect = new set<int>;
             set<int>* pLastConnect = new set<int>, *ptmp;
             set<NuEdge*> selEdge = {seedEdge[i]};
@@ -215,6 +220,14 @@ namespace NSPbm {
             // TODO: filter motifs by recheck compactness
 
             vector<int> NodeIndexVec(selNode.begin(), selNode.end());
+            #ifdef DEBUG
+                int nSelNode = NodeIndexVec.size();
+                cout << "Selected Nodes: ";
+                for(int j=0; j<nSelNode; j++) {
+                    cout << NodeIndexVec[j] << ",";
+                }
+                cout << endl;
+            #endif
 
             // TODO: compute ene
             double ene = 0;
@@ -224,8 +237,8 @@ namespace NSPbm {
             // TODO: redundent reduction
             int nmtf =  motifs.size();
             bool dup = false;
-            for(int i=0; i<nmtf; i++) {
-                if(*motifs[i] == *pMotif) {
+            for(int j=0; j<nmtf; j++) {
+                if(*motifs[j] == *pMotif) {
                     dup = true;
                     break;
                 }

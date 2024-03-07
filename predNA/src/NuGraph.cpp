@@ -3760,6 +3760,9 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	 */
 	for(int i=0;i<seqLen;i++){
 		for(int j=0;j<seqLen;j++){
+			#ifdef DEBUG
+				cout << "i=" <<i<<", j="<<j<<endl;
+			#endif
 			this->allEdges[i*seqLen+j] = new NuEdge(allNodes[i], allNodes[j], this);
 			this->allEdges[i*seqLen+j]->graph = this;
 			this->allEdges[i*seqLen+j]->weight = 0.0;
@@ -3835,7 +3838,7 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 void NuGraph::initPho(){
 	for(int i=0;i<seqLen;i++){
 		if(connectToDownstream[i]){
-			et->pb->buildPhosphate(allNodes[i]->riboseConf, allNodes[i]->riboseConf, allNodes[i]->phoConf);
+			et->pb->buildPhosphate(allNodes[i]->riboseConf, allNodes[i+1]->riboseConf, allNodes[i]->phoConf);
 			allNodes[i]->phoConfTmp->copyValueFrom(allNodes[i]->phoConf);
 		}
 	}
@@ -3846,7 +3849,7 @@ void NuGraph::initPho(){
 void NuGraph::initPho(PO3Builder* pb) {
 	for(int i=0;i<seqLen;i++){
 		if(connectToDownstream[i]){
-			pb->buildPhosphate(allNodes[i]->riboseConf, allNodes[i]->riboseConf, allNodes[i]->phoConf);
+			pb->buildPhosphate(allNodes[i]->riboseConf, allNodes[i+1]->riboseConf, allNodes[i]->phoConf);
 			allNodes[i]->phoConfTmp->copyValueFrom(allNodes[i]->phoConf);
 		}
 	}

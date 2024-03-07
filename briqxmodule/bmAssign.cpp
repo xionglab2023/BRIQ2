@@ -93,6 +93,8 @@ int main(int argc, char** argv) {
         RnaEnergyTable* et = new RnaEnergyTable();
         et->loadEnergyWithout6D();
         NuGraph* pNuGragh = new NuGraph(tmpInputFileName, rtl, atl, bpl, et, 1);
+        pNuGragh->initInfo->printPDB(
+            outPath.string() + "/" + outPDBprefix.string() + "-full" + ".pdb");
         MotifAssigner* mtfa = new MotifAssigner(pNuGragh);
         if(cmdArgs.specifiedOption("-dev")) {
             ofstream outCSV;
@@ -106,6 +108,7 @@ int main(int argc, char** argv) {
             mtfa->bySeed();
         }
         int nMotif = mtfa->motifs.size();
+        cout << "find " << nMotif << " motifs" << endl;
         for(int i=0; i<nMotif; i++) {
             mtfa->motifs[i]->writePDB(
                 outPath.string() + "/" + outPDBprefix.string() + "-" + to_string(i) + ".pdb");
