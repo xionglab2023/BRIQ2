@@ -86,6 +86,14 @@ int main(int argc, char** argv) {
         string cstStr = ".";
         cstStr.resize(rss.seq.size(),'.');
         tmpInput << "cst " << cstStr << endl;
+        int nbreak = rss.breakList.size();
+        if(nbreak > 0) {
+            tmpInput << "break ";
+            for(int i=0; i<nbreak-1; i++) {
+                tmpInput<< rss.breakList[i] << " ";
+            }
+            tmpInput<< rss.breakList[nbreak-1] << endl;
+        }
         tmpInput.close();
         delete rnaPdb;
         RotamerLib* rtl = new RotamerLib();
@@ -105,7 +113,18 @@ int main(int argc, char** argv) {
             }
             mtfa->writeEdgeWeight(outCSV);
         } else {
-            mtfa->bySeed();
+            #ifdef DEBUG
+                ofstream outCSV;
+                string csvFileName = outPath.string() + "/" + outPDBprefix.string() + "-EdgeWeights" + ".csv";
+                outCSV.open(csvFileName, ios::out);
+                if(!outCSV.is_open()) {
+                    throw "[Error] Fail to open file" + csvFileName;
+                }
+                mtfa->writeEdgeWeight(outCSV);
+                mtfa->bySeed(outPath.string(), outPDBprefix.string());
+            #else
+                mtfa->bySeed();
+            #endif
         }
         int nMotif = mtfa->motifs.size();
         cout << "find " << nMotif << " motifs" << endl;

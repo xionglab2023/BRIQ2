@@ -998,8 +998,9 @@ NuEdge::NuEdge(NuNode* nodeA, NuNode* nodeB, NuGraph* graph){
 	int typeB = nodeB->baseType%4;
 
 	this->ei = new EdgeInformation(sep, typeA, typeB, graph->pairLib);
-	this->moveSet = new MixedNuPairCluster(sep, typeA*4+typeB, graph->moveLib);
-	this->moveSet->updateEdgeInformation(this->ei);
+	this->moveSet = nullptr;
+	// this->moveSet = new MixedNuPairCluster(sep, typeA*4+typeB, graph->moveLib);
+	// this->moveSet->updateEdgeInformation(this->ei);
 	this->weight = this->ei->weight;
 
 	this->weightRand = weight;

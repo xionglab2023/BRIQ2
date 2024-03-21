@@ -71,6 +71,63 @@ namespace NSPbm {
     }
 
 
+    MotifAssigner::MotifAssigner(NuGraph* nuGraphIn) {
+        nuGraph = nuGraphIn;
+        int seqLen = nuGraph->seqLen;
+        for(int i=0; i<seqLen; i++) {
+            for(int j=i+2; j<seqLen; j++) {
+                NuEdge* curEdge = nuGraph->allEdges[i*seqLen+j];
+                NuEdge* revEdge = nuGraph->allEdges[j*seqLen+i];
+                bool isStackILast=false, isStackINext=false, isStackJLast=false, isStackJNext=false;
+                bool isBpILastJNext =false, isBpINextJLast=false;
+                if(i>0 && nuGraph->connectToDownstream[i-1]) {
+                    if(nuGraph->allEdges[(i-1)*seqLen+i]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX &&
+                       nuGraph->allEdges[i*seqLen+i-1]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX) {
+                        isStackILast = true;
+                    }
+                }
+                if(nuGraph->connectToDownstream[j-1]) {
+                    if(nuGraph->allEdges[(j-1)*seqLen+j]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX &&
+                       nuGraph->allEdges[j*seqLen+j-1]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX) {
+                        isStackJLast = true;
+                    }
+                }
+                if(nuGraph->connectToDownstream[i]) {
+                    if(nuGraph->allEdges[(i+1)*seqLen+i]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX &&
+                       nuGraph->allEdges[i*seqLen+i+1]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX) {
+                        isStackINext = true;
+                    }
+
+                }
+                if(nuGraph->connectToDownstream[j]) {
+                    if(nuGraph->allEdges[(j+1)*seqLen+j]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX &&
+                       nuGraph->allEdges[j*seqLen+j+1]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX) {
+                        isStackJNext = true;
+                    }
+                }
+                if(isStackILast && isStackJNext) {
+                    if(nuGraph->allEdges[(i-1)*seqLen+j+1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX &&
+                       nuGraph->allEdges[(j+1)*seqLen+i-1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
+                        isBpILastJNext=true;
+                    }
+                }
+                if(isStackINext && isStackJLast) {
+                    if(nuGraph->allEdges[(i+1)*seqLen+j-1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX &&
+                       nuGraph->allEdges[(j-1)*seqLen+i+1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
+                        isBpINextJLast=true;
+                    }
+                }
+                
+                if((isStackILast && isStackJNext && isBpILastJNext) || 
+                   (isStackINext && isStackJLast && isBpINextJLast)) {
+                    helixEdge.emplace(curEdge);
+                    helixEdge.emplace(revEdge);
+                }
+            }
+        }
+    }
+
+
     int MotifAssigner::writeEdgeWeight(ostream& outCSV) {
         int seqLen = nuGraph->seqLen;
         outCSV << "nodeID1,nodeID2,Weight,isWC,isNeighbor" << endl;
@@ -93,8 +150,11 @@ namespace NSPbm {
         return EXIT_SUCCESS;
     }
 
-
+    #ifdef DEBUG
+    void MotifAssigner::bySeed(string&& outPath, string&& outPDBprefix) {
+    #else
     void MotifAssigner::bySeed() {
+    #endif
         vector<NuEdge*> seedEdge;  // take non-neighboring nonWC pairs as seed
         int seqLen = nuGraph->seqLen;
         for(int i=0; i<seqLen; i++) {
@@ -102,16 +162,16 @@ namespace NSPbm {
                 NuEdge* curEdge = nuGraph->allEdges[i*seqLen+j];
                 NuEdge* revEdge = nuGraph->allEdges[j*seqLen+i];
 
-                // Exclude WC Edge in seed search
-                if(curEdge->isWC()) {
+                // Exclude helix WC Edge in seed search
+                if(curEdge->isWC() && helixEdge.count(curEdge)) {
                     continue;
                 }
                 
                 if(curEdge->weight <= revEdge->weight && curEdge->weight <= MOTIFASSIGNER_SEED_CUTOFF) {
-                    cout << "get seed " << i << "-" << j << ", weight=" << curEdge->weight << endl;
+                    cout << "get seed " << i << "-" << j << ", weight=" << curEdge->weight << ", WC: " << curEdge->isWC() << endl;
                     seedEdge.emplace_back(curEdge);
                 } else if(revEdge->weight < curEdge->weight && revEdge->weight <= MOTIFASSIGNER_SEED_CUTOFF) {
-                    cout << "get seed " << j << "-" << i << ", weight=" << revEdge->weight << endl;
+                    cout << "get seed " << j << "-" << i << ", weight=" << revEdge->weight << ", WC: " << revEdge->isWC() << endl;
                     seedEdge.emplace_back(revEdge);
                 }
             }
@@ -168,34 +228,54 @@ namespace NSPbm {
         }
 
         int nSeed = seedEdge.size();
+        #ifdef DEBUG
+            ofstream outCSV;
+            string csvFileName = outPath + "/" + outPDBprefix + "-Seeds" + ".csv";
+            outCSV.open(csvFileName, ios::out);
+            if(!outCSV.is_open()) {
+                throw "[Error] Fail to open file" + csvFileName;
+            }
+            outCSV << "indexA,indexB,weight,isWC" << endl;
+        #endif
         for(int i=0; i<nSeed; i++) {
             set<int> selNode{seedEdge[i]->indexA, seedEdge[i]->indexB};
             #ifdef DEBUG
                 cout << "seed node: " << seedEdge[i]->indexA << "," << seedEdge[i]->indexB << endl;
+                outCSV << seedEdge[i]->indexA << ","
+                       << seedEdge[i]->indexB << ","
+                       << seedEdge[i]->weight << ","
+                       << seedEdge[i]->isWC() << endl;
             #endif
             set<int>* pCurConnect = new set<int>;
             set<int>* pLastConnect = new set<int>, *ptmp;
             set<NuEdge*> selEdge = {seedEdge[i]};
+            // Initialize pCurConnect set
             for(auto& it:selNode) {
                 // for(const int& it2: *(nnbNeighborMap[it])) {
                 //     connectNode.emplace(it2);
                 // }
+                // connect all nnb neighbors (non-sequential-neighboring interactions)
                 set_union(pCurConnect->begin(), pCurConnect->end(), 
                           nnbNeighborMap[it]->begin(), nnbNeighborMap[it]->end(),
                           inserter(*pCurConnect, pCurConnect->begin()));
+                // connect nb neighbors
                 for(const int& it2: *(nbNeighborMap[it])) {
+                    // if current node is WC-only node and the nb neighbor is also WC-only node, then grow will stop,
+                    // so the nb neighbor excluded
                     if(WCNodeSet.count(it2) && WCNodeSet.count(it)) {
                         continue;
                     }
                     pCurConnect->emplace(it2);
                 }
             }
+            // iterate until pCurConnect nodes are already included in selNode
             while(!includes(selNode.begin(), selNode.end(), pCurConnect->begin(), pCurConnect->end())) {
                 set_union(selNode.begin(), selNode.end(),
                           pCurConnect->begin(), pCurConnect->end(),
                           inserter(selNode, selNode.begin()));
                 //TODO selEdge
                 pLastConnect->clear();
+                // initialize the connected nodes in next round according to pCurConnect, use pLastConnect temporarily
                 for(auto& it:*pCurConnect) {
                     // for(const int& it2: *(nnbNeighborMap[it])) {
                     //     connectNode.emplace(it2);
@@ -210,6 +290,7 @@ namespace NSPbm {
                         pLastConnect->emplace(it2);
                     }
                 }
+                // point pLastConnect to the last round pCurConnect, and pCurConnect to the next round connected nodes
                 ptmp = pCurConnect;
                 pCurConnect = pLastConnect;
                 pLastConnect = ptmp;
@@ -246,6 +327,9 @@ namespace NSPbm {
             dup || motifs.emplace_back(pMotif);
             
         }
+        #ifdef DEBUG
+            outCSV.close();
+        #endif
 
         for(auto& it:outEdgeMap) {
             delete it.second;

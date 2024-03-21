@@ -17,6 +17,8 @@
 #define MOTIFASSIGNER_SEED_CUTOFF -8.5
 #define MOTIFASSIGNER_GROW_CUTOFF -5.5
 #define MOTIFASSIGNER_RECALL_CUTOFF -7.0
+#define MOTIFASSIGNER_STACK_WEIGHT_MAX -1e-6
+#define MOTIFASSIGNER_BP_WEIGHT_MAX -12
 #define DEBUG
 
 namespace NSPbm {
@@ -84,10 +86,9 @@ namespace NSPbm {
     class MotifAssigner {
         public:
             NuGraph* nuGraph;
+            set<NuEdge*> helixEdge;
             vector<MotifGraph*> motifs;
-            MotifAssigner(NuGraph* nuGraphIn) {
-                nuGraph = nuGraphIn;
-            };
+            MotifAssigner(NuGraph* nuGraphIn);
             /**
              * @brief Write edge weights in csv format, with 5 columns:
              * nodeIndex1, nodeIndex2, weight, isWC, isNB
@@ -96,7 +97,11 @@ namespace NSPbm {
              * @return int execute state code
              */
             int writeEdgeWeight(ostream& outCSV);  // write edge weights in csv format, with feature columns 
+            #ifdef DEBUG
+            void bySeed(string&&, string&&);
+            #else
             void bySeed();  // assign motif by greedy algorithm starting from seed BPs
+            #endif
             void byLouvain();
 
             virtual ~MotifAssigner();
