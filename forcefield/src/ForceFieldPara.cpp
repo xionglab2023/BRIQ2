@@ -17,7 +17,7 @@ ForceFieldPara::ForceFieldPara() {
 	this->hbLamda1 = 0.15;
 	this->hbLamda2 = 0.3;
 	this->kHbOri = 1.0;
-	this->wtHb = 1.0;
+	this->wtHb = 1.8;
 
 	this->rnaKAng = 0.1;
 	this->rnaKBond = 9.0;
@@ -51,9 +51,10 @@ ForceFieldPara::ForceFieldPara() {
 
 	this->bwTag = "default";
 
-	this->wtBp1 = 1.0;
-	this->wtBp2 = 1.0;
+	this->wtBp1 = 2.0;
+	this->wtBp2 = 2.0;
 //	this->bbClash = 0.4;
+
 
 	this->wtO4O2C2Nb = 0.7;
 	this->wtO4O2C2Nnb = 0.3;
@@ -137,8 +138,8 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	}
 
 
-	this->wtBp1 = 2.0;
-	this->wtBp2 = 2.0;
+	this->wtBp1 = 1.0;
+	this->wtBp2 = 1.0;
 //	this->bbClash = 0.4;
 
 	this->wtO4O2C2Nb = 0.7;

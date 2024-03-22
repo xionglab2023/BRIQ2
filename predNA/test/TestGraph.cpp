@@ -44,12 +44,19 @@ int main(int argc, char** argv){
 	cout << "load energy table" << endl;
 
 	RnaEnergyTable* et = new RnaEnergyTable();
+	
+	et->para->kStepNum1 = 300;
+	et->para->kStepNum2 = 300;
+	et->para->kStepNum3 = 300;
+
 	et->loadAtomicEnergy();
 
 	cout << "init graph" << endl;
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
 	graph->initForMC(inputFile);
 	
+	//graph->initInfo->printPDB(output);
+
 	graph->initRandWeight();
 	cout << "all edge" << endl;
 	graph->printAllEdge();
@@ -78,6 +85,8 @@ int main(int argc, char** argv){
 	graphInfo* gi = tree->runAtomicMC();
 	gi->printPDB(output);
 	delete gi;
+
+	
 //	graph->printEnergy();
 
 	delete pairLib;

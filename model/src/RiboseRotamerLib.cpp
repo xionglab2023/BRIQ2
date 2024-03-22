@@ -166,7 +166,6 @@ RiboseRotamerLib::RiboseRotamerLib(ForceFieldPara* para){
 			exit(1);
 		}
 
-
 		int aaType = i%4;
 		int index = 0;
 		while(getline(file,s)){

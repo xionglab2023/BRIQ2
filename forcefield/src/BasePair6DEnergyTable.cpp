@@ -756,12 +756,12 @@ cm2Key(withBinary, binaryMode)
 	ifstream file;
 	string augc = "AUGC";
 
+
 	if(withBinary && binaryMode==2) {
 		string fileName = path + "../binaryData/pairEne/nb";
 		if(para->bwTag != "default") {
 			fileName = path + "../binaryData/pairEne/nb-" + para->bwTag;
 		}
-		cout << "fileName" << endl;
 		ifstream ins;
         ins.open(fileName,ios::in | ios::binary);
         if(!ins.is_open()) {
@@ -798,7 +798,7 @@ cm2Key(withBinary, binaryMode)
         bb->read(ins);
         ins.close();
 		for(int i=0; i<4; i++) {
-			for(int j=0;j<4;j++) {
+			for(int j=i;j<4;j++) {
 				string tN = string(augc.substr(i,1)) + augc.substr(j,1) + ".ene";
 				BinaryTable* btab = bb->tables_map.at(tN);
 				auto& indexACol = get<BinaryColumn<int>>(*(btab->cols[0]));
@@ -829,8 +829,13 @@ cm2Key(withBinary, binaryMode)
 					this->nbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
 				}
 				file.close();
+			}
+		}
 
-				fileName = path + "pairEne/nnb/"+pairType+".ene";
+		for(int i=0;i<4;i++) {
+			for(int j=i;j<4;j++) {
+				string pairType = augc.substr(i,1) + augc.substr(j,1);
+				string fileName = path + "pairEne/nnb/"+pairType+".ene";
 				if(para->bwTag != "default") {
 					fileName = path + "pairEne/nnb/"+pairType+".ene-" + para->bwTag;
 				}
@@ -958,7 +963,8 @@ int BasePair6DEnergyTable::load(ForceFieldPara* para) {
 			nnbKeysEnergy[i].emplace(keys[j], vals[j]);
 		}
 	}
-
+	wtNb = para->wtBp1;
+	wtNnb = para->wtBp2;
 	return EXIT_SUCCESS;
 }
 

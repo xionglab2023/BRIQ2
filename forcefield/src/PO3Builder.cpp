@@ -433,6 +433,8 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		else
 			e += u;
 
+		
+
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
 			e += u*u;
@@ -448,6 +450,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			e += (2*u-1);
 		else
 			e += (-2*u-1);
+
 
 		if(impIndexA < 10 && dihed2 > 250)
 			regionIndexA = 0;
@@ -510,6 +513,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			bestIndex1 = i;
 			minE = e;
 		}
+
 	}
 
 
@@ -541,11 +545,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		if(xdihed4 < 0) xdihed4 += 360;
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
+
+
 		u = (xd3-len3)*para->rnaKBond;
 		if(u < 0)
 			e += -u;
 		else
 			e += u;
+		
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -561,6 +568,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			e += (2*u-1);
 		else
 			e += (-2*u-1);
+
 
 		if(impIndexA < 10 && dihed2 > 250)
 			regionIndexA = 0;
@@ -750,6 +758,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
 		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[bestDihed1][bestDihed2], minE*para->wtPho);
+
 		return;
 
 	}
@@ -873,7 +882,6 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 					bestDihed2 = dihed2;
 					minE = e;
 				}
-
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;

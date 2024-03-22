@@ -13,7 +13,11 @@ add_executable(basePairEnergy TestBasePairEnergy.cpp)
 add_executable(testBP6DEneTabIO TestBP6DEneTabIO.cpp)
 add_executable(testBP6DEneTabCGIO TestBP6DEneTabCGIO.cpp)
 add_executable(scanBP BasePairEnergyScan.cpp)
+add_executable(xtbAdj xtb6dEnergyAdjustment.cpp)
+add_executable(compSP CompareStatisticalAndPhysical6D.cpp)
 
+target_link_libraries (compSP briqx)
+target_link_libraries (xtbAdj briqx)
 target_link_libraries (scanBP briqx)
 target_link_libraries (testMerge briqx)
 target_link_libraries (testConnect briqx)
@@ -27,5 +31,5 @@ target_link_libraries (rnaEne briqx)
 target_link_libraries (testBP6DEneTabIO briqx)
 target_link_libraries (testBP6DEneTabCGIO briqx)
 
-install(TARGETS rnaEne testBBCG testHbEnergy testXtb6d testConnect testMerge testBP6DEneTabIO testBP6DEneTabCGIO basePairEnergy scanBP
+install(TARGETS rnaEne testBBCG testHbEnergy testXtb6d testConnect testMerge testBP6DEneTabIO testBP6DEneTabCGIO basePairEnergy scanBP xtbAdj compSP
     RUNTIME DESTINATION bin)

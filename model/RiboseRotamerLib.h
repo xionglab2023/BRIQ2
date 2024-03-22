@@ -119,6 +119,23 @@ public:
 		}
 	}	
 
+	RiboseRotamer* rotCGToRot(RiboseRotamerCG* rotCG){
+		double minD = 99.9;
+		double d1, d2, d3;
+		int minID = -1;
+		for(int i=0;i<100;i++){
+			RiboseRotamer* rot = rotLib100[rotCG->resType][i];
+			d1 = rotCG->localCoords[0].squaredDistance(rot->localCoords[0]);
+			d2 = rotCG->localCoords[1].squaredDistance(rot->localCoords[5]);
+			d3 = rotCG->localCoords[2].squaredDistance(rot->localCoords[6]);
+			if(d1+d2+d3 < minD){
+				minD = d1+d2+d3;
+				minID = i;
+			}
+		}
+		return rotLib100[rotCG->resType][minID];
+	}
+
 	RiboseRotamer* getRandomRotamer(int baseType){
 		return rotLib[baseType][rand()%1500];
 	}

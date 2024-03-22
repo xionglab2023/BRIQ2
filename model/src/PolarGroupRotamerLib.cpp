@@ -18,7 +18,8 @@ PolarGroupRotamer::PolarGroupRotamer(const string& groupName){
 
     string s;
 	while(getline(f, s)){
-        if(!s.starts_with("ATOM")) continue;
+        if(s.length() < 4) continue;
+        if(s.substr(0,4) != "ATOM") continue;
         Atom at(s);
         this->atomTypes.push_back(at.getType());
         this->localCoords.push_back(at.getCoord());
