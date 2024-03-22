@@ -38,6 +38,18 @@ int main(int argc, char** argv){
     AtomLib* atLib = new AtomLib();
     string augc = "AUGC";
 
+    cout << "load et1" << endl;
+    ForceFieldPara* para1 = new ForceFieldPara();
+    para1->bwTag = "xtb";
+    BasePair6DEnergyTable* et1 = new BasePair6DEnergyTable(para1,true, 1);
+    et1->load(para1);
+
+    cout << "load et2" << endl;
+    ForceFieldPara* para2 = new ForceFieldPara();
+    para2->bwTag = "adj";
+    BasePair6DEnergyTable* et2 = new BasePair6DEnergyTable(para2, true, 1);
+    et2->load(para2);
+
     cout << "loat et5" << endl;
     cout << "para" << endl;
     ForceFieldPara* para5 = new ForceFieldPara();
@@ -50,63 +62,88 @@ int main(int argc, char** argv){
     BasePair6DEnergyTable* et5 = new BasePair6DEnergyTable(para5, true, 1);
     et5->load(para5);
 
-    ForceFieldPara* para6 = new ForceFieldPara();
-    para6->bwTag = "bw1";
-    para6->wtBp1 = 1.0;
-    para6->wtBp2 = 1.0;
-    para6->wtHb = 1.0;
+    {
+        
+                vector<double> eneList1; //xtb
+                vector<double> eneList2; //adj
+               // vector<double> eneList3; //xtb Energy table
+ 
+              //  vector<double> eneList40; //hbond energy kHbOri = 0.2
 
-    cout << "load et6" << endl;
-    BasePair6DEnergyTable* et6 = new BasePair6DEnergyTable(para6, true, 1);
-    et6->load(para6);
 
-    ForceFieldPara* para7 = new ForceFieldPara();
+                vector<double> eneList5; //6dEnergy default
+        int typeA = 0;
+        int typeB = 1;
+        BaseRotamer* rotA = new BaseRotamer(typeA, atLib);
+        BaseRotamer* rotB = new BaseRotamer(typeB, atLib);
+        string cmFile = "/public/home/pengx/briqx/xtb/sp2000/cluster/AA.cm";
+        vector<CsMove> cmList;
 
-    cout << "load et7" << endl;
-    para7->bwTag = "bw2";
-    para7->wtBp1 = 1.0;
-    para7->wtBp2 = 1.0;
-    para7->wtHb = 1.0;
-    BasePair6DEnergyTable* et7 = new BasePair6DEnergyTable(para7, true, 1);
-    et7->load(para7);
-    ForceFieldPara* para8 = new ForceFieldPara();
 
-    cout << "load et8" << endl;
-    para8->bwTag = "bw3";
-    para8->wtBp1 = 1.0;
-    para8->wtBp2 = 1.0;
-    para8->wtHb = 1.0;
-    BasePair6DEnergyTable* et8 = new BasePair6DEnergyTable(para8, true, 1);
-    et8->load(para8);
 
-    cout << "load hbet" << endl;
-    ForceFieldPara* paraHb0 = new ForceFieldPara();
-    paraHb0->kHbOri = 0.2;
-    HbondEnergy* hbET0 = new HbondEnergy(paraHb0);
+        ifstream file;
+        file.open(cmFile.c_str(), ios::in);
+        string s;
+        while(getline(file, s)){
+            CsMove cm(s);
+            cmList.push_back(cm);
+        }
+        file.close();
 
-    ForceFieldPara* paraHb1 = new ForceFieldPara();
-    paraHb1->kHbOri = 0.4;
-    HbondEnergy* hbET1 = new HbondEnergy(paraHb1);
 
-    ForceFieldPara* paraHb2 = new ForceFieldPara();
-    paraHb2->kHbOri = 0.6;
-    HbondEnergy* hbET2 = new HbondEnergy(paraHb2);
 
-    ForceFieldPara* paraHb3 = new ForceFieldPara();
-    paraHb3->kHbOri = 0.8;
-    HbondEnergy* hbET3 = new HbondEnergy(paraHb3);
+        for(int i=0;i<cmList.size();i++){
+            LocalFrame csA;
+            LocalFrame csB;
+            csB = csA + cmList[i];
+            BaseConformer* confA = new BaseConformer(rotA, csA);
+            BaseConformer* confB = new BaseConformer(rotB, csB);
+            double minD = 99.9;
+            for(int j=0;j<rotA->atomNum;j++){
+                for(int k=0;k<rotB->atomNum;k++){
+                    double d = confA->coords[j].distance(confB->coords[k]);
+                    if(d < minD){
+                        minD = d;
+                    }
+                }
+            }
+        
+           
 
-    ForceFieldPara* paraHb4 = new ForceFieldPara();
-    paraHb4->kHbOri = 1.0;
-    HbondEnergy* hbET4 = new HbondEnergy(paraHb4);
+            eneList1.push_back(et1->getEnergy(csA, csB, typeA, typeB, 2, minD));
+            eneList2.push_back(et2->getEnergy(csA, csB, typeA, typeB, 2, minD));
+            eneList5.push_back(et5->getEnergy(csA, csB, typeA, typeB, 2, minD));
+                        
+            delete confA;
+            delete confB;
+        }
 
-    ForceFieldPara* paraHb5 = new ForceFieldPara();
-    paraHb5->kHbOri = 1.2;
-    HbondEnergy* hbET5 = new HbondEnergy(paraHb5);
+        ofstream out;
 
-    cout << "load xtbet " << endl;
-    Xtb6dEnergy* xtbEt = new Xtb6dEnergy(para5);
+        string outfile = "/public/home/pengx/briqx/xtb/sp2000/cluster/compareResult/AA.xtb";
+        out.open(outfile.c_str(), ios::out);
+        for(int i=0;i<eneList1.size();i++){
+            out << eneList1[i]*0.25 << endl;
+        }
+        out.close();
 
+        outfile = "/public/home/pengx/briqx/xtb/sp2000/cluster/compareResult/AA.adj";
+        out.open(outfile.c_str(), ios::out);
+        for(int i=0;i<eneList2.size();i++){
+            out << eneList2[i] << endl;
+        }
+        out.close();
+
+        outfile = "/public/home/pengx/briqx/xtb/sp2000/cluster/compareResult/AA.default";
+        out.open(outfile.c_str(), ios::out);
+        for(int i=0;i<eneList5.size();i++){
+             out << eneList5[i] << endl;
+        }
+        out.close();
+    }
+
+
+    
     for(int typeA=0;typeA<4;typeA++){
         for(int typeB=0;typeB<4;typeB++){
             BaseRotamer* rotA = new BaseRotamer(typeA, atLib);
@@ -114,21 +151,15 @@ int main(int argc, char** argv){
             for(int clusterID=0;clusterID<4;clusterID++){
                 string outlines[168];
 
-
-                vector<double> eneList3; //xtb Energy table
+                vector<double> eneList1; //xtb
+                vector<double> eneList2; //adj
+               // vector<double> eneList3; //xtb Energy table
  
-                vector<double> eneList40; //hbond energy kHbOri = 0.2
-                vector<double> eneList41; //hbond energy kHbOri = 0.4
-                vector<double> eneList42; //hbond energy kHbOri = 0.6
-                vector<double> eneList43; //hbond energy kHbOri = 0.8
-                vector<double> eneList44; //hbond energy kHbOri = 1.0
-                vector<double> eneList45; //hbond energy kHbOri = 1.2
-                vector<double> eneList46; //hbond energy kHbOri = 1.4
+              //  vector<double> eneList40; //hbond energy kHbOri = 0.2
+
 
                 vector<double> eneList5; //6dEnergy default
-                vector<double> eneList6; //bw1
-                vector<double> eneList7; //bw2
-                vector<double> eneList8; //bw3
+               
                 for(int scan=0;scan<scanList.size();scan++){
                     
                     sprintf(xx, "%d", clusterID);
@@ -166,6 +197,7 @@ int main(int argc, char** argv){
                             }
                         }
         
+                        /*
                         double hbEne0 = 0.0;
                         for(int j=0;j<rotA->polarAtomNum;j++){    
                             for(int k=0;k<rotB->polarAtomNum;k++){
@@ -215,11 +247,12 @@ int main(int argc, char** argv){
                         eneList43.push_back(hbEne3);
                         eneList44.push_back(hbEne4);
                         eneList45.push_back(hbEne5);
+                        */
 
+                        eneList1.push_back(et1->getEnergy(csA, csB, typeA, typeB, 2, minD));
+                        eneList2.push_back(et2->getEnergy(csA, csB, typeA, typeB, 2, minD));
                         eneList5.push_back(et5->getEnergy(csA, csB, typeA, typeB, 2, minD));
-                        eneList6.push_back(et6->getEnergy(csA, csB, typeA, typeB, 2, minD));
-                        eneList7.push_back(et7->getEnergy(csA, csB, typeA, typeB, 2, minD));
-                        eneList8.push_back(et8->getEnergy(csA, csB, typeA, typeB, 2, minD));
+                        //eneList8.push_back(et8->getEnergy(csA, csB, typeA, typeB, 2, minD));
 
                         delete confA;
                         delete confB;
@@ -227,28 +260,33 @@ int main(int argc, char** argv){
                 }
 
                 ofstream out;
+
+
                 sprintf(xx, "%c%c-%d.ene", augc[typeA], augc[typeB], clusterID);
-                string outfile = "/public/home/pengx/briqx/basePairScan/xtbEt/nnb/" + string(xx);
+
+
+                string outfile = "/public/home/pengx/briqx/basePairScan/xtb/nnb/" + string(xx);
                 out.open(outfile.c_str(), ios::out);
-                for(int i=0;i<eneList3.size();i++){
-                    out << eneList3[i] << endl;
+                for(int i=0;i<eneList1.size();i++){
+                    out << eneList1[i]*0.25 << endl;
                 }
                 out.close();
 
-                outfile = "/public/home/pengx/briqx/basePairScan/hbond0/nnb/" + string(xx);
+                outfile = "/public/home/pengx/briqx/basePairScan/adj/nnb/" + string(xx);
                 out.open(outfile.c_str(), ios::out);
-                for(int i=0;i<eneList40.size();i++){
-                    out << eneList40[i] << endl;
+                for(int i=0;i<eneList2.size();i++){
+                    out << eneList2[i] << endl;
                 }
                 out.close();
 
-                outfile = "/public/home/pengx/briqx/basePairScan/hbond1/nnb/" + string(xx);
+                outfile = "/public/home/pengx/briqx/basePairScan/default/nnb/" + string(xx);
                 out.open(outfile.c_str(), ios::out);
-                for(int i=0;i<eneList41.size();i++){
-                    out << eneList41[i] << endl;
+                for(int i=0;i<eneList5.size();i++){
+                    out << eneList5[i] << endl;
                 }
                 out.close();
 
+                /*
                 outfile = "/public/home/pengx/briqx/basePairScan/hbond2/nnb/" + string(xx);
                 out.open(outfile.c_str(), ios::out);
                 for(int i=0;i<eneList42.size();i++){
@@ -305,6 +343,7 @@ int main(int argc, char** argv){
                     out << eneList8[i] << endl;
                 }
                 out.close();
+                */
 
             }
             delete rotA;
@@ -314,20 +353,9 @@ int main(int argc, char** argv){
 
     delete atLib;
     delete para5;
-    delete para6;
-    delete para7;
-    delete para8;
+
     delete et5;
-    delete et6;
-    delete et7;
-    delete et8;
-    delete hbET0;
-    delete hbET1;
-    delete hbET2;
-    delete hbET3;
-    delete hbET4;
-    delete hbET5;
-    delete xtbEt;
+
 
 
 }

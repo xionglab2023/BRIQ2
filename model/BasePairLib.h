@@ -30,19 +30,20 @@ public:
 	int nbBasePairNum[16];
 	int nnbBasePairNum[16];
 
-	BaseDistanceMatrix nbDMClusterCenters[16][2000]; //max cluster num < 2000
-	BaseDistanceMatrix nnbDMClusterCenters[16][2000];
+	BaseDistanceMatrix nbDMClusterCenters[16][20000]; //max cluster num < 20000
+	BaseDistanceMatrix nnbDMClusterCenters[16][20000];
 
-	double nbEnergy[16][2000];
-	double nbEnergyWithOxy[16][2000];
-	double nbProportion[16][2000];
+	double nbEnergy[16][20000];
+	double nbEnergyWithOxy[16][20000];
+	double nbProportion[16][20000];
 
-	double nnbEnergy[16][2000];
-	double nnbEnergyWithOxy[16][2000];
-	double nnbProportion[16][2000];
+	double nnbEnergy[16][20000];
+	double nnbEnergyWithOxy[16][20000];
+	double nnbProportion[16][20000];
 
 
 	BasePairLib();
+	BasePairLib(const string& bpLibType);
 
 	int getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int sep); //sep: sequence separation
 	void getNeighborClusters(BaseDistanceMatrix dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters);

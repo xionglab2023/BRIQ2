@@ -15,8 +15,8 @@ BasePairLib::BasePairLib() {
 	string nbCenter = path+"basePair/nb.center.dm";
 	string nbCenterInfo = path+"basePair/nb.center.info";
 
-	string nnbCenter = path+"basePair/bpDensityNnb/nnb.center.dm";
-	string nnbCenterInfo = path+"basePair/bpDensityNnb/nnb.center.info";
+	string nnbCenter = path+"basePair/adj-1.2/nnb.center.dm";
+	string nnbCenterInfo = path+"basePair/adj-1.2/nnb.center.info";
 
 	ifstream file;
 	string s;
@@ -34,7 +34,146 @@ BasePairLib::BasePairLib() {
 	for(int i=0;i<16;i++){
 		this->nbBasePairNum[i] = 0;
 		this->nnbBasePairNum[i] = 0;
-		for(int j=0;j<200;j++){
+		for(int j=0;j<20000;j++){
+			this->nbEnergy[i][j] = 0.0;
+			this->nbEnergyWithOxy[i][j] = 0.0;
+			this->nbProportion[i][j] = 0.0;
+			this->nnbEnergy[i][j] = 0.0;
+			this->nnbEnergyWithOxy[i][j] = 0.0;
+			this->nnbProportion[i][j] = 0.0;
+		}
+	}
+
+	file.open(nbCenter.c_str(), ios::in);
+	if(!file.is_open()){
+		cout << "fail to open file: nb.center.dm" << endl;
+		exit(1);
+	}
+	currentType = -1;
+	lastType = -1;
+	currentIndex = -1;
+	while(getline(file, s)){
+		if(s.length() < 10) continue;
+		BaseDistanceMatrix dm(s);
+		typeA = typeMap[s[0]];
+		typeB = typeMap[s[2]];
+		currentType = typeA*4+typeB;
+		if(currentType != lastType)
+			currentIndex = 0;
+		else
+			currentIndex++;
+		this->nbDMClusterCenters[typeA*4+typeB][currentIndex] = dm;
+		this->nbBasePairNum[currentType]++;
+		lastType = currentType;
+	}
+	file.close();
+
+
+	file.open(nbCenterInfo.c_str(), ios::in);
+	if(!file.is_open()){
+		cout << "fail to open file: nb.center.info" << endl;
+		exit(1);
+	}
+	currentType = -1;
+	lastType = -1;
+	currentIndex = -1;
+	while(getline(file, s)){
+		if(s.length() < 10) continue;
+		typeA = typeMap[s[0]];
+		typeB = typeMap[s[1]];
+		currentType = typeA*4+typeB;
+		if(currentType != lastType)
+			currentIndex = 0;
+		else
+			currentIndex++;
+		splitString(s, " ", &spt);
+		this->nbEnergy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
+		this->nbProportion[typeA*4+typeB][currentIndex] = atof(spt[3].c_str());
+		this->nbEnergyWithOxy[typeA*4+typeB][currentIndex] = atof(spt[4].c_str());
+		lastType = currentType;
+	}
+	file.close();
+
+
+	file.open(nnbCenter.c_str(), ios::in);
+	if(!file.is_open()){
+		cout << "fail to open file: nnb.center.dm" << endl;
+		exit(1);
+	}
+	currentType = -1;
+	lastType = -1;
+	currentIndex = -1;
+	while(getline(file, s)){
+		if(s.length() < 10) continue;
+		BaseDistanceMatrix dm(s);
+		typeA = typeMap[s[0]];
+		typeB = typeMap[s[2]];
+		currentType = typeA*4+typeB;
+		if(currentType != lastType)
+			currentIndex = 0;
+		else
+			currentIndex++;
+		this->nnbDMClusterCenters[typeA*4+typeB][currentIndex] = dm;
+		this->nnbBasePairNum[currentType]++;
+		lastType = currentType;
+	}
+	file.close();
+
+
+
+	file.open(nnbCenterInfo.c_str(), ios::in);
+	if(!file.is_open()){
+		cout << "fail to open file: nnb.center.info" << endl;
+		exit(1);
+	}
+	currentType = -1;
+	lastType = -1;
+	currentIndex = -1;
+	while(getline(file, s)){
+		if(s.length() < 10) continue;
+		typeA = typeMap[s[0]];
+		typeB = typeMap[s[1]];
+		currentType = typeA*4+typeB;
+		if(currentType != lastType)
+			currentIndex = 0;
+		else
+			currentIndex++;
+		splitString(s, " ", &spt);
+		this->nnbEnergy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
+		this->nnbProportion[typeA*4+typeB][currentIndex] = atof(spt[3].c_str());
+		this->nnbEnergyWithOxy[typeA*4+typeB][currentIndex] = atof(spt[4].c_str());
+
+		lastType = currentType;
+	}
+	file.close();
+}
+
+BasePairLib::BasePairLib(const string& bpLibType) {
+
+	string path = NSPdataio::datapath();
+	string nbCenter = path+"basePair/nb.center.dm";
+	string nbCenterInfo = path+"basePair/nb.center.info";
+
+	string nnbCenter = path+"basePair/" + bpLibType + "/nnb.center.dm";
+	string nnbCenterInfo = path+"basePair/" + bpLibType + "/nnb.center.info";
+
+	ifstream file;
+	string s;
+	vector<string> spt;
+	int typeA, typeB, currentType, lastType, currentIndex;
+
+
+	map<char, int> typeMap;
+	typeMap['A'] = 0;
+	typeMap['U'] = 1;
+	typeMap['G'] = 2;
+	typeMap['C'] = 3;
+
+
+	for(int i=0;i<16;i++){
+		this->nbBasePairNum[i] = 0;
+		this->nnbBasePairNum[i] = 0;
+		for(int j=0;j<20000;j++){
 			this->nbEnergy[i][j] = 0.0;
 			this->nbEnergyWithOxy[i][j] = 0.0;
 			this->nbProportion[i][j] = 0.0;
@@ -207,10 +346,14 @@ int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int se
 		}
 	}
 
+	//return minIndex;
+	
+	
 	if(minD < 1.2)
 		return minIndex;
 	else
 		return -1;
+	
 }
 
 void BasePairLib::getNeighborClusters(BaseDistanceMatrix dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters){

@@ -70,7 +70,7 @@ class BasePair6DEnergyTable {
 public:
 
 	map<int, double> nbKeysEnergy[36000]; //16*2250, distacne 50 bins, dihedral 45 bins, sphere 2000*2000
-	map<int, double> nnbKeysEnergy[36000];
+	map<int, double> nnbKeysEnergy[36000]; //only 10 basepairs: AA, AU, AG, AG, UU, UG, UC, GG, GC, CC
 
 	CsMoveTo6DKey cm2Key;
 	map<int,double>::iterator it;
@@ -83,6 +83,10 @@ public:
 
 	double getEnergyBiInterpolation(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		//bilinear interpolation
+
+		if(typeA > typeB && sep == 2){
+			return getEnergyBiInterpolation(csB, csA, typeB, typeA, sep, minDistance);
+		}
 
 		if(minDistance < 1.5) return 0.0;
 		if(minDistance >= 5.0) return 0.0;
@@ -130,10 +134,17 @@ public:
 	double getEnergy(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		//6D interpolation
 
+		
 		if(minDistance < 1.5) return 0.0;
 		if(minDistance >= 5.0) return 0.0;
 
+
+		if(typeA > typeB && sep == 2){
+			return getEnergy(csB, csA, typeB, typeA, sep, minDistance);
+		}
+
 		double len = csA.origin_.distance(csB.origin_);
+
 		if(len >= 15.0)
 			return 0.0;
 
@@ -142,7 +153,7 @@ public:
 		double ene[36];
 
 		cm2Key.getIndexAndWeight6DInterpolation(csA, csB, len, index, weights);
-
+	
 
 		for(int i=0;i<4;i++){
 			for(int j=0;j<9;j++){
@@ -175,15 +186,20 @@ public:
 		for(int i=0;i<4;i++){
 			for(int j=0;j<9;j++){
 				e += weights[i] * weights[4+j] * ene[i*9+j];
-				//printf("%-2d %6.3f %5.4f\n", i, ene[i*9+j], weights[i]*weights[4+j]);
+				//printf("%d %d %6.4f %6.4f %8.3f wtNb: %4.2f wtNnb: %4.2f\n", i, j, weights[i], weights[4+j], ene[i*9+j], wtNb, wtNnb);
 			}
 		}
+
 		return e;
 	}
 
 	double getEnergyNearestNeighbor(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		if(minDistance >= 5.0) return 0;
 		if(minDistance < 1.5) return 0;
+
+		if(typeA > typeB && sep == 2){
+			return getEnergyNearestNeighbor(csB, csA, typeB, typeA, sep, minDistance);
+		}
 
 		double len = csA.origin_.distance(csB.origin_);
 		if(len >= 15.0)

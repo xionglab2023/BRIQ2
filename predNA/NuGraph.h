@@ -113,6 +113,7 @@ public:
 	double rotMutEnergyCG();
 	bool checkEnergyCG();
 
+
 	vector<Atom*> toAtomList(AtomLib* atLib);
 	vector<Atom*> toAtomListWithPho(AtomLib* atLib);
 	vector<Atom*> toAtomListCG(AtomLib* atLib);
@@ -247,11 +248,13 @@ public:
 	bool* fixed;
 	NuNode** nodes;
 	double ene;
+	double nbEne;
+	double nnbEne;
 	double rms;
 	AtomLib* atLib;
 
 	//graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib);
-	graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib, int mode);
+	graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib, int mode); 
 
 	void setRMS(double rms){
 		this->rms = rms;
@@ -259,8 +262,13 @@ public:
 	double rmsd(graphInfo* other);
 	double rmsdCG(graphInfo* other);
 	void printPDB(const string& outputFile);
-	void printPDBCG(const string& outputFile);
 	void printAlignedPDB(graphInfo* alignTarget, const string& outputFile);
+	void setNbEnergy(double e){
+		this->nbEne = e;
+	}
+	void setNnbEnergy(double e){
+		this->nnbEne = e;
+	}
 	virtual ~graphInfo();
 
 };
@@ -308,6 +316,10 @@ public:
 	void checkEnergyCG();
 
 	double totalEnergy();
+
+	double nbEnergy();
+	double nnbEnergy();
+
 	double totalEnergyCG();
 	double totalEnergyCGTmp();
 	
@@ -316,6 +328,8 @@ public:
 
 	void printEnergy();
 	void printEnergyCG();
+
+	void cgToAllAtom();
 
 	graphInfo* getGraphInfo();
 	graphInfo* getGraphInfoCG();

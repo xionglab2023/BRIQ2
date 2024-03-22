@@ -33,7 +33,7 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clus
 	sprintf(xx, "%c%c%d", augc[typeA], augc[typeB], clusterID);
 
 	if(!bb){
-		string path = NSPdataio::datapath()+"pairMove3/";
+		string path = NSPdataio::datapath()+"pairMove4/";
 
 		if(sep == 1 || sep == -1)
 			fileName = path+"nb/"+string(xx)+".move";
@@ -133,6 +133,7 @@ int IndividualNuPairMoveSet::load(istream& ins) {
 }
 
 CsMove IndividualNuPairMoveSet::getRandomMove(OrientationIndex* oi){
+
 	int selectBin = rand()% 50;
 	int selectID = rand()% moveIndexList[selectBin].size();
 	
@@ -367,7 +368,7 @@ void NuPairMoveSetLibrary::printMoveLibInfo(){
 		cout << "cluster num: " << i << " " << imNum << endl;
 		for(int j=0;j<imNum;j++){
 			int moveNum = 0;
-			for(int k=0;k<20;k++){
+			for(int k=0;k<50;k++){
 				moveNum += nbMoveList[i][j]->moveIndexList[k].size();
 			}
 			cout << "cluster: " << j << " moveNum: " << moveNum << endl;
@@ -380,7 +381,7 @@ void NuPairMoveSetLibrary::printMoveLibInfo(){
 		cout << "cluster num: " << i << " " << imNum << endl;
 		for(int j=0;j<imNum;j++){
 			int moveNum = 0;
-			for(int k=0;k<20;k++){
+			for(int k=0;k<50;k++){
 				moveNum += revNbMoveList[i][j]->moveIndexList[k].size();
 			}
 			cout << "cluster: " << j << " moveNum: " << moveNum << endl;
@@ -393,7 +394,7 @@ void NuPairMoveSetLibrary::printMoveLibInfo(){
 		cout << "cluster num: " << i << " " << imNum << endl;
 		for(int j=0;j<imNum;j++){
 			int moveNum = 0;
-			for(int k=0;k<20;k++){
+			for(int k=0;k<50;k++){
 				moveNum += nnbMoveList[i][j]->moveIndexList[k].size();
 			}
 			cout << "cluster: " << j << " moveNum: " << moveNum << endl;

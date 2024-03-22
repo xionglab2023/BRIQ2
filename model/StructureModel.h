@@ -17,6 +17,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include "geometry/ConvexPolygon.h"
 
 namespace NSPmodel {
 using namespace std;
@@ -201,7 +202,7 @@ public:
 		XYZ t2 = other->getBaseNormVector();
 		double ang = NSPgeometry::angleX(t1,t2);
 		if(ang > 90)
-			ang = 180 - 90;
+			ang = 180 - ang;
 		return ang;
 	}
 
@@ -268,6 +269,12 @@ public:
 		}
 		return false;
 	}
+
+	ConvexPolygon getBaseConvexPolygon(LocalFrame& cs, AtomLib* atLib);
+
+	bool isStackingTo(RNABase* other, AtomLib* atLib);
+
+	bool isStackingToVerbose(RNABase* other, AtomLib* atLib);
 
 	int printPDBFormat(ostream& out, int startAtomID) const;
 	string print();

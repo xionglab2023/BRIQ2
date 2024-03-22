@@ -67,6 +67,7 @@ int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, 
         baseNum++;
         totEne += gi->ene;
         totRms += gi->rms;
+        //graph->printEnergy();
        
         delete gi;
 	    delete tree;
@@ -133,7 +134,9 @@ int main(int argc, char** argv){
     string tag = cmdArgs.getValue("-tag");
     string outputFile = cmdArgs.getValue("-out");
     string bw = cmdArgs.getValue("-bw");
-    //string outpdb = cmdArgs.getValue("-outpdb");
+    string outpdb;
+    if(cmdArgs.specifiedOption("-outpdb"))
+        outpdb = cmdArgs.getValue("-outpdb");
 
     ofstream out;
     out.open(outputFile.c_str(), ios::out);
@@ -167,8 +170,8 @@ int main(int argc, char** argv){
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 
-    cout << "task: " << tag << endl;
 
+    cout << "task: " << tag << endl;
     cout << "a" << endl;
 
     if(tag == "clashNb") {
@@ -1005,6 +1008,8 @@ int main(int argc, char** argv){
                 }
             }
 
+           
+
             double minRms = 9999.9;
             for(int i=0;i<mp;i++){
                 if(outRMSList[i] < minRms){
@@ -1017,7 +1022,7 @@ int main(int argc, char** argv){
         }
     }
     else if(tag == "pdb") {
-        //testSingleBasePredictionPrintPDB(moveLib, et, pairLib, rotLib, atLib, inputFile, out, outpdb);
+        testSingleBasePredictionPrintPDB(moveLib, et, pairLib, rotLib, atLib, inputFile, out, outpdb);
     }
 
     out.close();

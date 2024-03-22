@@ -563,6 +563,120 @@ array<XYZ,4> RNABase::getFourPseudoAtomCoords(){
 	return list;
 }
 
+ConvexPolygon RNABase::getBaseConvexPolygon(LocalFrame& cs, AtomLib* atLib){
+	if(!sidechainComplete(atLib)) return ConvexPolygon();
+	vector<XY> points;
+	if(baseTypeInt == 0 || baseTypeInt == 4){
+
+				XYZ a = global2local(cs, getAtom("N9")->coord);
+				XYZ b = global2local(cs, getAtom("C8")->coord);
+				XYZ c = global2local(cs, getAtom("N7")->coord);
+				XYZ d = global2local(cs, getAtom("N6")->coord);
+				XYZ e = global2local(cs, getAtom("N1")->coord);
+				XYZ f = global2local(cs, getAtom("C2")->coord);
+				XYZ g = global2local(cs, getAtom("N3")->coord);
+				
+    			points.push_back(XY(a.x_, a.y_));
+    			points.push_back(XY(b.x_, b.y_));
+    			points.push_back(XY(c.x_, c.y_));
+    			points.push_back(XY(d.x_, d.y_));
+    			points.push_back(XY(e.x_, e.y_));
+    			points.push_back(XY(f.x_, f.y_));
+    			points.push_back(XY(g.x_, g.y_));
+	}
+	else if(baseTypeInt == 2 || baseTypeInt == 6){
+
+				XYZ a = global2local(cs, getAtom("N9")->coord);
+				XYZ b = global2local(cs, getAtom("C8")->coord);
+				XYZ c = global2local(cs, getAtom("N7")->coord);
+				XYZ d = global2local(cs, getAtom("O6")->coord);
+				XYZ e = global2local(cs, getAtom("N2")->coord);
+				XYZ f = global2local(cs, getAtom("N3")->coord);
+				
+    			points.push_back(XY(a.x_, a.y_));
+    			points.push_back(XY(b.x_, b.y_));
+    			points.push_back(XY(c.x_, c.y_));
+    			points.push_back(XY(d.x_, d.y_));
+    			points.push_back(XY(e.x_, e.y_));
+    			points.push_back(XY(f.x_, f.y_));
+	}
+	else if(baseTypeInt == 3 || baseTypeInt == 7){
+
+				XYZ a = global2local(cs, getAtom("N1")->coord);
+				XYZ b = global2local(cs, getAtom("O2")->coord);
+				XYZ c = global2local(cs, getAtom("N4")->coord);
+				XYZ d = global2local(cs, getAtom("C5")->coord);
+				XYZ e = global2local(cs, getAtom("C6")->coord);
+				
+    			points.push_back(XY(a.x_, a.y_));
+    			points.push_back(XY(b.x_, b.y_));
+    			points.push_back(XY(c.x_, c.y_));
+    			points.push_back(XY(d.x_, d.y_));
+    			points.push_back(XY(e.x_, e.y_));
+	}
+	else if(baseTypeInt == 1 || baseTypeInt == 5){
+				XYZ a = global2local(cs, getAtom("N1")->coord);
+				XYZ b = global2local(cs, getAtom("O2")->coord);
+				XYZ c = global2local(cs, getAtom("O4")->coord);
+				XYZ d = global2local(cs, getAtom("C5")->coord);
+				XYZ e = global2local(cs, getAtom("C6")->coord);
+				
+    			points.push_back(XY(a.x_, a.y_));
+    			points.push_back(XY(b.x_, b.y_));
+    			points.push_back(XY(c.x_, c.y_));
+    			points.push_back(XY(d.x_, d.y_));
+    			points.push_back(XY(e.x_, e.y_));
+	}
+
+	return ConvexPolygon(points);
+}
+
+bool RNABase::isStackingTo(RNABase* other, AtomLib* atLib){
+
+	LocalFrame csA = getCoordSystem();
+	LocalFrame csB = other->getCoordSystem();
+	if(csA.origin_.distance(csB.origin_) > 15.0) return false;
+	double planeDistance = this->planeDistance(other);
+	if(planeDistance > 4.0) return false;
+	double planeAng = planeAngle(other);
+	if(planeAng > 40.0) return false;
+
+
+	TransMatrix tmA = csA.localToGlobalTM;
+	XYZ z1 = XYZ(tmA.mtx[0][2], tmA.mtx[1][2], tmA.mtx[2][2]);
+	TransMatrix tmB = csB.localToGlobalTM;
+	XYZ z2 = XYZ(tmB.mtx[0][2], tmB.mtx[1][2], tmB.mtx[2][2]);
+	double ang = angleX(z1, z2);
+
+
+	XYZ meanZ;
+	if(ang > 90.0)
+		meanZ = z1 - z2;
+	else
+		meanZ = z1 + z2;
+	
+	double len = meanZ.length();
+	if(len == 0)
+		meanZ = XYZ(0,0,1);
+	else 
+		meanZ = ~meanZ;
+		
+
+
+	XYZ x = XYZ(tmA.mtx[0][0], tmA.mtx[1][0], tmA.mtx[2][0]);
+	XYZ y = meanZ ^ x;
+	XYZ origin = XYZ(0,0,0);
+	LocalFrame cs = LocalFrame(origin, x, y, meanZ);
+
+	ConvexPolygon cpA = getBaseConvexPolygon(cs, atLib);
+    ConvexPolygon cpB = other->getBaseConvexPolygon(cs, atLib);
+
+    if(cpA.overlap(cpB))
+    	return true;
+
+    return false;
+}
+
 int RNABase::printPDBFormat(ostream& out, int startAtomID) const{
     char c = this->baseID.at(baseID.length()-1);
     char s[100];
@@ -1454,7 +1568,6 @@ void RNAPDB::readCIF(const string& cifFile){
 
     input.close();
 }
-
 
 
 void RNAPDB::printPDBFormat(ostream& out) const{

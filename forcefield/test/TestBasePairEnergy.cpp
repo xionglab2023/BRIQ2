@@ -36,8 +36,10 @@ int main(int argc, char** argv){
 	char xx[200];
 
 	RNAPDB pdb = RNAPDB(pdbFile, "xxxx");
-	RNAChain* rc = pdb.getFirstChain();
-	vector<RNABase*> rawBaseList = rc->getBaseList();
+
+
+	
+	vector<RNABase*> rawBaseList = pdb.getBaseList();
 
 	vector<RNABase*> baseList;
 	for(int i=0;i<rawBaseList.size();i++){
@@ -110,22 +112,26 @@ int main(int argc, char** argv){
 			sep = seqSep[j] - seqSep[i];
 			if(sep > 2) sep = 2;
 			nodeB = nodeList[j];
-			cout << i << " " << j << endl;
 
-			cout << "dm" << endl;
 			BaseDistanceMatrix dm(nodeA->baseConf->cs1, nodeB->baseConf->cs1);
-			
+		
+			//int pairType = bpLib->getPairType(dm, nodeA->baseType, nodeB->baseType, sep);
+			int pairType = bpLib->getPairType(dm, nodeA->baseType, nodeB->baseType, 2);
 
-			int pairType = bpLib->getPairType(dm, nodeA->baseType, nodeB->baseType, sep);
+
 
 			if(pairType < 0) continue;
 
 			double eBB;
+			/*
 			if(sep == 1)
 				eBB = bpLib->nbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];
 			else
 				eBB = bpLib->nnbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];
-			
+			*/
+
+			eBB = bpLib->nnbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];
+
 			//cout << "eBB" << endl;
 			//double eBB = getBaseBaseEnergy(nodeA, nodeB, sep, et, false);
 	

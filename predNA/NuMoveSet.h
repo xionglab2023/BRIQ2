@@ -16,6 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <unistd.h>
 #include "dataio/datapaths.h"
 #include "dataio/binaryTable.h"
 #include "geometry/CsMove.h"

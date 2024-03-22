@@ -89,10 +89,14 @@ int main(int argc, char** argv){
 
     string inputFile = cmdArgs.getValue("-in");
     string outputFile = cmdArgs.getValue("-out");
-    if(!outputFile.ends_with(".pdb")) {
+
+    string outEndTag = outputFile.substr(outputFile.length()-3, 3);
+
+    if(outEndTag != "pdb") {
         cout << "output file should be end with .pdb" << endl;
         exit(0);
     }
+
     int mp = atoi(cmdArgs.getValue("-mp").c_str());
     int startID = 0;
     if(cmdArgs.specifiedOption("-id")) {
