@@ -274,8 +274,6 @@ public:
 
 	bool isStackingTo(RNABase* other, AtomLib* atLib);
 
-	bool isStackingToVerbose(RNABase* other, AtomLib* atLib);
-
 	int printPDBFormat(ostream& out, int startAtomID) const;
 	string print();
 	virtual ~RNABase();
