@@ -20,6 +20,8 @@ namespace NSPbm {
     MotifGraph::MotifGraph(NuGraph* graphIn, vector<int>& NodeIndexVec, double eneIn) {
         fullGraph = graphIn;
         nNode = NodeIndexVec.size();
+        nFrag = 1;
+        sep.emplace_back(0);
         ene = eneIn;
         seq = new int[nNode];
         nodeIndex = new int[nNode];
@@ -35,6 +37,7 @@ namespace NSPbm {
             seq[i] = graphIn->seq[nodeIndex[i]];
             if(NodeIndexSet.count(nodeIndex[i]+1)) {
                 connectToDownstream[i] = graphIn->connectToDownstream[nodeIndex[i]];
+
             } else {
                 connectToDownstream[i] = false;  // the original downstream node is not included in subgraph
             }
@@ -74,59 +77,237 @@ namespace NSPbm {
     MotifAssigner::MotifAssigner(NuGraph* nuGraphIn) {
         nuGraph = nuGraphIn;
         int seqLen = nuGraph->seqLen;
+        baseStackingMap = getStackingSetMap();
         for(int i=0; i<seqLen; i++) {
             for(int j=i+2; j<seqLen; j++) {
                 NuEdge* curEdge = nuGraph->allEdges[i*seqLen+j];
                 NuEdge* revEdge = nuGraph->allEdges[j*seqLen+i];
-                bool isStackILast=false, isStackINext=false, isStackJLast=false, isStackJNext=false;
-                bool isBpILastJNext =false, isBpINextJLast=false;
-                if(i>0 && nuGraph->connectToDownstream[i-1]) {
-                    if(nuGraph->allEdges[(i-1)*seqLen+i]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX &&
-                       nuGraph->allEdges[i*seqLen+i-1]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX) {
-                        isStackILast = true;
-                    }
-                }
-                if(nuGraph->connectToDownstream[j-1]) {
-                    if(nuGraph->allEdges[(j-1)*seqLen+j]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX &&
-                       nuGraph->allEdges[j*seqLen+j-1]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX) {
-                        isStackJLast = true;
-                    }
-                }
-                if(nuGraph->connectToDownstream[i]) {
-                    if(nuGraph->allEdges[(i+1)*seqLen+i]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX &&
-                       nuGraph->allEdges[i*seqLen+i+1]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX) {
-                        isStackINext = true;
-                    }
-
-                }
-                if(nuGraph->connectToDownstream[j]) {
-                    if(nuGraph->allEdges[(j+1)*seqLen+j]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX &&
-                       nuGraph->allEdges[j*seqLen+j+1]->weight < MOTIFASSIGNER_STACK_WEIGHT_MAX) {
-                        isStackJNext = true;
-                    }
-                }
-                if(isStackILast && isStackJNext) {
-                    if(nuGraph->allEdges[(i-1)*seqLen+j+1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX &&
-                       nuGraph->allEdges[(j+1)*seqLen+i-1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
-                        isBpILastJNext=true;
-                    }
-                }
-                if(isStackINext && isStackJLast) {
-                    if(nuGraph->allEdges[(i+1)*seqLen+j-1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX &&
-                       nuGraph->allEdges[(j-1)*seqLen+i+1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
-                        isBpINextJLast=true;
-                    }
-                }
-                
-                if((isStackILast && isStackJNext && isBpILastJNext) || 
-                   (isStackINext && isStackJLast && isBpINextJLast)) {
+                if(isHelixByWC(i,j)) {
                     helixEdge.emplace(curEdge);
                     helixEdge.emplace(revEdge);
                 }
+                // helix by stacking
+                /*
+                if(isHelixByStacking(i,j)) {
+                    helixEdge.emplace(curEdge);
+                    helixEdge.emplace(revEdge);
+                } 
+                */
             }
         }
     }
 
+    bool MotifAssigner::isHelixByWC(int i, int j) {
+        bool isWCIJ = false;
+        bool isWCILast1JNext1 =false, isWCINext1JLast1=false;
+        bool isWCILast2JNext2 =false, isWCINext2JLast2=false;
+        if(i>j) {
+            int tmp = j;
+            i=j;
+            j=tmp;
+        }
+        int seqLen = nuGraph->seqLen;
+        isWCIJ = nuGraph->allEdges[i*seqLen + j]->isWC();
+        if(isWCIJ) {
+            if(i>1 && j<seqLen-2 && nuGraph->connectToDownstream[i-1] && nuGraph->connectToDownstream[i-2] &&
+            nuGraph->connectToDownstream[j] && nuGraph->connectToDownstream[j+1]) {
+                isWCILast2JNext2 =  nuGraph->allEdges[(i-2)*seqLen+j+2].isWC();
+                isWCILast1JNext1 =  nuGraph->allEdges[(i-1)*seqLen+j+1].isWC();
+            } else if (i==1 && j<seqLen-1 && nuGraph->connectToDownstream[i-1] && nuGraph->connectToDownstream[j]) {
+                isWCILast1JNext1 = nuGraph->allEdges[(i-1)*seqLen+j+1].isWC();
+            }
+
+            if(i<seqLen-2 && nuGraph->connectToDownstream[i] && nuGraph->connectToDownstream[i+1] && 
+            nuGraph->connectToDownstream[j-1] && nuGraph->connectToDownstream[j-2]) {
+                isWCINext2JLast2 = nuGraph->allEdges[(i+2)*seqLen+j-2].isWC();
+                isWCINext1JLast1 = nuGraph->allEdges[(i+1)*seqLen+j-1].isWC();
+            } else if(i == seqLen-2 && nuGraph->connectToDownstream[i] && nuGraph->Downstream[j-1]) {
+                isWCINext1JLast1 = nuGraph->allEdges[(i+1)*seqLen+j-1].isWC();
+            }
+            if(isWCINext1JLast1 && isWCILast1JNext1) {
+                return true;
+            }
+            if(isWCINext2JLast2 && isWCINext1JLast1) {
+                return true;
+            }
+            if(isWCILast2JNext2 && isWCILast1JNext1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    map<int, set<int>*>* getStackingSetMap() {
+        int seqLen = nuGraph->seqLen;
+        AtomLib* atl = nuGraph->atLib;
+        vector<RNABase*> baseVec;
+        map<int,char> baseTypeitoaMap = {{0,'A'}, {1, 'U'}, {2, 'G'}, {3, 'C'},
+            {4,'a'}, {5, 't'}, {6, 'g'}, {7,'c'}, {-1, 'N'}};
+        for(int i=0; i<seqLen;i++) {
+            char btc = baseTypeitoaMap[nuGraph->allNodes[i]->baseType];
+            RNABase* curBase = new RNABase(to_string(i),"A",btc);
+            vector<Atom*>& atomList = nuGraph->allNodes[i]->toAtomListWithPho(atl);
+            int nAt = atomList.size();
+            for(int j=0; j<nAt; j++) {
+                curBase->addAtom(atomList[j])
+            }
+            baseVec.emplace_back(curBase);
+        }
+        map<int, set<int>*> * baseStackingMap = new map<int, set<int>*>;
+        for(int i=0; i<seqLen; i++) {
+            for(int j=i+1; j<seqLen; j++) {
+                if(baseVec[i]->isStackingTo(baseVec[j], atl)) {
+                    if(baseStackingMap.count(i)==0) {
+                        baseStackingMap.emplace(i,new set{j});
+                    } else {
+                        baseStackingMap[i]->emplace(j);
+                    }
+                    if(baseStackingMap.count(j)==0) {
+                        baseStackingMap.emplace(j,new set{i});
+                    } else {
+                        baseStackingMap[j]->emplace(i);
+                    }
+                }
+            }
+        }
+
+        // release baseVec pointed memory
+        for(int i=0; i<seqLen;i++) {
+            RNABase* p1 = baseVec[i];
+            int nAt = p1->getAtomList()->size();
+            for(int j=0; j<nAt; j++) {
+                delete p1->getAtomList()->at(j);
+            }
+            delete p1;
+        }
+
+        return baseStackingMap;
+
+    }
+
+
+    bool MotifAssigner::isHelixByStacking(int i, int j) {
+        // map<int, set<int>*>* baseStackingMap = getStackingSetMap();
+        bool isStackILast1=false, isStackINext1=false, isStackJLast1=false, isStackJNext1=false;
+        bool isStackILast2=false, isStackINext2=false, isStackJLast2=false, isStackJNext2=false;
+        bool isBpILast1JNext1 =false, isBpINext1JLast1=false;
+        bool isBpILast2JNext2 =false, isBpINext2JLast2=false;
+        if(nuGraph->allEdges[i*seqLen+j]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
+            if(i>0 && nuGraph->connectToDownstream[i-1]) {
+                if(baseStackiongMap->count(i) && baseStackingMap[i]->count(i-1)) {
+                    isStackILast1 = true;
+                    if(i>1 && nuGraph->connectTodownstream[i-2]) {
+                        if(baseStackingMap[i-1]->count(i-2)) {
+                            isStackILast2 = true;
+                        }
+                    }
+                }
+            }
+            if(j>0 && nuGraph->connectToDownstream[j-1]) {
+                if(baseStackingMap->count(j) && baseStackingMap[j]->count(j-1)) {
+                    isStackJLast1 = true;
+                    if(j>1 && nuGraph->connectTodownstream[j-2]) {
+                        if(baseStackingMap[j-1]->count(j-2)) {
+                            isStackJLast2 = true;
+                        }
+                    }
+                }
+            }
+            if(nuGraph->connectToDownstream[i]) {
+                if(baseStackingMap->count(i+1) && baseStackingMap[i+1]->count(i)) {
+                    isStackINext1 = true;
+                    if(i<seqLen-2 && nuGraph->connectToDownstream[i+1]) {
+                        if(baseStackingMap[i+2]->count(i+1)) {
+                            isStackINext2 = true;
+                        }
+                    }
+                }
+            }
+            if(nuGraph->connectToDownstream[j]) {
+                if(baseStackingMap->count(j+1) && baseStackingMap[j+1]->count(j)) {
+                    isStackJNext1 = true;
+                    if(j<seqLen-2 && nuGraph->connectToDownstream[j+1]) {
+                        if(baseStackingMap[j+2]->count(j+1)) {
+                            isStackJNext2 = true;
+                        }
+                    }
+                }
+            }
+
+            if(isStackILast1 && isStackJNext1) {
+                if(nuGraph->allEdges[(i-1)*seqLen+j+1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX &&
+                   nuGraph->allEdges[(j+1)*seqLen+i-1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
+                    isBpILast1JNext1=true;
+                }
+            }
+            if(isStackINext1 && isStackJLast1) {
+                if(nuGraph->allEdges[(i+1)*seqLen+j-1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX &&
+                   nuGraph->allEdges[(j-1)*seqLen+i+1]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
+                    isBpINext1JLast1=true;
+                }
+            }
+        
+            if(isBpILast1JNext1 && isBpINext1JLast1) {
+                return true;
+            }
+
+            if(isStackILast2 && isStackJNext2) {
+                if(nuGraph->allEdges[(i-2)*seqLen+j+2]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX &&
+                   nuGraph->allEdges[(j+2)*seqLen+i-2]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
+                    isBpILast2JNext2=true;
+                }
+            }
+
+            if(isBpILast1JNext1 && isBpILast2JNext2) {
+                return true;
+            }
+
+            if(isStackINext2 && isStackJLast2) {
+                if(nuGraph->allEdges[(i+2)*seqLen+j-2]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX &&
+                   nuGraph->allEdges[(j-2)*seqLen+i+2]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
+                    isBpINext2JLast2=true;
+                }
+            }
+
+            if(isBpINext1JLast1 && isBpINext2JLast2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Determine if edge between node i,j is formed due to implicit interaction. An edge is
+     * thought implicit if node i/j forms basepair with a third node k that stacking to j/i with
+     * a stronger basepair weight than edge ij.
+     * 
+     * @param i 
+     * @param j 
+     * @return true 
+     * @return false 
+     */
+    bool isImplicitEdge(int i, int j) {
+        double curWeight = min(nuGraph->allEdges[i*seqLen+j]->weight,
+                               nuGraph->allEdges[j*seqLen+i]->weight);
+        if(baseStackingMap->count(i)) {
+            for(auto& it : baseStackingMap->at(i)) {
+                if(min(nuGraph->allEdges[(it.second)*seqLen+j]->weight,
+                       nuGraph->allEdges[j*seqLen+it.second]->weight) < curWeight) {
+                    return true;
+                }
+            }
+        }
+        if(baseStackingMap->count(j)) {
+            for(auto& it : baseStackingMap->at(j)) {
+                if(min(nuGraph->allEdges[(it.second)*seqLen+i]->weight,
+                       nuGraph->allEdges[i*seqLen+it.second]->weight) < curWeight) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     int MotifAssigner::writeEdgeWeight(ostream& outCSV) {
         int seqLen = nuGraph->seqLen;
@@ -192,6 +373,7 @@ namespace NSPbm {
                     inEdgeMap.emplace(j, new set<NuEdge*>);
                 }
                 if(nuGraph->allEdges[i*seqLen+j]->weight < MOTIFASSIGNER_GROW_CUTOFF) {
+                    if(isImplicitEdge(i,j)) continue;
                     outEdgeMap[i]->emplace(nuGraph->allEdges[i*seqLen+j]);
                     inEdgeMap[j]->emplace(nuGraph->allEdges[i*seqLen+j]);
                 }
@@ -354,5 +536,9 @@ namespace NSPbm {
         for(auto& it : motifs) {
             delete it;
         }
+        for(auto& it : *baseStackingMap) {
+            delete it.second;
+        }
+        delete baseStackingMap;
     }
 }

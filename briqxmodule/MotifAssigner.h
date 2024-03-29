@@ -15,9 +15,8 @@
 #include "predNA/NuGraph.h"
 
 #define MOTIFASSIGNER_SEED_CUTOFF -8.5
-#define MOTIFASSIGNER_GROW_CUTOFF -5.5
+#define MOTIFASSIGNER_GROW_CUTOFF -4.0
 #define MOTIFASSIGNER_RECALL_CUTOFF -7.0
-#define MOTIFASSIGNER_STACK_WEIGHT_MAX -1e-6
 #define MOTIFASSIGNER_BP_WEIGHT_MAX -12
 #define DEBUG
 
@@ -33,6 +32,7 @@ namespace NSPbm {
     class MotifGraph {
         public:
             int nNode;  // L
+            int nFrag;  // number of fragments
             double ene;
             NuGraph* fullGraph;
             int* seq;
@@ -43,6 +43,7 @@ namespace NSPbm {
             NuEdge** allEdges;  // L*L edges
             vector<NuEdge*> geList;  //L*(L-1)/2 edges
             graphInfo* motifInfo;
+            vector<int> sep;  // nFrag*2 sized array, recording the number of bases to the last/next fragment.
             // map<array<NuNode*,2>,NuEdge*> node2EdgeMap;
 
             /**
@@ -87,6 +88,7 @@ namespace NSPbm {
         public:
             NuGraph* nuGraph;
             set<NuEdge*> helixEdge;
+            map<int,set<int>*>* baseStackingMap;
             vector<MotifGraph*> motifs;
             MotifAssigner(NuGraph* nuGraphIn);
             /**
@@ -96,7 +98,8 @@ namespace NSPbm {
              * @param outCSV the output stream object, must in txt mode
              * @return int execute state code
              */
-            int writeEdgeWeight(ostream& outCSV);  // write edge weights in csv format, with feature columns 
+            int writeEdgeWeight(ostream& outCSV);  // write edge weights in csv format, with feature columns
+            int writeSeqFrag(ostream& out);  // write motif sequeces with fragmentation info
             #ifdef DEBUG
             void bySeed(string&&, string&&);
             #else
@@ -105,6 +108,11 @@ namespace NSPbm {
             void byLouvain();
 
             virtual ~MotifAssigner();
+        private:
+            bool isHelixByWC(int i, int j);
+            bool isHelixByStacking(int i, int j);
+            map<int,set<int>>* getStackingSetMap();  // returns a map on the stack, requires manual release;
+            bool isImplicitEdge(int i, int j);
     };
 }
 #endif /* BRIQXMODULE_MOTIFASSIGNER_H_ */
