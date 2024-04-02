@@ -17,29 +17,66 @@ namespace NSPbm {
     using namespace NSPpredNA;
     using namespace std;
 
-    MotifGraph::MotifGraph(NuGraph* graphIn, vector<int>& NodeIndexVec, double eneIn) {
+    
+    MotifGraph::MotifGraph(NuGraph* graphIn, vector<int>& nodeIndexVec, double eneIn, set<NuEdge*>* pHelixEdge) {
         fullGraph = graphIn;
-        nNode = NodeIndexVec.size();
+        nNode = nodeIndexVec.size();
         nFrag = 1;
+        int iHelix = 0;
         sep.emplace_back(0);
         ene = eneIn;
         seq = new int[nNode];
         nodeIndex = new int[nNode];
-        memcpy(nodeIndex, &NodeIndexVec[0], sizeof(int)*nNode);
+        memcpy(nodeIndex, &nodeIndexVec[0], sizeof(int)*nNode);
         connectToDownstream = new bool[nNode];
         fixed = new bool[nNode];
         allNodes = new NuNode*[nNode];
         allEdges = new NuEdge*[nNode*nNode];
         geList.reserve(nNode*(nNode-1)/2);
-        set<int> NodeIndexSet(NodeIndexVec.begin(), NodeIndexVec.end());
+        set<int> NodeIndexSet(nodeIndexVec.begin(), nodeIndexVec.end());
+        map<int,NuEdge*>* pHelixNode2EdgeMap = new map<int,NuEdge*>;
+        for(auto& it: *pHelixEdge) {
+            if(pHelixNode2EdgeMap->count(it->indexA)) {
+                string errInfo = "[ERROR] Duplicated Helix Node " + to_string(it->indexA) + " in edge" +\
+                    to_string(it->indexA) + "-" + to_string(it->indexB) + "\n";
+                cerr << errInfo;
+            }
+            if(pHelixNode2EdgeMap->count(it->indexB)) {
+                string errInfo = "[ERROR] Duplicated Helix Node " + to_string(it->indexB) + " in edge" +\
+                    to_string(it->indexA) + "-" + to_string(it->indexB) + "\n";
+                cerr << errInfo;
+            }
+            pHelixNode2EdgeMap->emplace(it->indexA, it);
+            pHelixNode2EdgeMap->emplace(it->indexB, it);
+        }
+        map<int,int> node2HelixMap;  // map from nodeIndex to ihelix
         for(int i=0; i<nNode; i++) {
             allNodes[i] = graphIn->allNodes[nodeIndex[i]];
             seq[i] = graphIn->seq[nodeIndex[i]];
             if(NodeIndexSet.count(nodeIndex[i]+1)) {
                 connectToDownstream[i] = graphIn->connectToDownstream[nodeIndex[i]];
-
-            } else {
+                if(!connectToDownstream[i]) {
+                    sep.emplace_back(0);
+                    sep.emplace_back(0);
+                    nFrag+=1;
+                }
+            } else if(nodeIndex[i]+1 == graphIn->seqLen) {
+                connectToDownstream[i] = false;
+                sep.emplace_back(0);
+            }
+            else {
                 connectToDownstream[i] = false;  // the original downstream node is not included in subgraph
+                // next motif node is nodeIndexVec[i+1], next full seq node is nodeIndexVec[i]+1
+                // check helix first
+                if(pHelixNode2EdgeMap->count(nodeIndexVec[i]) && pHelixNode2EdgeMap->count(nodeIndexVec[i]+1)
+                    && graphIn->allEdges[nodeIndexVec[i]*(graphIn->seqLen)+nodeIndexVec[i]+1]->weight
+                    < MOTIFASSIGNER_GROW_CUTOFF) {  // helix break
+                    iHelix+=1;
+                    sep.emplace_back(-iHelix);
+                    node2HelixMap.emplace(nodeIndexVec[i], iHelix);
+                }
+
+
             }
             fixed[i] = graphIn->fixed[nodeIndex[i]];
             for(int j=0; j<nNode; j++) {
@@ -98,6 +135,7 @@ namespace NSPbm {
     }
 
     bool MotifAssigner::isHelixByWC(int i, int j) {
+        int seqLen = nuGraph->seqLen;
         bool isWCIJ = false;
         bool isWCILast1JNext1 =false, isWCINext1JLast1=false;
         bool isWCILast2JNext2 =false, isWCINext2JLast2=false;
@@ -111,18 +149,18 @@ namespace NSPbm {
         if(isWCIJ) {
             if(i>1 && j<seqLen-2 && nuGraph->connectToDownstream[i-1] && nuGraph->connectToDownstream[i-2] &&
             nuGraph->connectToDownstream[j] && nuGraph->connectToDownstream[j+1]) {
-                isWCILast2JNext2 =  nuGraph->allEdges[(i-2)*seqLen+j+2].isWC();
-                isWCILast1JNext1 =  nuGraph->allEdges[(i-1)*seqLen+j+1].isWC();
+                isWCILast2JNext2 =  nuGraph->allEdges[(i-2)*seqLen+j+2]->isWC();
+                isWCILast1JNext1 =  nuGraph->allEdges[(i-1)*seqLen+j+1]->isWC();
             } else if (i==1 && j<seqLen-1 && nuGraph->connectToDownstream[i-1] && nuGraph->connectToDownstream[j]) {
-                isWCILast1JNext1 = nuGraph->allEdges[(i-1)*seqLen+j+1].isWC();
+                isWCILast1JNext1 = nuGraph->allEdges[(i-1)*seqLen+j+1]->isWC();
             }
 
             if(i<seqLen-2 && nuGraph->connectToDownstream[i] && nuGraph->connectToDownstream[i+1] && 
             nuGraph->connectToDownstream[j-1] && nuGraph->connectToDownstream[j-2]) {
-                isWCINext2JLast2 = nuGraph->allEdges[(i+2)*seqLen+j-2].isWC();
-                isWCINext1JLast1 = nuGraph->allEdges[(i+1)*seqLen+j-1].isWC();
-            } else if(i == seqLen-2 && nuGraph->connectToDownstream[i] && nuGraph->Downstream[j-1]) {
-                isWCINext1JLast1 = nuGraph->allEdges[(i+1)*seqLen+j-1].isWC();
+                isWCINext2JLast2 = nuGraph->allEdges[(i+2)*seqLen+j-2]->isWC();
+                isWCINext1JLast1 = nuGraph->allEdges[(i+1)*seqLen+j-1]->isWC();
+            } else if(i == seqLen-2 && nuGraph->connectToDownstream[i] && nuGraph->connectToDownstream[j-1]) {
+                isWCINext1JLast1 = nuGraph->allEdges[(i+1)*seqLen+j-1]->isWC();
             }
             if(isWCINext1JLast1 && isWCILast1JNext1) {
                 return true;
@@ -138,7 +176,7 @@ namespace NSPbm {
     }
 
 
-    map<int, set<int>*>* getStackingSetMap() {
+    map<int, set<int>*>* MotifAssigner::getStackingSetMap() {
         int seqLen = nuGraph->seqLen;
         AtomLib* atl = nuGraph->atLib;
         vector<RNABase*> baseVec;
@@ -147,10 +185,10 @@ namespace NSPbm {
         for(int i=0; i<seqLen;i++) {
             char btc = baseTypeitoaMap[nuGraph->allNodes[i]->baseType];
             RNABase* curBase = new RNABase(to_string(i),"A",btc);
-            vector<Atom*>& atomList = nuGraph->allNodes[i]->toAtomListWithPho(atl);
+            vector<Atom*> atomList = nuGraph->allNodes[i]->toAtomListWithPho(atl);
             int nAt = atomList.size();
             for(int j=0; j<nAt; j++) {
-                curBase->addAtom(atomList[j])
+                curBase->addAtom(atomList[j]);
             }
             baseVec.emplace_back(curBase);
         }
@@ -158,15 +196,15 @@ namespace NSPbm {
         for(int i=0; i<seqLen; i++) {
             for(int j=i+1; j<seqLen; j++) {
                 if(baseVec[i]->isStackingTo(baseVec[j], atl)) {
-                    if(baseStackingMap.count(i)==0) {
-                        baseStackingMap.emplace(i,new set{j});
+                    if(baseStackingMap->count(i)==0) {
+                        baseStackingMap->emplace(i,new set{j});
                     } else {
-                        baseStackingMap[i]->emplace(j);
+                        baseStackingMap->at(i)->emplace(j);
                     }
-                    if(baseStackingMap.count(j)==0) {
-                        baseStackingMap.emplace(j,new set{i});
+                    if(baseStackingMap->count(j)==0) {
+                        baseStackingMap->emplace(j,new set{i});
                     } else {
-                        baseStackingMap[j]->emplace(i);
+                        baseStackingMap->at(j)->emplace(i);
                     }
                 }
             }
@@ -188,47 +226,47 @@ namespace NSPbm {
 
 
     bool MotifAssigner::isHelixByStacking(int i, int j) {
-        // map<int, set<int>*>* baseStackingMap = getStackingSetMap();
+        int seqLen = nuGraph->seqLen;
         bool isStackILast1=false, isStackINext1=false, isStackJLast1=false, isStackJNext1=false;
         bool isStackILast2=false, isStackINext2=false, isStackJLast2=false, isStackJNext2=false;
         bool isBpILast1JNext1 =false, isBpINext1JLast1=false;
         bool isBpILast2JNext2 =false, isBpINext2JLast2=false;
         if(nuGraph->allEdges[i*seqLen+j]->weight < MOTIFASSIGNER_BP_WEIGHT_MAX) {
             if(i>0 && nuGraph->connectToDownstream[i-1]) {
-                if(baseStackiongMap->count(i) && baseStackingMap[i]->count(i-1)) {
+                if(baseStackingMap->count(i) && baseStackingMap->at(i)->count(i-1)) {
                     isStackILast1 = true;
-                    if(i>1 && nuGraph->connectTodownstream[i-2]) {
-                        if(baseStackingMap[i-1]->count(i-2)) {
+                    if(i>1 && nuGraph->connectToDownstream[i-2]) {
+                        if(baseStackingMap->at(i-1)->count(i-2)) {
                             isStackILast2 = true;
                         }
                     }
                 }
             }
             if(j>0 && nuGraph->connectToDownstream[j-1]) {
-                if(baseStackingMap->count(j) && baseStackingMap[j]->count(j-1)) {
+                if(baseStackingMap->count(j) && baseStackingMap->at(j)->count(j-1)) {
                     isStackJLast1 = true;
-                    if(j>1 && nuGraph->connectTodownstream[j-2]) {
-                        if(baseStackingMap[j-1]->count(j-2)) {
+                    if(j>1 && nuGraph->connectToDownstream[j-2]) {
+                        if(baseStackingMap->at(j-1)->count(j-2)) {
                             isStackJLast2 = true;
                         }
                     }
                 }
             }
             if(nuGraph->connectToDownstream[i]) {
-                if(baseStackingMap->count(i+1) && baseStackingMap[i+1]->count(i)) {
+                if(baseStackingMap->count(i+1) && baseStackingMap->at(i+1)->count(i)) {
                     isStackINext1 = true;
                     if(i<seqLen-2 && nuGraph->connectToDownstream[i+1]) {
-                        if(baseStackingMap[i+2]->count(i+1)) {
+                        if(baseStackingMap->at(i+2)->count(i+1)) {
                             isStackINext2 = true;
                         }
                     }
                 }
             }
             if(nuGraph->connectToDownstream[j]) {
-                if(baseStackingMap->count(j+1) && baseStackingMap[j+1]->count(j)) {
+                if(baseStackingMap->count(j+1) && baseStackingMap->at(j+1)->count(j)) {
                     isStackJNext1 = true;
                     if(j<seqLen-2 && nuGraph->connectToDownstream[j+1]) {
-                        if(baseStackingMap[j+2]->count(j+1)) {
+                        if(baseStackingMap->at(j+2)->count(j+1)) {
                             isStackJNext2 = true;
                         }
                     }
@@ -287,21 +325,22 @@ namespace NSPbm {
      * @return true 
      * @return false 
      */
-    bool isImplicitEdge(int i, int j) {
+    bool MotifAssigner::isImplicitEdge(int i, int j) {
+        int seqLen = nuGraph->seqLen;
         double curWeight = min(nuGraph->allEdges[i*seqLen+j]->weight,
                                nuGraph->allEdges[j*seqLen+i]->weight);
         if(baseStackingMap->count(i)) {
-            for(auto& it : baseStackingMap->at(i)) {
-                if(min(nuGraph->allEdges[(it.second)*seqLen+j]->weight,
-                       nuGraph->allEdges[j*seqLen+it.second]->weight) < curWeight) {
+            for(auto& it : *(baseStackingMap->at(i))) {
+                if(min(nuGraph->allEdges[it*seqLen+j]->weight,
+                       nuGraph->allEdges[j*seqLen+it]->weight) < curWeight) {
                     return true;
                 }
             }
         }
         if(baseStackingMap->count(j)) {
-            for(auto& it : baseStackingMap->at(j)) {
-                if(min(nuGraph->allEdges[(it.second)*seqLen+i]->weight,
-                       nuGraph->allEdges[i*seqLen+it.second]->weight) < curWeight) {
+            for(auto& it : *(baseStackingMap->at(j))) {
+                if(min(nuGraph->allEdges[it*seqLen+i]->weight,
+                       nuGraph->allEdges[i*seqLen+it]->weight) < curWeight) {
                     return true;
                 }
             }
@@ -482,12 +521,12 @@ namespace NSPbm {
             
             // TODO: filter motifs by recheck compactness
 
-            vector<int> NodeIndexVec(selNode.begin(), selNode.end());
+            vector<int> nodeIndexVec(selNode.begin(), selNode.end()); // set is internally sorted
             #ifdef DEBUG
-                int nSelNode = NodeIndexVec.size();
+                int nSelNode = nodeIndexVec.size();
                 cout << "Selected Nodes: ";
                 for(int j=0; j<nSelNode; j++) {
-                    cout << NodeIndexVec[j] << ",";
+                    cout << nodeIndexVec[j] << ",";
                 }
                 cout << endl;
             #endif
@@ -495,7 +534,7 @@ namespace NSPbm {
             // TODO: compute ene
             double ene = 0;
 
-            MotifGraph* pMotif = new MotifGraph(nuGraph, NodeIndexVec, ene);
+            MotifGraph* pMotif = new MotifGraph(nuGraph, nodeIndexVec, ene);
 
             // TODO: redundent reduction
             int nmtf =  motifs.size();

@@ -50,9 +50,11 @@ namespace NSPbm {
              * @brief Construct a new Motif Graph object
              * 
              * @param[in] GraphIn The original NuGraph.
-             * @param[in] NodeIndexVec Indexes of selected nodes in GraphIn allNodes (and seq)
+             * @param[in] NodeIndexVec Indexes of selected nodes in GraphIn allNodes (and seq), the indexes
+             *      may not be continuous but must be sorted.
              */
-            MotifGraph(NuGraph* GraphIn, vector<int>& NodeIndexVec, double ene=0.0);
+            MotifGraph(NuGraph* GraphIn, vector<int>& NodeIndexVec, double ene=0.0,
+                set<NuEdge*>* pHelixEdge=nullptr);
             int writePDB(const string& outputFile);
             
             /**
@@ -91,6 +93,7 @@ namespace NSPbm {
             map<int,set<int>*>* baseStackingMap;
             vector<MotifGraph*> motifs;
             MotifAssigner(NuGraph* nuGraphIn);
+
             /**
              * @brief Write edge weights in csv format, with 5 columns:
              * nodeIndex1, nodeIndex2, weight, isWC, isNB
@@ -111,7 +114,7 @@ namespace NSPbm {
         private:
             bool isHelixByWC(int i, int j);
             bool isHelixByStacking(int i, int j);
-            map<int,set<int>>* getStackingSetMap();  // returns a map on the stack, requires manual release;
+            map<int,set<int>*>* getStackingSetMap();  // returns a map on the stack, requires manual release;
             bool isImplicitEdge(int i, int j);
     };
 }
