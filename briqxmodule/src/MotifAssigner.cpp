@@ -144,7 +144,6 @@ namespace NSPbm {
             i=j;
             j=tmp;
         }
-        int seqLen = nuGraph->seqLen;
         isWCIJ = nuGraph->allEdges[i*seqLen + j]->isWC();
         if(isWCIJ) {
             if(i>1 && j<seqLen-2 && nuGraph->connectToDownstream[i-1] && nuGraph->connectToDownstream[i-2] &&

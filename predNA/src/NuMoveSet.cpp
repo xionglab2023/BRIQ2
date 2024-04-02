@@ -179,21 +179,33 @@ int NuPairMoveSetLibrary::dump() {
 		throw("[Error]Fail to open " + outpath + "/" + fileName);
 	}
 	oi->dump(outs);
+	outs.write(reinterpret_cast<char*>(nbContactClusterNum), sizeof(int)*16);
+	outs.write(reinterpret_cast<char*>(revNbContactClusterNum), sizeof(int)*16);
+	int nnbClustNum[16];
+	for(int i=0;i<16; i++) {
+		nnbClustNum[i] = nnbMoveList[i].size();
+	}
+	outs.write(reinterpret_cast<char*>(nnbClustNum), sizeof(int)*16);
 	for(int i=0; i<16; i++) {
-		int lnb = nbMoveList[i].size();
-		outs.write(reinterpret_cast<char*>(&lnb), sizeof(int));
-		int lnnb = nnbMoveList[i].size();
-		outs.write(reinterpret_cast<char*>(&lnnb), sizeof(int));
-		for(int j=0;j<lnb;j++) {
+		for(int j=0;j<nbContactClusterNum[i];j++) {
 			nbMoveList[i][j]->dump(outs);
 		}
-		for(int j=0;j<lnb;j++) {
+		for(int j=0;j<revNbContactClusterNum[i];j++) {
 			revNbMoveList[i][j]->dump(outs);
 		}
-		for(int j=0;j<lnnb;j++) {
+		for(int j=0;j<nnbClustNum[i];j++) {
 			nnbMoveList[i][j]->dump(outs);
-		}
+		}		
 	}
+	outs.write(reinterpret_cast<char*>(&nbNonContactClusterNum), sizeof(int));
+	char z0[4] = {'\0'};
+	outs.write(reinterpret_cast<char*>(z0), sizeof(int));
+
+	for(int i=0;i<nbNonContactClusterNum;i++) {
+		nbNonContactMoveList[i]->dump(outs);
+		revNbNonContactMoveList[i]->dump(outs);
+	}
+
 	// outs.write(reinterpret_cast<char*>(this), sizeof(*this));
 	// outs.write(reinterpret_cast<char*>(this->oi), sizeof(*(this->oi)));
 	// for(int i=0; i<16; i++) {
@@ -226,27 +238,41 @@ int NuPairMoveSetLibrary::load() {
 	}
 	oi = new OrientationIndex(true);
 	oi->load(ins);
+	ins.read(reinterpret_cast<char*>(nbContactClusterNum), sizeof(int)*16);
+	ins.read(reinterpret_cast<char*>(revNbContactClusterNum), sizeof(int)*16);
+	int nnbClustNum[16];
+	ins.read(reinterpret_cast<char*>(nnbClustNum), sizeof(int)*16);
 	for(int i=0; i<16; i++) {
 		int lnb, lnnb, tmp[2];
 		ins.read(reinterpret_cast<char*>(&tmp), 2*sizeof(int));
 		lnb = tmp[0];
 		lnnb = tmp[1];
-		nbMoveList[i].resize(lnb);
-		for(int j=0;j<lnb;j++) {
+		nbMoveList[i].resize(nbContactClusterNum[i]);
+		for(int j=0;j<nbContactClusterNum[i];j++) {
 			nbMoveList[i][j] = new IndividualNuPairMoveSet();
 			nbMoveList[i][j]->load(ins);
 		}
-		revNbMoveList[i].resize(lnb);
-		for(int j=0;j<lnb;j++) {
+		revNbMoveList[i].resize(revNbContactClusterNum[i]);
+		for(int j=0;j<revNbContactClusterNum[i];j++) {
 			revNbMoveList[i][j] = new IndividualNuPairMoveSet();
 			revNbMoveList[i][j]->load(ins);
 		}
-		nnbMoveList[i].resize(lnnb);
-		for(int j=0;j<lnnb;j++) {
+		nnbMoveList[i].resize(nnbClustNum[i]);
+		for(int j=0;j<nnbClustNum[i];j++) {
 			nnbMoveList[i][j] = new IndividualNuPairMoveSet();
 			nnbMoveList[i][j]->load(ins);
 		}
 	}
+	ins.read(reinterpret_cast<char*>(&nbNonContactClusterNum), sizeof(int));
+	int z0;
+	ins.read(reinterpret_cast<char*>(&z0), sizeof(int));
+	for(int i=0; i<nbNonContactClusterNum; i++) {
+		nbNonContactMoveList[i] = new IndividualNuPairMoveSet();
+		nbNonContactMoveList[i]->load(ins);
+		revNbNonContactMoveList[i] = new IndividualNuPairMoveSet();
+		revNbNonContactMoveList[i]->load(ins);
+	}
+	
 
 	return EXIT_SUCCESS;
 }
