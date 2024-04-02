@@ -7,6 +7,7 @@
 #define FORCEFIELD_RNAENERGYTABLE_H_
 
 #include "model/BaseDistanceMatrix.h"
+#include "model/BasePairLib.h"
 #include "dataio/datapaths.h"
 #include "forcefield/XPara.h"
 
@@ -40,6 +41,8 @@ public:
 	HbondEnergy* hbET;
 	BackboneConnectionEnergyCG* bbcgET;
 
+	BasePairLib* bpLib;
+
 	ForceFieldPara* para;
 	bool deleteTag;
 
@@ -54,6 +57,7 @@ public:
 		pb = NULL;
 		hbET = NULL;
 		bbcgET = NULL;
+		bpLib = NULL;
 	}
 
 	RnaEnergyTable(const string& paraFile){
@@ -67,6 +71,7 @@ public:
 		pb = NULL;
 		hbET = NULL;
 		bbcgET = NULL;
+		bpLib = NULL;
 	}
 
 	RnaEnergyTable(ForceFieldPara* para){
@@ -79,6 +84,7 @@ public:
 		pb = NULL;
 		hbET = NULL;
 		bbcgET = NULL;
+		bpLib = NULL;
 	}
 
 	void loadEnergyWithout6D(){
@@ -90,13 +96,20 @@ public:
 	}
 
 	void loadAtomicEnergy(){
-
+		cout << "load bp6d" << endl;
 		bpET = new BasePair6DEnergyTable(para, true, 1);
 		bpET->load(para);
+		cout << "load clash" << endl;
 		acET = new AtomicClashEnergy(para);
+		cout << "load ribose oxy" << endl;
 		roET = new RiboseOxygenEnergyTable(para);
+		cout << "load pb" << endl;
 		pb = new PO3Builder(para);
+		cout << "load hb" << endl;
 		hbET = new HbondEnergy(para);
+		cout << "load bp" << endl;
+		bpLib = new BasePairLib();
+		cout << "finish" << endl;
 	}
 
 	void loadCoarseGrainedEnergy(){
@@ -105,6 +118,7 @@ public:
 		bpcgET->load();
 		acET = new AtomicClashEnergy(para);
 		bbcgET = new BackboneConnectionEnergyCG(para);
+		bpLib = new BasePairLib();
 	}	
 
 	virtual ~RnaEnergyTable();

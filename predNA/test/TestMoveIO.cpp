@@ -25,19 +25,22 @@ int main() {
     gettimeofday(&end, NULL);
     timeTxt = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
     cout << "time consumed: " << timeTxt << " seconds" << endl;
+
+    set1->printMoveLibInfo();
+
     cout << "first int in each vector of nbMoveList[6][9] moveIndexList:" << endl;
     for(int i=0; i<20; i++) {
-        cout << set1->nbMoveList[6][9]->moveIndexList[i][0] << " ";
+        cout << set1->getMoveSet(6,9,1)->moveIndexList[i][0] << " ";
     }
     cout << endl;
     cout << "first int in each vector of revNbMoveList[6][9] moveIndexList:" << endl;
     for(int i=0; i<20; i++) {
-        cout << set1->revNbMoveList[6][9]->moveIndexList[i][0] << " ";
+        cout << set1->getMoveSet(6,9,-1)->moveIndexList[i][0] << " ";
     }
     cout << endl;
     cout << "first int in each vector of nnbMoveList[6][9] moveIndexList:" << endl;
     for(int i=0; i<20; i++) {
-        cout << set1->nnbMoveList[6][9]->moveIndexList[i][0] << " ";
+        cout << set1->getMoveSet(6,9,2)->moveIndexList[i][0] << " ";
     }
     cout << endl;
     cout << "oi sphereKeyMap1000 first 5 key-val pairs: " << endl;
@@ -48,7 +51,6 @@ int main() {
             if(ii>4) break;
 		}
     set1->dump();
-    set1->printMoveLibInfo();
     delete set1;
     
     /*
@@ -92,17 +94,17 @@ int main() {
     cout << "time consumed: " << timeBinaryCache << " seconds" << endl;
     cout << "first int in each vector of nbMoveList[6][9] moveIndexList:" << endl;
     for(int i=0; i<20; i++) {
-        cout << set1->nbMoveList[6][9]->moveIndexList[i][0] << " ";
+        cout << set1->getMoveSet(6,9,1)->moveIndexList[i][0] << " ";
     }
     cout << endl;
     cout << "first int in each vector of revNbMoveList[6][9] moveIndexList:" << endl;
     for(int i=0; i<20; i++) {
-        cout << set1->revNbMoveList[6][9]->moveIndexList[i][0] << " ";
+        cout << set1->getMoveSet(6,9,-1)->moveIndexList[i][0] << " ";
     }
     cout << endl;
     cout << "first int in each vector of nnbMoveList[6][9] moveIndexList:" << endl;
     for(int i=0; i<20; i++) {
-        cout << set1->nnbMoveList[6][9]->moveIndexList[i][0] << " ";
+        cout << set1->getMoveSet(6,9,2)->moveIndexList[i][0] << " ";
     }
     cout << endl;
     cout << "oi sphereKeyMap1000 first 5 key-val pairs: " << endl;

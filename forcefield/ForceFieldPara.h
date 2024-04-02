@@ -37,6 +37,8 @@ public:
 	double wtPho;
 	double wtRibose;
 
+	double pNbClusterCutoff;
+
 	double rnaDihedImpD1D2Shift[6];
 	double rnaDihedImpD4D5Shift[6];
 	double rnaDihedD2D3D4Shift[6];

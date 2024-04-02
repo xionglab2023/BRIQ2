@@ -939,6 +939,22 @@ vector<Atom*> NuNode::toAtomList(AtomLib* atLib){
     return atomList;
 }
 
+vector<Atom*> NuNode::toAtomListOnlyBase(AtomLib* atLib){
+	vector<Atom*> list;
+	vector<string>* names = atLib->getRnaSidechainAtoms(this->baseType);
+	vector<XYZ> tList;
+	for(int i=0;i<baseConf->rot->atomNum;i++){
+		tList.push_back(baseConf->coords[i]);
+	}
+    vector<Atom*> atomList;
+
+    for(int i=0;i<tList.size();i++){
+    	atomList.push_back(new Atom(names->at(i), tList[i]));
+    }
+
+    return atomList;
+}
+
 vector<Atom*> NuNode::toAtomListCG(AtomLib* atLib){
     vector<Atom*> atomList;
 	atomList.push_back(new Atom("C1", baseConfCG->coords[0]));
@@ -2765,8 +2781,10 @@ void NuTree::randomInit(){
 	for(int i=0;i<geList.size();i++){
 
 		randEdge = geList[i];
-
+		cout << "rand edge: " << randEdge->indexA << " " << randEdge->indexB << endl;
+		cout << "rand edge sampling freq: " << randEdge->samplingFreq << endl;
 		if(randEdge->samplingFreq == 0) continue;
+
 		randMove = randEdge->moveSet->getRandomMove();
 
 		/*
@@ -3005,6 +3023,10 @@ graphInfo* NuTree::runAtomicMC(){
 					cout << "edge mut, edge: " << randEdge->indexA << " " << randEdge->indexB << " AC/RJ" << endl;
 					graph->checkEnergy();
 				}
+			}
+
+			if(debug) {
+				printf("step %d curEne: %8.3f eTot: %8.3f totEne: %8.3f\n", k, curEne, eTot, graph->totalEnergy());
 			}
 		}
 
@@ -3368,6 +3390,28 @@ double graphInfo::rmsd(graphInfo* other){
 			delete aList[k];
 		}
 	}
+	return NSPgeometry::simpleRMSD(tList1, tList2);
+}
+
+double graphInfo::rmsd(graphInfo* other, int pos){
+	vector<XYZ> tList1;
+	vector<XYZ> tList2;
+
+			
+	vector<Atom*> aList = nodes[pos]->toAtomListOnlyBase(this->atLib);
+	for(int j=0;j<aList.size();j++)
+		tList1.push_back(aList[j]->coord);
+	for(int k=0;k<aList.size();k++){
+		delete aList[k];
+	}
+
+	aList = other->nodes[pos]->toAtomListOnlyBase(this->atLib);
+	for(int j=0;j<aList.size();j++)
+		tList2.push_back(aList[j]->coord);
+	for(int k=0;k<aList.size();k++){
+		delete aList[k];
+	}
+
 	return NSPgeometry::simpleRMSD(tList1, tList2);
 }
 
@@ -3925,19 +3969,24 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 
 	set<int> maskedPositions;
 	NuNode* nodeTarget = allNodes[pos];
-	vector<XYZ> coordTarget;
-	for(int i=0;i<nodeTarget->baseConf->rot->atomNum;i++){
-		coordTarget.push_back(nodeTarget->baseConf->coords[i]);
-	}
-	for(int i=0;i<nodeTarget->riboseConf->rot->atomNum;i++){
-		coordTarget.push_back(nodeTarget->riboseConf->coords[i]);
-	}
-	for(int i=0;i<4;i++){
-		coordTarget.push_back(nodeTarget->phoConf->coords[i]);
-	}
 
 	double d;
 	int i,j,k;
+
+	//mask residues with minD > 10.0 
+
+	/*
+	vector<XYZ> coordTarget;
+	for(i=0;i<nodeTarget->baseConf->rot->atomNum;i++){
+		coordTarget.push_back(nodeTarget->baseConf->coords[i]);
+	}
+	for(i=0;i<nodeTarget->riboseConf->rot->atomNum;i++){
+		coordTarget.push_back(nodeTarget->riboseConf->coords[i]);
+	}
+	for(i=0;i<4;i++){
+		coordTarget.push_back(nodeTarget->phoConf->coords[i]);
+	}
+
 	for(i=0;i<seqLen;i++){
 		if(i==pos) continue;
 		NuNode* nodeA = allNodes[i];
@@ -3964,12 +4013,23 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 			maskedPositions.insert(i);
 		}
 	}
+	*/
 
 	int seqLen = baseSeq.length();
 	char xx[seqLen+1];
 	for(i=0;i<seqLen;i++)
 		xx[i] = '0';
 	xx[seqLen] = '\0';
+
+	for(i=0;i<=pos-3;i++){
+		if(allNodes[i]->samplingFreq > 0.0)
+			allNodes[i]->samplingFreq = 0.2;
+	}
+	for(i=pos+3;i<seqLen;i++){
+		if(allNodes[i]->samplingFreq > 0.0)
+			allNodes[i]->samplingFreq = 0.2;
+	}
+
 	for(i=0;i<seqLen;i++){
 		if(maskedPositions.find(i) != maskedPositions.end())
 			xx[i] = '-';
@@ -3987,8 +4047,6 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 	for(i=0;i<seqLen;i++){
 		char c = cst[i];
 		for(j=0;j<cstString.length();j++){
-
-			
 			if(c == cstString[j]) {
 				for(k=i+1;k<seqLen;k++){
 					char d = cst[k];
@@ -4017,7 +4075,7 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 			this->masked[i] = false;
 			this->fixed[i] = true;
 			if(this->allNodes[i]->samplingFreq != 0)
-				this->allNodes[i]->samplingFreq = 0.5;
+				this->allNodes[i]->samplingFreq = 0.3;
 		}
 		else {
 			this->masked[i] = false;

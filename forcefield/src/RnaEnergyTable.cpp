@@ -15,6 +15,7 @@ namespace NSPforcefield {
 		if(this->hbET != NULL) delete this->hbET;
 		if(this->bpcgET != NULL) delete this->bpcgET;
 		if(this->bbcgET != NULL) delete this->bbcgET;
+		if(this->bpLib != NULL) delete this->bpLib;
 		
 		if(deleteTag)
 			delete this->para;

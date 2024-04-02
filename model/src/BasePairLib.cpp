@@ -12,8 +12,11 @@ namespace NSPmodel {
 BasePairLib::BasePairLib() {
 
 	string path = NSPdataio::datapath();
-	string nbCenter = path+"basePair/nb.center.dm";
-	string nbCenterInfo = path+"basePair/nb.center.info";
+	string nbCenter = path+"basePair/nb2/nb.merge.dm";
+	string nbCenterInfo = path+"basePair/nb2/nb.merge.info";
+
+	string nbContactCenter = path+"basePair/nb2/nb.contact.dm";
+	string nbNonContactCenter = path+"basePair/nb2/nb.noncontact.dm";
 
 	string nnbCenter = path+"basePair/adj-1.2/nnb.center.dm";
 	string nnbCenterInfo = path+"basePair/adj-1.2/nnb.center.info";
@@ -34,19 +37,59 @@ BasePairLib::BasePairLib() {
 	for(int i=0;i<16;i++){
 		this->nbBasePairNum[i] = 0;
 		this->nnbBasePairNum[i] = 0;
-		for(int j=0;j<20000;j++){
+		for(int j=0;j<3000;j++){
 			this->nbEnergy[i][j] = 0.0;
 			this->nbEnergyWithOxy[i][j] = 0.0;
 			this->nbProportion[i][j] = 0.0;
+
 			this->nnbEnergy[i][j] = 0.0;
 			this->nnbEnergyWithOxy[i][j] = 0.0;
 			this->nnbProportion[i][j] = 0.0;
 		}
 	}
 
+	file.open(nbContactCenter.c_str(), ios::in);
+	if(!file.is_open()){
+		cout << "fail to open file: nb.contact.dm" << endl;
+		exit(1);
+	}
+	currentType = -1;
+	lastType = -1;
+	currentIndex = -1;
+	while(getline(file, s)){
+		if(s.length() < 10) continue;
+		BaseDistanceMatrix dm(s);
+		typeA = typeMap[s[0]];
+		typeB = typeMap[s[2]];
+		currentType = typeA*4+typeB;
+		if(currentType != lastType)
+			currentIndex = 0;
+		else
+			currentIndex++;
+		
+		this->nbContactBasePairNum[currentType]++;
+		lastType = currentType;
+	}
+	file.close();
+
+
+	file.open(nbNonContactCenter.c_str(), ios::in);
+		if(!file.is_open()){
+		cout << "fail to open file: nb.noncontact.dm" << endl;
+		exit(1);
+	}
+	this->nbNonContactBasePairNum = 0;
+	currentIndex = 0;
+	while(getline(file, s)){
+		if(s.length() < 10) continue;
+		this->nbNonContactBasePairNum++;
+	}
+	file.close();
+
+
 	file.open(nbCenter.c_str(), ios::in);
 	if(!file.is_open()){
-		cout << "fail to open file: nb.center.dm" << endl;
+		cout << "fail to open file: nb.merge.dm" << endl;
 		exit(1);
 	}
 	currentType = -1;
@@ -148,144 +191,7 @@ BasePairLib::BasePairLib() {
 	file.close();
 }
 
-BasePairLib::BasePairLib(const string& bpLibType) {
 
-	string path = NSPdataio::datapath();
-	string nbCenter = path+"basePair/nb.center.dm";
-	string nbCenterInfo = path+"basePair/nb.center.info";
-
-	string nnbCenter = path+"basePair/" + bpLibType + "/nnb.center.dm";
-	string nnbCenterInfo = path+"basePair/" + bpLibType + "/nnb.center.info";
-
-	ifstream file;
-	string s;
-	vector<string> spt;
-	int typeA, typeB, currentType, lastType, currentIndex;
-
-
-	map<char, int> typeMap;
-	typeMap['A'] = 0;
-	typeMap['U'] = 1;
-	typeMap['G'] = 2;
-	typeMap['C'] = 3;
-
-
-	for(int i=0;i<16;i++){
-		this->nbBasePairNum[i] = 0;
-		this->nnbBasePairNum[i] = 0;
-		for(int j=0;j<20000;j++){
-			this->nbEnergy[i][j] = 0.0;
-			this->nbEnergyWithOxy[i][j] = 0.0;
-			this->nbProportion[i][j] = 0.0;
-			this->nnbEnergy[i][j] = 0.0;
-			this->nnbEnergyWithOxy[i][j] = 0.0;
-			this->nnbProportion[i][j] = 0.0;
-		}
-	}
-
-	file.open(nbCenter.c_str(), ios::in);
-	if(!file.is_open()){
-		cout << "fail to open file: nb.center.dm" << endl;
-		exit(1);
-	}
-	currentType = -1;
-	lastType = -1;
-	currentIndex = -1;
-	while(getline(file, s)){
-		if(s.length() < 10) continue;
-		BaseDistanceMatrix dm(s);
-		typeA = typeMap[s[0]];
-		typeB = typeMap[s[2]];
-		currentType = typeA*4+typeB;
-		if(currentType != lastType)
-			currentIndex = 0;
-		else
-			currentIndex++;
-		this->nbDMClusterCenters[typeA*4+typeB][currentIndex] = dm;
-		this->nbBasePairNum[currentType]++;
-		lastType = currentType;
-	}
-	file.close();
-
-
-	file.open(nbCenterInfo.c_str(), ios::in);
-	if(!file.is_open()){
-		cout << "fail to open file: nb.center.info" << endl;
-		exit(1);
-	}
-	currentType = -1;
-	lastType = -1;
-	currentIndex = -1;
-	while(getline(file, s)){
-		if(s.length() < 10) continue;
-		typeA = typeMap[s[0]];
-		typeB = typeMap[s[1]];
-		currentType = typeA*4+typeB;
-		if(currentType != lastType)
-			currentIndex = 0;
-		else
-			currentIndex++;
-		splitString(s, " ", &spt);
-		this->nbEnergy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
-		this->nbProportion[typeA*4+typeB][currentIndex] = atof(spt[3].c_str());
-		this->nbEnergyWithOxy[typeA*4+typeB][currentIndex] = atof(spt[4].c_str());
-		lastType = currentType;
-	}
-	file.close();
-
-
-	file.open(nnbCenter.c_str(), ios::in);
-	if(!file.is_open()){
-		cout << "fail to open file: nnb.center.dm" << endl;
-		exit(1);
-	}
-	currentType = -1;
-	lastType = -1;
-	currentIndex = -1;
-	while(getline(file, s)){
-		if(s.length() < 10) continue;
-		BaseDistanceMatrix dm(s);
-		typeA = typeMap[s[0]];
-		typeB = typeMap[s[2]];
-		currentType = typeA*4+typeB;
-		if(currentType != lastType)
-			currentIndex = 0;
-		else
-			currentIndex++;
-		this->nnbDMClusterCenters[typeA*4+typeB][currentIndex] = dm;
-		this->nnbBasePairNum[currentType]++;
-		lastType = currentType;
-	}
-	file.close();
-
-
-
-	file.open(nnbCenterInfo.c_str(), ios::in);
-	if(!file.is_open()){
-		cout << "fail to open file: nnb.center.info" << endl;
-		exit(1);
-	}
-	currentType = -1;
-	lastType = -1;
-	currentIndex = -1;
-	while(getline(file, s)){
-		if(s.length() < 10) continue;
-		typeA = typeMap[s[0]];
-		typeB = typeMap[s[1]];
-		currentType = typeA*4+typeB;
-		if(currentType != lastType)
-			currentIndex = 0;
-		else
-			currentIndex++;
-		splitString(s, " ", &spt);
-		this->nnbEnergy[typeA*4+typeB][currentIndex] = atof(spt[2].c_str());
-		this->nnbProportion[typeA*4+typeB][currentIndex] = atof(spt[3].c_str());
-		this->nnbEnergyWithOxy[typeA*4+typeB][currentIndex] = atof(spt[4].c_str());
-
-		lastType = currentType;
-	}
-	file.close();
-}
 
 int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
 
@@ -354,6 +260,77 @@ int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int se
 	else
 		return -1;
 	
+}
+
+double BasePairLib::getPairClusterProportion(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
+	if(typeA > 3)
+		typeA = typeA - 4;
+
+	if(typeB > 3)
+		typeB = typeB - 4;
+
+	if(typeA < 0 || typeA > 3) {
+		cout << "invalid base type: " << typeA << endl;
+		return -1;
+	}
+
+	if(typeB < 0 || typeB > 3) {
+		cout << "invalid base type: " << typeB << endl;
+		return -1;
+	}
+
+	double minD = 999.9;
+	int minIndex = -1;
+	double minP = 0.0;
+	int pairType = typeA*4+typeB;
+	double d;
+
+	if(sep == 1) { //neighbor base pair
+		int pairNum = nbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+				minP = nbProportion[pairType][i];
+			}
+		}
+	}
+	else if(sep == -1){
+		int revPairType = typeB*4+typeA;
+		BaseDistanceMatrix revDM = dm.reverse();
+		int pairNum = nbBasePairNum[revPairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+				minP = nbProportion[revPairType][i];
+			}
+		}
+	}
+	else if(sep == 0) {
+		return -1;
+	}
+	else { //non-neighbor base pair
+		int pairNum = nnbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nnbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+				minP = nnbProportion[pairType][i];
+			}
+		}
+	}
+
+	//return minIndex;
+	
+	
+	if(minD < 1.2)
+		return minP;
+	else
+		return 0.0;	
 }
 
 void BasePairLib::getNeighborClusters(BaseDistanceMatrix dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters){

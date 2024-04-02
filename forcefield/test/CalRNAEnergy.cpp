@@ -20,10 +20,12 @@
 #include "forcefield/AtomicClashEnergy.h"
 #include "forcefield/HbondEnergy.h"
 #include "model/BasePairLib.h"
+#include "geometry/OrientationIndex.h"
 
 using namespace NSPmodel;
 using namespace NSPforcefield;
 using namespace NSPpredna;
+using namespace NSPgeometry;
 
 int main(int argc, char** argv){
 
@@ -106,6 +108,8 @@ int main(int argc, char** argv){
 	cout << "init basePair lib" << endl;
 	BasePairLib* bpLib = new BasePairLib();
 
+	OrientationIndex oi;
+
 	cout << "calculate energy" << endl;
 	for(int i=0;i<nodeList.size();i++){
 		nodeA = nodeList[i];
@@ -115,16 +119,20 @@ int main(int argc, char** argv){
 			nodeB = nodeList[j];
 
 			BaseDistanceMatrix dm(nodeA->baseConf->cs1, nodeB->baseConf->cs1);
+
+			CsMove cm = nodeB->baseConf->cs1 - nodeA->baseConf->cs1;
+			pair<int,int> id2000 = oi.moveToIndex2000(cm);
+			printf("%d %d SP2000: %d %d\n", i, j, id2000.first, id2000.second);
 		
-			int pairType = bpLib->getPairType(dm, nodeA->baseType, nodeB->baseType, sep);
+			int pairType = bpLib->getPairType(dm, nodeA->baseType, nodeB->baseType, 2);
+
+			printf("cluster ID: %d %d %3d\n", i, j, pairType);
 			
-			if(pairType < 0) continue;
+			//if(pairType < 0) continue;
 
 
-			double eBB = getBaseBaseEnergy(nodeA, nodeB, sep, et, false);
-	
+			double eBB = getBaseBaseEnergy(nodeA, nodeB, 2, et, false);
 			double eBBClash = baseBaseClash(nodeA, nodeB, sep, et, false);
-
 			double eBR = getBaseRiboseEnergy(nodeA, nodeB, sep, et, false);
 			eBR += getBaseRiboseEnergy(nodeB, nodeA, -sep, et, false);
 			if(eBR > 0) eBR = 0;

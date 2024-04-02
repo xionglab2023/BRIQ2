@@ -32,11 +32,23 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clus
 	char xx[20];
 	sprintf(xx, "%c%c%d", augc[typeA], augc[typeB], clusterID);
 
+	char rxx[20];
+	sprintf(rxx, "%c%c%d", augc[typeB], augc[typeA], clusterID);
+
+	char yy[20];
+	sprintf(yy, "%d", clusterID);
+
 	if(!bb){
 		string path = NSPdataio::datapath()+"pairMove4/";
 
-		if(sep == 1 || sep == -1)
-			fileName = path+"nb/"+string(xx)+".move";
+		if(pairType == -1) //neighbor non-contact base pair
+		{
+			fileName = path+"nb/nonContact/nc" + string(yy)+".move";
+		}
+		else if(sep == 1)
+			fileName = path+"nb/contact/"+string(xx)+".move";
+		else if(sep == -1)
+			fileName = path+"nb/contact/"+string(rxx)+".move";
 		else
 			fileName = path+"nnb/"+string(xx)+".move";
 
@@ -48,15 +60,13 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clus
 			CsMove m1 = oi->index1000ToCsMove(moveID);
 			double d = m1.oriMove.length();
 			if(d < 0.001){
-				printf("%s %d\n", fileName, moveID);
+				printf("BAD MOVE: %s %d\n", fileName, moveID);
 			}
-
 
 			if(sep > 0)
 				moveIndexList[binID].push_back(moveID);
 			else if(sep == -1){
-				CsMove move = oi->index1000ToCsMove(moveID);
-				CsMove revMove = move.reverse();
+				CsMove revMove = m1.reverse();
 				moveIndexList[binID].push_back(oi->moveToIndex1000(revMove));
 			}
 		}
@@ -78,11 +88,9 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(int sep, int pairType, int clus
 				printf("%s %d\n", tableName, moveID);
 			}
 
-
 			if(sep > 0)
 				moveIndexList[binID].emplace_back(moveID);
 			else if(sep == -1){
-				// CsMove move = oi->index1000ToCsMove(moveID);
 				CsMove revMove = m1.reverse();
 				moveIndexList[binID].emplace_back(oi->moveToIndex1000(revMove));
 			}
@@ -257,6 +265,8 @@ OrientationIndex* oi, BinaryBook* bb, vector<IndividualNuPairMoveSet*> * rvec) {
 
 NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary, int binaryMode){
 
+
+
 	if(withBinary && binaryMode == 1) {
 		// Read from binaryCache
 		this->load();
@@ -280,17 +290,37 @@ NuPairMoveSetLibrary::NuPairMoveSetLibrary(bool withBinary, int binaryMode){
 		if(!withBinary) {
 			/* Read from TXT*/
 			for(int i=0;i<16;i++){
-				int clusterNum = bpLib->nbBasePairNum[i];
+				int typeA = i/4;
+				int typeB = i%4;
+				int reverseType = typeB*4+typeA;
+
+				int clusterNum = bpLib->nbContactBasePairNum[i];
+				int reverseClusterNum = bpLib->nbContactBasePairNum[reverseType];
+
 				for(int j=0;j<clusterNum;j++){
 					nbMoveList[i].push_back(new IndividualNuPairMoveSet(1, i, j, oi));
+					
+				}
+
+				for(int j=0;j<reverseClusterNum;j++){
 					revNbMoveList[i].push_back(new IndividualNuPairMoveSet(-1, i, j, oi));
 				}
+
+				this->nbContactClusterNum[i] = clusterNum;
+				this->revNbContactClusterNum[i] = reverseClusterNum;
 
 				clusterNum = bpLib->nnbBasePairNum[i];
 				for(int j=0;j<clusterNum;j++){
 					nnbMoveList[i].push_back(new IndividualNuPairMoveSet(2, i, j, oi));
 				}
 			}
+
+			for(int i=0;i<bpLib->nbNonContactBasePairNum;i++){
+				this->nbNonContactMoveList.push_back(new IndividualNuPairMoveSet(1, -1, i, oi));
+				this->revNbNonContactMoveList.push_back(new IndividualNuPairMoveSet(-1, -1, i, oi));
+			}
+			this->nbNonContactClusterNum = bpLib->nbNonContactBasePairNum;
+
 		} else if(binaryMode == 2) {
 			/* Read from BinaryTable */
 			ifstream ins;
@@ -388,6 +418,28 @@ void NuPairMoveSetLibrary::printMoveLibInfo(){
 		}
 	}
 
+	cout << "non-contact neighbor move: " << endl;
+	int num = nbNonContactMoveList.size();
+	cout << "cluster num: " << num << endl;
+	for(int j=0;j<num;j++){
+		int moveNum = 0;
+		for(int k=0;k<50;k++){
+			moveNum += nbNonContactMoveList[j]->moveIndexList[k].size();
+		}
+		cout << "cluster: " << j << " moveNum: " << moveNum << endl;
+	}
+
+	cout << "non-contact reverse neighbor move: " << endl;
+	num =  revNbNonContactMoveList.size();
+	cout << "cluster num: " << num << endl;
+	for(int j=0;j<num;j++){
+		int moveNum = 0;
+		for(int k=0;k<50;k++){
+			moveNum += revNbNonContactMoveList[j]->moveIndexList[k].size();
+		}
+		cout << "cluster: " << j << " moveNum: " << moveNum << endl;
+	}
+
 	cout << "non-neighbor move:" << endl;
 	for(int i=0;i<16;i++){
 		int imNum = nnbMoveList[i].size();
@@ -400,6 +452,51 @@ void NuPairMoveSetLibrary::printMoveLibInfo(){
 			cout << "cluster: " << j << " moveNum: " << moveNum << endl;
 		}
 	}	
+}
+
+IndividualNuPairMoveSet* NuPairMoveSetLibrary::getMoveSet(int type, int clusterID, int sep){
+	if(type < 0 || type >= 16){
+		cout << "invalid move set base type: " << type << endl;
+		exit(0);
+	}
+
+	if(sep==1){
+		if(clusterID < 0) {
+			cout << "invalid move set clusterID: " << clusterID << " pairType: " << type << endl;
+			exit(0);
+		}
+		else if(clusterID < this->nbContactClusterNum[type]){
+			return this->nbMoveList[type][clusterID];
+		}
+		else if(clusterID < this->nbContactClusterNum[type] + this->nbNonContactClusterNum) {
+			return this->nbNonContactMoveList[clusterID - this->nbContactClusterNum[type]];
+		}
+		else {
+			cout << "invalid move set clusterID: " << clusterID << " pairType: " << type << endl;
+			exit(0);
+		}
+	}
+	else if(sep == -1){
+
+
+		if(clusterID < 0) {
+			cout << "invalid move set clusterID: " << clusterID << " pairType: " << type << endl;
+			exit(0);
+		}
+		else if(clusterID < this->revNbContactClusterNum[type]){
+			return this->revNbMoveList[type][clusterID];
+		}
+		else if(clusterID < this->nbContactClusterNum[type] + this->nbNonContactClusterNum) {
+			return this->nbNonContactMoveList[clusterID - this->nbContactClusterNum[type]];
+		}
+		else {
+			cout << "invalid move set clusterID: " << clusterID << " pairType: " << type << endl;
+			exit(0);
+		}		
+	}
+	else{
+		return this->nnbMoveList[type][clusterID];
+	}
 }
 
 NuPairMoveSetLibrary::~NuPairMoveSetLibrary(){
@@ -477,24 +574,9 @@ CsMove MixedNuPairCluster::getRandomMove(){
 
 	int cluster = randPool[rand()%100000];
 	
-	if(sep == 1)
-	{
-		CsMove cm = moveLib->nbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
-		cm.clusterID = cluster;
-		return cm;
-	}	
-	else if(sep == -1) {
-		int typeA = pairType/4;
-		int typeB = pairType%4;
-		CsMove cm = moveLib->revNbMoveList[typeB*4+typeA][cluster]->getRandomMove(moveLib->oi);
-		cm.clusterID = cluster;
-		return cm;
-	}
-	else {
-		CsMove cm = moveLib->nnbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
-		cm.clusterID = cluster;
-		return cm;
-	}
+	CsMove cm = moveLib->getMoveSet(pairType, cluster, sep)->getRandomMove(moveLib->oi);
+	cm.clusterID = cluster;
+	return cm;
 }
 
 CsMove MixedNuPairCluster::getRandomMoveWithFixedCluster(CsMove& move){
@@ -506,24 +588,10 @@ CsMove MixedNuPairCluster::getRandomMoveWithFixedCluster(CsMove& move){
 	if(cluster < 0)
 		cluster = randPool[rand()%100000];
 	
-	if(sep == 1)
-	{
-		CsMove cm = moveLib->nbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
-		cm.clusterID = cluster;
-		return cm;
-	}	
-	else if(sep == -1) {
-		int typeA = pairType/4;
-		int typeB = pairType%4;
-		CsMove cm = moveLib->revNbMoveList[typeB*4+typeA][cluster]->getRandomMove(moveLib->oi);
-		cm.clusterID = cluster;
-		return cm;
-	}
-	else {
-		CsMove cm = moveLib->nnbMoveList[pairType][cluster]->getRandomMove(moveLib->oi);
-		cm.clusterID = cluster;
-		return cm;
-	}
+
+	CsMove cm = moveLib->getMoveSet(pairType, cluster, sep)->getRandomMove(moveLib->oi);
+	cm.clusterID = cluster;
+	return cm;
 }
 
 CsMove MixedNuPairCluster::getRandomMoveWithFixedSubCluster(CsMove& move){
@@ -536,24 +604,10 @@ CsMove MixedNuPairCluster::getRandomMoveWithFixedSubCluster(CsMove& move){
 		cluster = randPool[rand()%100000];
 	int subCluster = move.subClusterID;
 	
-	if(sep == 1)
-	{
-		CsMove cm = moveLib->nbMoveList[pairType][cluster]->getRandomMoveWithFixedSubCluster(moveLib->oi, subCluster);
-		cm.clusterID = cluster;
-		return cm;
-	}	
-	else if(sep == -1) {
-		int typeA = pairType/4;
-		int typeB = pairType%4;
-		CsMove cm = moveLib->revNbMoveList[typeB*4+typeA][cluster]->getRandomMoveWithFixedSubCluster(moveLib->oi, subCluster);
-		cm.clusterID = cluster;
-		return cm;
-	}
-	else {
-		CsMove cm = moveLib->nnbMoveList[pairType][cluster]->getRandomMoveWithFixedSubCluster(moveLib->oi,subCluster);
-		cm.clusterID = cluster;
-		return cm;
-	}
+	CsMove cm = moveLib->getMoveSet(pairType, cluster, sep)->getRandomMoveWithFixedSubCluster(moveLib->oi, subCluster);
+	cm.clusterID = cluster;
+	return cm;
+	
 }
 
 CsMove MixedNuPairCluster::getRandomMoveWithFixedSP1000Index(CsMove& move) {
