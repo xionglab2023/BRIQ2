@@ -16,6 +16,46 @@ using namespace NSPtools;
 using namespace NSPthread;
 
 
+class singlePredictionResult{
+public:
+    int posNum;
+    vector<int> posList;
+    vector<double> rmsList;
+    vector<double> eneList;
+
+    singlePredictionResult(){
+        this->posNum = 0;
+    }
+
+    void addPos(int pos, double ene, double rms){
+        posList.push_back(pos);
+        if(rms > 2.5)
+            rms = 2.5;
+        rmsList.push_back(rms);
+        eneList.push_back(ene);
+        this->posNum = posList.size();
+    }
+
+    void mergeResult(singlePredictionResult* other){
+        if(this->posNum != other->posNum){
+            cout << "pos num not consistent" << endl;
+        }
+        for(int i=0;i<posNum;i++){
+            if(other->rmsList[i] < this->rmsList[i]){
+                this->rmsList[i] = other->rmsList[i];
+                this->eneList[i] = other->eneList[i];
+            }
+        }
+    }
+
+    void clear(){
+        this->posNum = 0;
+        this->posList.clear();
+        this->rmsList.clear();
+        this->eneList.clear();
+    }
+};
+
 int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile){
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
@@ -32,11 +72,8 @@ int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const
     return (int)(tree->totalSamp);
 }
 
-int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, double* outEne, double* outRMS, int* outBaseNum, int mpID){
+int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, singlePredictionResult** outList, int mpID){
 	
-    int baseNum = 0;
-    double totEne = 0.0;
-    double totRms = 0.0;
     NSPtools::InputParser input(inputFile);
     string cst = input.getValue("cst");
 
@@ -64,9 +101,11 @@ int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, 
         //tree->printEdgeInfo();
         cout << "run mc" << endl;
 	    graphInfo* gi = tree->runAtomicMC();
-        baseNum++;
-        totEne += gi->ene;
-        totRms += gi->rms;
+        double rms = gi->rmsd(graph->initInfo, pos);
+        gi->setRMS(rms);
+
+        outList[mpID]->addPos(pos, gi->ene, gi->rms);
+
         //graph->printEnergy();
        
         delete gi;
@@ -74,14 +113,11 @@ int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, 
 	    delete graph;
     }
 
-    outEne[mpID] = totEne/baseNum;
-    outRMS[mpID] = totRms/baseNum;
-    outBaseNum[mpID] = baseNum;
 
     return 0;
 }
 
-int testSingleBasePredictionPrintPDB(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, ofstream& out, const string& pdbFile){
+int testSingleBasePredictionPrintPDB(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, ofstream& out, const string& pdbFile, const string& pdbID){
 	
     NSPtools::InputParser input(inputFile);
     string cst = input.getValue("cst");
@@ -103,9 +139,10 @@ int testSingleBasePredictionPrintPDB(NuPairMoveSetLibrary* moveLib, RnaEnergyTab
 	    tree->updateSamplingInfo();
         tree->printNodeInfo();
 	    graphInfo* gi = tree->runAtomicMC();
-        out << pos << " " <<  gi->ene  << " " << gi->rms << endl;
+        double rms = gi->rmsd(graph->initInfo, pos);
+        out  << pdbID << " " <<  pos << " " <<  gi->ene  << " " << rms << endl;
         gi->printPDB(pdbout);
-        graph->printEnergy();
+        //graph->printEnergy();
 
         delete gi;
 	    delete tree;
@@ -137,6 +174,10 @@ int main(int argc, char** argv){
     string outpdb;
     if(cmdArgs.specifiedOption("-outpdb"))
         outpdb = cmdArgs.getValue("-outpdb");
+    string pdbID = "pdb";
+     if(cmdArgs.specifiedOption("-pdbID"))
+        pdbID = cmdArgs.getValue("-pdbID");
+
 
     ofstream out;
     out.open(outputFile.c_str(), ios::out);
@@ -147,9 +188,10 @@ int main(int argc, char** argv){
     int startID = 0;
 	clock_t start = clock();
 
-    double* outEneList = new double[mp];
-    double* outRMSList = new double[mp];
-    int* outBaseNum = new int[mp];
+    singlePredictionResult** outList = new singlePredictionResult*[mp];
+    for(int i=0;i<mp;i++){
+        outList[i] = new singlePredictionResult();
+    }
 
     ForceFieldPara* para = new ForceFieldPara();
     para->bwTag = bw;
@@ -183,13 +225,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -201,21 +241,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -228,17 +265,15 @@ int main(int argc, char** argv){
            
            para->clashLamdaNnb = x;
 
-            shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
+             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -250,21 +285,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -281,13 +313,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -299,21 +329,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -330,13 +357,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -348,21 +373,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -379,13 +401,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -397,21 +417,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -423,18 +440,17 @@ int main(int argc, char** argv){
         for(double x= 0.3; x < 6.0;x = x*1.3) {
            
            para->wtBp1 = x;
+           et->bpET->updateForceFieldPara(para);
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -446,21 +462,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -472,18 +485,16 @@ int main(int argc, char** argv){
         for(double x= 0.3; x < 6.0;x = x*1.3) {
            
            para->wtBp2 = x;
-
+            et->bpET->updateForceFieldPara(para);
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -495,21 +506,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -526,13 +534,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -544,21 +550,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -575,13 +578,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -593,21 +594,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -624,14 +622,13 @@ int main(int argc, char** argv){
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
+
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -643,21 +640,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -670,18 +664,19 @@ int main(int argc, char** argv){
             for(int k=0;k<16;k++) {
                 para->wtRiboseOxy[k] = x;
             }
+            
+            delete et->roET;
+            et->roET = new RiboseOxygenEnergyTable(para);
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -693,21 +688,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -726,13 +718,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -744,21 +734,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -780,13 +767,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -798,21 +783,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%8.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -832,13 +814,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -850,21 +830,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-           sprintf(xx, "%8.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -886,13 +863,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -904,21 +879,18 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%8.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
@@ -935,13 +907,11 @@ int main(int argc, char** argv){
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -953,43 +923,90 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%8.2f %8.4f %8.4f %d", x, minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
 
         }
     }
-    else if(tag == "test") {
-       testSingleBasePrediction(moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum, 0);
-    }
     else if(tag == "bw") {
-
         {
          
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
-                outEneList[i] = 0.0;
-                outRMSList[i] = 0.0;
-                outBaseNum[i] = 0;
+                outList[i]->clear();
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outEneList, outRMSList, outBaseNum,i-startID);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                jid++;
+                thrPool->addTask(request);
+            }
+
+            while(true) {
+                sleep(1);
+                if(thrPool->getTaskCount() == 0) {
+                    cout << "finish mc" << endl;
+                    break;
+                }
+             }
+
+            cout << "merge result" << endl;
+
+            for(int i=1;i<mp;i++){
+                cout << "mp: " << i  << endl;
+                outList[0]->mergeResult(outList[i]);
+            }
+
+            cout << "posNum: " << outList[0]->posNum << endl;
+
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
+            }
+
+            cout << minEne << " " << minRMS << endl;
+            
+            sprintf(xx, "%4.2f %8.4f %d", minEne, minRMS, outList[0]->posNum);
+            out << string(xx) << endl;
+        }
+    }
+    else if(tag == "nbPCutoff"){
+        vector<double> xList;
+        xList.push_back(0.1);
+        xList.push_back(0.05);
+        xList.push_back(0.02);
+        xList.push_back(0.01);
+        xList.push_back(0.005);
+        xList.push_back(0.001);
+
+        for(int y=0;y<xList.size();y++) {
+            double x= xList[y];
+            para->pNbClusterCutoff = x;
+
+            shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
+            size_t jid = 0; 
+
+            for(int i=0;i<mp;i++){
+                outList[i]->clear();
+            }   
+            for(int i=startID;i<startID+mp;i++) {
+                shared_ptr<IntFuncTask> request(new IntFuncTask);
+                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -1001,28 +1018,27 @@ int main(int argc, char** argv){
                 }
              }
 
-            double minEne = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outEneList[i] < minEne){
-                    minEne = outEneList[i];
-                }
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
             }
 
-           
-
-            double minRms = 9999.9;
-            for(int i=0;i<mp;i++){
-                if(outRMSList[i] < minRms){
-                    minRms = outRMSList[i];
-                }   
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "bw %8.4f %8.4f %d",  minEne, minRms, outBaseNum[0]);
+            sprintf(xx, "%5.3f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
+
         }
+
+        clock_t end1 = clock();
+	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;        
     }
     else if(tag == "pdb") {
-        testSingleBasePredictionPrintPDB(moveLib, et, pairLib, rotLib, atLib, inputFile, out, outpdb);
+        testSingleBasePredictionPrintPDB(moveLib, et, pairLib, rotLib, atLib, inputFile, out, outpdb, pdbID);
     }
 
     out.close();
@@ -1032,5 +1048,10 @@ int main(int argc, char** argv){
     delete moveLib;
     delete et;
     delete para;
+
+    for(int i=0;i<mp;i++){
+        delete outList[i];
+    }
+    delete [] outList;
 
 }

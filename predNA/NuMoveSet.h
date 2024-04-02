@@ -34,8 +34,8 @@ class IndividualNuPairMoveSet {
 public:
 
 	int sep; //1: nb   -1: revNb  2: nnb
-	int pairType; //0~15: AA, AU, AG, AC, UA, ..., CC
-	int clusterID;
+	int pairType; //0~15: AA, AU, AG, AC, UA, ..., CC; pairType = -1 means non-contact base pair cluster
+	int clusterID; //non-contact base pair clusterID : 0~1050
 
 	/*
 	 * Ust SP1000 move index, distance 50 bins, dihedral angle 40 bins, sphere 1000*1000
@@ -86,11 +86,20 @@ public:
 };
 
 class NuPairMoveSetLibrary {
-public:
+private:
 	vector<IndividualNuPairMoveSet*> nbMoveList[16];
 	vector<IndividualNuPairMoveSet*> revNbMoveList[16];
+
+	int nbContactClusterNum[16];
+	int revNbContactClusterNum[16];
+
+	int nbNonContactClusterNum;
+
+	vector<IndividualNuPairMoveSet*> nbNonContactMoveList;
+	vector<IndividualNuPairMoveSet*> revNbNonContactMoveList;
+
 	vector<IndividualNuPairMoveSet*> nnbMoveList[16];
-	OrientationIndex* oi;
+
 
 	/**
 	 * @brief Construct a new NuPairMoveSetLibrary object. 
@@ -98,10 +107,15 @@ public:
 	 * @param withBinary Bool, if true, read from binary; if false, read from txt parameter tables.
 	 * @param binaryMode Int, if 1, read dumped BinaryCache; if 2, read BinaryTable
 	 */
+	
+
+public:
+	OrientationIndex* oi;
 	NuPairMoveSetLibrary(bool withBinary=true, int binaryMode=1);
 	int dump();
 	int load();
 	void printMoveLibInfo();
+	IndividualNuPairMoveSet* getMoveSet(int type, int clusterID, int sep);
 	virtual ~NuPairMoveSetLibrary();
 };
 

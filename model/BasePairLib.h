@@ -28,26 +28,35 @@ class BasePairLib {
 public:
 
 	int nbBasePairNum[16];
+	int nbContactBasePairNum[16];
+	int nbNonContactBasePairNum;
 	int nnbBasePairNum[16];
 
-	BaseDistanceMatrix nbDMClusterCenters[16][20000]; //max cluster num < 20000
-	BaseDistanceMatrix nnbDMClusterCenters[16][20000];
+	BaseDistanceMatrix nbDMClusterCenters[16][3000]; //max cluster num < 3000
+	BaseDistanceMatrix nnbDMClusterCenters[16][3000];
 
-	double nbEnergy[16][20000];
-	double nbEnergyWithOxy[16][20000];
-	double nbProportion[16][20000];
 
-	double nnbEnergy[16][20000];
-	double nnbEnergyWithOxy[16][20000];
-	double nnbProportion[16][20000];
+
+	/*
+	 * all neighbor pairs
+	 */
+	double nbEnergy[16][3000];
+	double nbEnergyWithOxy[16][3000];
+	double nbProportion[16][3000];
+
+	/*
+	 * non-neighbor pairs
+	 */
+	double nnbEnergy[16][3000];
+	double nnbEnergyWithOxy[16][3000];
+	double nnbProportion[16][3000];
 
 
 	BasePairLib();
-	BasePairLib(const string& bpLibType);
 
 	int getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int sep); //sep: sequence separation
 	void getNeighborClusters(BaseDistanceMatrix dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters);
-
+	double getPairClusterProportion(BaseDistanceMatrix dm, int typeA, int typeB, int sep);
 	double distanceToClusterCenter(BaseDistanceMatrix dm, int typeA, int typeB, int sep);
 	double getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int sep);
 	double getEnergy(int clusterID, int typeA, int typeB, int sep){
@@ -61,7 +70,6 @@ public:
 			return 0.0;		
 	}
 	double getPairEnergy(RNABase* baseA, RNABase* baseB); //base-base energy + base-O2' hbond + O2'-O2' hbond
-
 	double getEnergyWithOxy(BaseDistanceMatrix dm, int typeA, int typeB, int sep);
 	double getEnergyWithOxy(int clusterID, int typeA, int typeB, int sep){
 		if(sep == 1)

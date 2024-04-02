@@ -85,13 +85,6 @@ public:
 		}
 	}
 
-	inline double riboseOxyEnergyRescale(double e){
-		if(e < 0.81)
-			return e;
-		else
-			return 1.8*sqrt(e) - 0.81;
-	}
-
 	virtual ~RiboseOxygenEnergyTable();
 };
 

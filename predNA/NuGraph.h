@@ -116,6 +116,7 @@ public:
 
 
 	vector<Atom*> toAtomList(AtomLib* atLib);
+	vector<Atom*> toAtomListOnlyBase(AtomLib* atLib);
 	vector<Atom*> toAtomListWithPho(AtomLib* atLib);
 	vector<Atom*> toAtomListCG(AtomLib* atLib);
 
@@ -262,6 +263,7 @@ public:
 		this->rms = rms;
 	}
 	double rmsd(graphInfo* other);
+	double rmsd(graphInfo* other, int pos);
 	double rmsdCG(graphInfo* other);
 	void printPDB(const string& outputFile);
 	void printAlignedPDB(graphInfo* alignTarget, const string& outputFile);

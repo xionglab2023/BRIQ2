@@ -28,7 +28,9 @@ add_executable(trainSamp TrainSamplingEfficiency.cpp)
 add_executable(testRand test.cpp)
 add_executable(trainFFP TrainForcefieldPara.cpp)
 add_executable(trainSingleBase TrainForcefieldParaSingleBaseMove.cpp)
+add_executable(testSingle TestSingleBasePrediction.cpp)
 
+target_link_libraries (testSingle briqx)
 target_link_libraries (trainSingleBase briqx)
 target_link_libraries (trainFFP briqx)
 target_link_libraries (testRand briqx)
@@ -58,5 +60,5 @@ target_link_libraries (briq_InitPDB briqx)
 target_link_libraries (rnaScoring briqx)
 target_link_libraries (testMoveIO briqx)
 
-install(TARGETS testGraph testGraphCG testMoveIO testTree testGraphMP buildBB trainSamp testRand trainFFP trainSingleBase
+install(TARGETS testGraph testGraphCG testMoveIO testTree testGraphMP buildBB trainSamp testRand trainFFP trainSingleBase testSingle
     RUNTIME DESTINATION bin)

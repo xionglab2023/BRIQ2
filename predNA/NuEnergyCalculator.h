@@ -54,7 +54,20 @@ inline double nuBaseBaseEnergy(BaseConformer* baseConfA, BaseConformer* baseConf
 		}
 
 		if(minDD < 20.25){
-			bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
+
+			
+			if(sep == 1 || sep == -1){
+				/*test code, need to be modified*/
+				BaseDistanceMatrix dm(baseConfA->cs1, baseConfB->cs1);
+				double pCluster = et->bpLib->getPairClusterProportion(dm, baseConfA->rot->baseType, baseConfB->rot->baseType, sep);
+				if(pCluster < et->para->pNbClusterCutoff){
+					bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, 2, sqrt(minDD));
+				}
+				else 
+					bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
+			}
+			else 
+				bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
 		}
 	}
 

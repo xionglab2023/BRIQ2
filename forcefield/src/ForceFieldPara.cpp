@@ -25,6 +25,8 @@ ForceFieldPara::ForceFieldPara() {
 	this->wtPho = 0.7;
 	this->wtRibose = 1.0;
 
+	pNbClusterCutoff = 0.001;
+
 	for(int i=0;i<6;i++){
 		rnaDihedImpD1D2Shift[i] = 0.0;
 		rnaDihedImpD4D5Shift[i] = 0.0;
@@ -112,6 +114,8 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	this->wtRibose = 1.0;
 
 	string bwTag = "default";
+
+	pNbClusterCutoff = 0.001;
 
 	for(int i=0;i<6;i++){
 		rnaDihedImpD1D2Shift[i] = 0.0;

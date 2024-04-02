@@ -34,7 +34,8 @@ RiboseOxygenEnergyTable::RiboseOxygenEnergyTable(ForceFieldPara* para) {
 			while(getline(file, line)){
 				NSPtools::splitString(line, " ", &spt);
 				ene = atof(spt[0].c_str());
-				ene = riboseOxyEnergyRescale(ene);
+				if(ene > 0)
+					ene = 0.0;
 
 				ene = ene*para->wtRiboseOxy[(i%4)*4 + j];
 
@@ -62,7 +63,8 @@ RiboseOxygenEnergyTable::RiboseOxygenEnergyTable(ForceFieldPara* para) {
 		while(getline(file, line)){
 			NSPtools::splitString(line, " ", &spt);
 			ene = atof(spt[0].c_str());
-			ene = riboseOxyEnergyRescale(ene);
+			if(ene > 0)
+				ene = 0.0;
 
 			ene = ene*para->wtRiboseOxy[(i%4)*4 + 3];
 			this->etListM1[i].push_back(ene);

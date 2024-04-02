@@ -81,6 +81,11 @@ public:
 	int dump(ForceFieldPara* para);
 	int load(ForceFieldPara* para);
 
+	void updateForceFieldPara(ForceFieldPara* para){
+		this->wtNb = para->wtBp1;
+		this->wtNnb = para->wtBp2;
+	}
+
 	double getEnergyBiInterpolation(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		//bilinear interpolation
 
@@ -142,6 +147,7 @@ public:
 		if(typeA > typeB && sep == 2){
 			return getEnergy(csB, csA, typeB, typeA, sep, minDistance);
 		}
+
 
 		double len = csA.origin_.distance(csB.origin_);
 
