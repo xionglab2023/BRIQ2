@@ -1015,8 +1015,9 @@ NuEdge::NuEdge(NuNode* nodeA, NuNode* nodeB, NuGraph* graph){
 	int typeB = nodeB->baseType%4;
 
 	this->ei = new EdgeInformation(sep, typeA, typeB, graph->pairLib);
-	this->moveSet = new MixedNuPairCluster(sep, typeA*4+typeB, graph->moveLib);
-	this->moveSet->updateEdgeInformation(this->ei);
+	this->moveSet = nullptr;
+	// this->moveSet = new MixedNuPairCluster(sep, typeA*4+typeB, graph->moveLib);
+	// this->moveSet->updateEdgeInformation(this->ei);
 	this->weight = this->ei->weight;
 
 	this->weightRand = weight;
@@ -2587,6 +2588,10 @@ void NuEdge::printPartition(){
 	cout << endl;
 }
 
+bool NuEdge::isWC() {
+	return graph->wcPairPosID[indexA] == indexB;
+};  // check if this is currently a Watson-Crick edge
+
 NuTree::NuTree(NuGraph* graph){
 	this->graph = graph;
 	this->adjMtx = new bool[graph->seqLen*graph->seqLen];
@@ -3576,6 +3581,22 @@ NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, Ba
 	initForMST(inputFile);
 }
 
+NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int initMode){
+	this->pairLib = pairLib;
+	this->rotLib = rotLib;
+	this->atLib = atLib;
+	this->moveLib = NULL;
+	this->et = et;
+	this->initInfo = NULL;
+	switch (initMode) {
+		case 1:
+			initForMC(inputFile);
+			break;
+		default:
+			cerr << "Unknown initMode " << initMode << endl;
+	}
+}
+
 NuGraph::~NuGraph() {
 
 	delete [] seq;
@@ -3785,6 +3806,9 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	 */
 	for(int i=0;i<seqLen;i++){
 		for(int j=0;j<seqLen;j++){
+			#ifdef DEBUG
+				cout << "i=" <<i<<", j="<<j<<endl;
+			#endif
 			this->allEdges[i*seqLen+j] = new NuEdge(allNodes[i], allNodes[j], this);
 			this->allEdges[i*seqLen+j]->graph = this;
 			this->allEdges[i*seqLen+j]->weight = 0.0;
@@ -4082,10 +4106,8 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 			this->fixed[i] = false;
 		}
 	}
-
-
-
 }
+
 
 bool MST_cmp_weight(NuEdge* e1, NuEdge* e2){
 	return (e1->weightRand < e2->weightRand);

@@ -969,6 +969,7 @@ int BasePair6DEnergyTable::load(ForceFieldPara* para) {
 	return EXIT_SUCCESS;
 }
 
+
 BasePair6DEnergyTable::~BasePair6DEnergyTable() {
 	// TODO Auto-generated destructor stub
 }

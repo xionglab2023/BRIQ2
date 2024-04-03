@@ -114,8 +114,8 @@ int main() {
 		ii++;
         if(ii>4) break;
 	}
+    set1->printMoveLibInfo();
     cout << "Reading BinaryTable is " << timeTxt/timeBinaryCache << "x boosting than reading txt." << endl;
     
-    set1->printMoveLibInfo();
     delete set1;
 }

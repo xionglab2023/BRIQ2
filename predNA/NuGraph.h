@@ -7,6 +7,7 @@
 
 #ifndef PREDNA_NUGRAPH_H_
 #define PREDNA_NUGRAPH_H_
+#define DEBUG
 
 #include <vector>
 #include <string>
@@ -193,6 +194,7 @@ public:
 	void clearMutation();
 	bool checkEnergy();
 	bool checkReversePair();
+	bool isWC();
 
 	void updateCsMoveCG(CsMove& cm);
 	double mutEnergyCG();
@@ -303,6 +305,7 @@ public:
 
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int InitMode);
 
 	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& cst, const string& chainBreak);
 	void initPho();
