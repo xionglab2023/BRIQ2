@@ -8,7 +8,7 @@
 #ifndef PREDNA_NUMOVESET_H_
 #define PREDNA_NUMOVESET_H_
 // #define TIMING
-#define DEBUG
+// #define DEBUG
 
 #include <vector>
 #include <string>

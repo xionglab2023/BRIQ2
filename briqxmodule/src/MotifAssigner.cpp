@@ -70,10 +70,15 @@ namespace NSPbm {
                 // check helix first
                 if(pHelixNode2EdgeMap->count(nodeIndexVec[i]) && pHelixNode2EdgeMap->count(nodeIndexVec[i]+1)
                     && graphIn->allEdges[nodeIndexVec[i]*(graphIn->seqLen)+nodeIndexVec[i]+1]->weight
-                    < MOTIFASSIGNER_GROW_CUTOFF) {  // helix break
+                    < MOTIFASSIGNER_GROW_CUTOFF) {  // 5' helix break
                     iHelix+=1;
                     sep.emplace_back(-iHelix);
                     node2HelixMap.emplace(nodeIndexVec[i], iHelix);
+                    if(pHelixNode2EdgeMap->at(nodeIndexVec[i])->indexA == nodeIndexVec[i]) {
+                        node2HelixMap.emplace(pHelixNode2EdgeMap->at(nodeIndexVec[i])->indexB, iHelix);
+                    } else {
+                        node2HelixMap.emplace(pHelixNode2EdgeMap->at(nodeIndexVec[i])->indexA, iHelix);
+                    }
                 }
 
 
