@@ -197,6 +197,9 @@ int NuPairMoveSetLibrary::dump() {
 			nnbMoveList[i][j]->dump(outs);
 		}		
 	}
+	#ifdef DEBUG
+		cout << "nbNonContactClusterNum=" << nbNonContactClusterNum << endl;
+	#endif
 	outs.write(reinterpret_cast<char*>(&nbNonContactClusterNum), sizeof(int));
 	char z0[4] = {'\0'};
 	outs.write(reinterpret_cast<char*>(z0), sizeof(int));
@@ -236,17 +239,22 @@ int NuPairMoveSetLibrary::load() {
 	if(!ins.is_open()) {
 		throw("[Error]Fail to open " + fileName);
 	}
+	#ifdef DEBUG
+		cout << "reading OrientationIndex" << endl;
+	#endif
 	oi = new OrientationIndex(true);
 	oi->load(ins);
+	#ifdef DEBUG
+		cout <<"reading clusterNums" << endl;
+	#endif
 	ins.read(reinterpret_cast<char*>(nbContactClusterNum), sizeof(int)*16);
 	ins.read(reinterpret_cast<char*>(revNbContactClusterNum), sizeof(int)*16);
 	int nnbClustNum[16];
 	ins.read(reinterpret_cast<char*>(nnbClustNum), sizeof(int)*16);
+	#ifdef DEBUG
+		cout << "reading MoveList set 1" << endl;
+	#endif
 	for(int i=0; i<16; i++) {
-		int lnb, lnnb, tmp[2];
-		ins.read(reinterpret_cast<char*>(&tmp), 2*sizeof(int));
-		lnb = tmp[0];
-		lnnb = tmp[1];
 		nbMoveList[i].resize(nbContactClusterNum[i]);
 		for(int j=0;j<nbContactClusterNum[i];j++) {
 			nbMoveList[i][j] = new IndividualNuPairMoveSet();
@@ -263,9 +271,18 @@ int NuPairMoveSetLibrary::load() {
 			nnbMoveList[i][j]->load(ins);
 		}
 	}
+	#ifdef DEBUG
+		cout << "reading nbNonContactClusterNum" << endl;
+	#endif
 	ins.read(reinterpret_cast<char*>(&nbNonContactClusterNum), sizeof(int));
 	int z0;
 	ins.read(reinterpret_cast<char*>(&z0), sizeof(int));
+	#ifdef DEBUG
+		cout << "nbNonContactClusterNum=" << nbNonContactClusterNum << endl;
+		cout << "reading NonContactMoveList" << endl;
+	#endif
+	nbNonContactMoveList.resize(nbNonContactClusterNum);
+	revNbNonContactMoveList.resize(nbNonContactClusterNum);
 	for(int i=0; i<nbNonContactClusterNum; i++) {
 		nbNonContactMoveList[i] = new IndividualNuPairMoveSet();
 		nbNonContactMoveList[i]->load(ins);
@@ -273,7 +290,7 @@ int NuPairMoveSetLibrary::load() {
 		revNbNonContactMoveList[i]->load(ins);
 	}
 	
-
+	ins.close();	
 	return EXIT_SUCCESS;
 }
 

@@ -26,7 +26,7 @@ int main() {
     timeTxt = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
     cout << "time consumed: " << timeTxt << " seconds" << endl;
 
-    set1->printMoveLibInfo();
+    // set1->printMoveLibInfo();
 
     cout << "first int in each vector of nbMoveList[6][9] moveIndexList:" << endl;
     for(int i=0; i<20; i++) {
@@ -114,8 +114,8 @@ int main() {
 		ii++;
         if(ii>4) break;
 	}
-    cout << "Reading BinaryTable is " << timeTxt/timeBinaryCache << "x boosting than reading txt." << endl;
+    cout << "Reading BinaryCache is " << timeTxt/timeBinaryCache << "x boosting than reading txt." << endl;
     
-    set1->printMoveLibInfo();
+    // set1->printMoveLibInfo();
     delete set1;
 }
