@@ -11,8 +11,8 @@ namespace NSPforcefield {
 
 ForceFieldPara::ForceFieldPara() {
 	// TODO Auto-generated constructor stub
-	this->clashLamdaNb = 2.5;
-	this->clashLamdaNnb = 2.5;
+	this->clashLamdaNb = 2.8;
+	this->clashLamdaNnb = 2.8;
 
 	this->hbLamda1 = 0.15;
 	this->hbLamda2 = 0.3;
@@ -25,8 +25,6 @@ ForceFieldPara::ForceFieldPara() {
 	this->wtPho = 0.7;
 	this->wtRibose = 1.0;
 
-	pNbClusterCutoff = 0.001;
-
 	for(int i=0;i<6;i++){
 		rnaDihedImpD1D2Shift[i] = 0.0;
 		rnaDihedImpD4D5Shift[i] = 0.0;
@@ -48,15 +46,13 @@ ForceFieldPara::ForceFieldPara() {
 
 
 	for(int i=0;i<16;i++){
-		wtRiboseOxy[i] = 1.0;
+		wtRiboseOxy[i] = 1.8;
 	}
 
-	this->bwTag = "default";
+	this->bwTag = "bw6";
 
 	this->wtBp1 = 2.0;
 	this->wtBp2 = 2.0;
-//	this->bbClash = 0.4;
-
 
 	this->wtO4O2C2Nb = 0.7;
 	this->wtO4O2C2Nnb = 0.3;
@@ -68,44 +64,27 @@ ForceFieldPara::ForceFieldPara() {
 	this->T2 = 0.15;
 	this->T3 = 0.015;
 
-	this->anneal = 0.95;
 	this->kStepNum1 = 1280;
 	this->kStepNum2 = 1280;
 	this->kStepNum3 = 1280;
 	this->kNodeFreq = 1.0;
 
-	this->outFreq = 1000;
-
-	this->lamdaClash = 2.8;
-
-	this->initConnectWT = 0.4;
-	this->initClashWT = 0.002;
-
-	this->initShift = 0.6;
-	this->dShift = 0.02;
-
-	this->connectWTFactor = 1.05;
-	this->clashWTFactor = 1.05;
-
-	loopRiboConnectMove = true;
-	ctRandMove = true;
-	f3Move = true;
-	singleBaseMove = true;
-	reverseRotMove = true;
-
-	this->spType = "sp2000";
-	this->phoRep = 4.0;
+	for(int i=0;i<16;i++){
+		for(int j=0;j<6;j++){
+			this->nbPairEnergyRescale[i][j] = 1.0;
+		}
+	}
 
 }
 
 ForceFieldPara::ForceFieldPara(const string& paraFile){
-	this->clashLamdaNb = 2.5;
-	this->clashLamdaNnb = 2.5;
+	this->clashLamdaNb = 2.8;
+	this->clashLamdaNnb = 2.8;
 
 	this->hbLamda1 = 0.15;
 	this->hbLamda2 = 0.3;
 	this->kHbOri = 1.0;
-	this->wtHb = 1.0;
+	this->wtHb = 1.8;
 
 	this->rnaKAng = 0.1;
 	this->rnaKBond = 9.0;
@@ -113,10 +92,6 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	this->wtPho = 0.7;
 	this->wtRibose = 1.0;
 
-	string bwTag = "default";
-
-	pNbClusterCutoff = 0.001;
-
 	for(int i=0;i<6;i++){
 		rnaDihedImpD1D2Shift[i] = 0.0;
 		rnaDihedImpD4D5Shift[i] = 0.0;
@@ -138,13 +113,13 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 
 
 	for(int i=0;i<16;i++){
-		wtRiboseOxy[i] = 1.0;
+		wtRiboseOxy[i] = 1.8;
 	}
 
+	this->bwTag = "bw6";
 
-	this->wtBp1 = 1.0;
-	this->wtBp2 = 1.0;
-//	this->bbClash = 0.4;
+	this->wtBp1 = 2.0;
+	this->wtBp2 = 2.0;
 
 	this->wtO4O2C2Nb = 0.7;
 	this->wtO4O2C2Nnb = 0.3;
@@ -156,68 +131,15 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	this->T2 = 0.15;
 	this->T3 = 0.015;
 
-
-
-	this->anneal = 0.95;
 	this->kStepNum1 = 1280;
 	this->kStepNum2 = 1280;
 	this->kStepNum3 = 1280;
-	this->kNodeFreq = 0.8;
+	this->kNodeFreq = 1.0;
 
-	this->outFreq = 1000;
-
-	this->lamdaClash = 2.8;
-
-	this->initConnectWT = 0.4;
-	this->initClashWT = 0.002;
-
-	this->initShift = 0.6;
-	this->dShift = 0.02;
-
-	this->connectWTFactor = 1.05;
-	this->clashWTFactor = 1.05;
-
-	loopRiboConnectMove = true;
-	ctRandMove = true;
-	f3Move = true;
-	singleBaseMove = true;
-	reverseRotMove = true;
-
-	this->spType = "sp2000";
-	this->phoRep = 4.0;
-
-
-	ifstream input;
-	input.open(paraFile.c_str(), ios::in);
-	if(!input.is_open()) {
-		cout << "fail to open file: " << paraFile << endl;
-		exit(1);
-	}
-	string s;
-	vector<string> spt;
-	vector<double> pList;
-	while(getline(input,s)) {
-		pList.push_back(atof(s.c_str()));
-	}
-	this->clashLamdaNb = pList[0];
-	this->clashLamdaNnb = pList[1];
-	this->hbLamda1 = pList[2];
-	this->hbLamda2 = pList[3];
-	this->wtHb = pList[4];
-	this->rnaKBond = pList[5];
-	this->rnaKAng = pList[6];
-	this->wtPho = pList[7];
-	//this->wtRibose = pList[8];
-	for(int i=0;i<6;i++){
-		rnaDihedImpD1D2Shift[i] = pList[9+i];
-		rnaDihedImpD4D5Shift[i] = pList[15+i];
-		rnaDihedD2D3D4Shift[i] = pList[21+i];
-	}
-	for(int i=0;i<4;i++){
-		rnaRiboseRotamerShift[i] = pList[27+i];
-	}
 	for(int i=0;i<16;i++){
-		wtRiboseOxy[i] = pList[31+i];
+		for(int j=0;j<6;j++){
+			this->nbPairEnergyRescale[i][j] = 1.0;
+		}
 	}
 
 }

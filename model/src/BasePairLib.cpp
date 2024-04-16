@@ -48,6 +48,9 @@ BasePairLib::BasePairLib() {
 		}
 	}
 
+	/*
+	 * read contact pair num
+ 	 */
 	file.open(nbContactCenter.c_str(), ios::in);
 	if(!file.is_open()){
 		cout << "fail to open file: nb.contact.dm" << endl;
@@ -72,7 +75,9 @@ BasePairLib::BasePairLib() {
 	}
 	file.close();
 
-
+	/*
+	 * read non-contact pair num
+	 */
 	file.open(nbNonContactCenter.c_str(), ios::in);
 		if(!file.is_open()){
 		cout << "fail to open file: nb.noncontact.dm" << endl;
@@ -106,6 +111,7 @@ BasePairLib::BasePairLib() {
 		else
 			currentIndex++;
 		this->nbDMClusterCenters[typeA*4+typeB][currentIndex] = dm;
+		this->revNbDMClusterCenters[typeB*4+typeA][currentIndex] = dm.reverse();
 		this->nbBasePairNum[currentType]++;
 		lastType = currentType;
 	}
@@ -193,7 +199,7 @@ BasePairLib::BasePairLib() {
 
 
 
-int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
+int BasePairLib::getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int sep){
 
 	if(typeA > 3)
 		typeA = typeA - 4;
@@ -225,18 +231,18 @@ int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int se
 				minIndex = i;
 			}
 		}
+		return minIndex;
 	}
 	else if(sep == -1){
-		int revPairType = typeB*4+typeA;
-		BaseDistanceMatrix revDM = dm.reverse();
-		int pairNum = nbBasePairNum[revPairType];
+		int pairNum = nbBasePairNum[typeB*4+typeA];
 		for(int i=0;i<pairNum;i++){
-			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
+			d = revNbDMClusterCenters[pairType][i].distanceTo(dm);
 			if(d < minD){
 				minD = d;
 				minIndex = i;
 			}
 		}
+		return minIndex;
 	}
 	else if(sep == 0) {
 		return -1;
@@ -262,7 +268,7 @@ int BasePairLib::getPairType(BaseDistanceMatrix dm, int typeA, int typeB, int se
 	
 }
 
-double BasePairLib::getPairClusterProportion(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
+double BasePairLib::getPairClusterProportion(BaseDistanceMatrix& dm, int typeA, int typeB, int sep){
 	if(typeA > 3)
 		typeA = typeA - 4;
 
@@ -295,19 +301,20 @@ double BasePairLib::getPairClusterProportion(BaseDistanceMatrix dm, int typeA, i
 				minP = nbProportion[pairType][i];
 			}
 		}
+		return minP;
 	}
 	else if(sep == -1){
-		int revPairType = typeB*4+typeA;
-		BaseDistanceMatrix revDM = dm.reverse();
-		int pairNum = nbBasePairNum[revPairType];
+
+		int pairNum = nbBasePairNum[typeB*4+typeA];
 		for(int i=0;i<pairNum;i++){
-			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
+			d = revNbDMClusterCenters[pairType][i].distanceTo(dm);
 			if(d < minD){
 				minD = d;
 				minIndex = i;
-				minP = nbProportion[revPairType][i];
+				minP = nbProportion[typeB*4+typeA][i];
 			}
 		}
+		return minP;
 	}
 	else if(sep == 0) {
 		return -1;
@@ -333,7 +340,29 @@ double BasePairLib::getPairClusterProportion(BaseDistanceMatrix dm, int typeA, i
 		return 0.0;	
 }
 
-void BasePairLib::getNeighborClusters(BaseDistanceMatrix dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters){
+int BasePairLib::getNeighborPairFirstFiveClusterID(BaseDistanceMatrix& dm, int typeA, int typeB){
+	//return clusterID 0,1,2,4 or return 5 for other clusters
+	
+
+	double minD = 999.9;
+	int minIndex = -1;
+	int pairType = typeA*4+typeB;
+	double d;
+
+	for(int i=0;i<5;i++){
+		d = nbDMClusterCenters[pairType][i].distanceTo(dm);
+		if(d < minD){
+			minD = d;
+			minIndex = i;
+		}
+	}
+	if(minD < 1.2)
+		return minIndex;
+	else
+		return 5;
+}
+
+void BasePairLib::getNeighborClusters(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters, double distanceCutoff){
 	if(typeA > 3)
 		typeA = typeA - 4;
 
@@ -365,22 +394,28 @@ void BasePairLib::getNeighborClusters(BaseDistanceMatrix dm, int typeA, int type
 		int pairNum = nbBasePairNum[pairType];
 		for(int i=0;i<pairNum;i++){
 			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
-			if(d < 1.2){
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+			if(d < distanceCutoff){
 				neighborClusters.push_back(i);
 				distanceToClusterCenters.push_back(d);
 			}	
 		}
 	}
 	else if(sep == -1){
-		int revPairType = typeB*4+typeA;
-		BaseDistanceMatrix revDM = dm.reverse();
-		int pairNum = nbBasePairNum[revPairType];
+		int pairNum = nbBasePairNum[typeB*4+typeA];
 		for(int i=0;i<pairNum;i++){
-			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
-			if(d < 1.2){
+			d = revNbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+			if(d < distanceCutoff){
 				neighborClusters.push_back(i);
 				distanceToClusterCenters.push_back(d);
-			}	
+			}
 		}
 	}
 	else if(sep == 0) {
@@ -390,15 +425,20 @@ void BasePairLib::getNeighborClusters(BaseDistanceMatrix dm, int typeA, int type
 		int pairNum = nnbBasePairNum[pairType];
 		for(int i=0;i<pairNum;i++){
 			d = nnbDMClusterCenters[pairType][i].distanceTo(dm);
-			if(d < 1.2){
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+			if(d < distanceCutoff){
 				neighborClusters.push_back(i);
 				distanceToClusterCenters.push_back(d);
 			}	
 		}
 	}
+
 }
 
-double BasePairLib::distanceToClusterCenter(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
+double BasePairLib::distanceToClusterCenter(BaseDistanceMatrix& dm, int typeA, int typeB, int sep){
 
 	if(typeA > 3)
 		typeA = typeA - 4;
@@ -432,11 +472,9 @@ double BasePairLib::distanceToClusterCenter(BaseDistanceMatrix dm, int typeA, in
 		}
 	}
 	else if(sep == -1){
-		int revPairType = typeB*4+typeA;
-		BaseDistanceMatrix revDM = dm.reverse();
-		int pairNum = nbBasePairNum[revPairType];
+		int pairNum = nbBasePairNum[typeB*4+typeA];
 		for(int i=0;i<pairNum;i++){
-			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
+			d = revNbDMClusterCenters[pairType][i].distanceTo(dm);
 			if(d < minD){
 				minD = d;
 				minIndex = i;
@@ -456,7 +494,7 @@ double BasePairLib::distanceToClusterCenter(BaseDistanceMatrix dm, int typeA, in
 	return minD;
 }
 
-double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
+double BasePairLib::getEnergy(BaseDistanceMatrix& dm, int typeA, int typeB, int sep){
 
 	if(typeA > 3)
 		typeA = typeA - 4;
@@ -490,11 +528,10 @@ double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int s
 		}
 	}
 	else if(sep == -1){
-		int revPairType = typeB*4+typeA;
-		BaseDistanceMatrix revDM = dm.reverse();
-		int pairNum = nbBasePairNum[revPairType];
+		
+		int pairNum = nbBasePairNum[typeB*4+typeA];
 		for(int i=0;i<pairNum;i++){
-			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
+			d = revNbDMClusterCenters[pairType][i].distanceTo(dm);
 			if(d < minD){
 				minD = d;
 				minIndex = i;
@@ -514,26 +551,26 @@ double BasePairLib::getEnergy(BaseDistanceMatrix dm, int typeA, int typeB, int s
 	double ene = 0.0;
 
 	if(sep == 1 && minD < 1.2) {
+		double e = this->nbEnergy[typeA*4+typeB][minIndex];
+		double p = this->nbProportion[typeA*4+typeB][minIndex];
+		if(p < 0.001) p = 0.001;
+		if(p > 0.3) p = 0.3;
+		ene = e - (log(p)+6.0)*0.4;
+		if(ene > -0.01)
+			ene = -0.01;
+	}
+	else if(sep == -1 && minD < 1.2){
 		int revPairType = typeB*4+typeA;
 		double e = this->nbEnergy[revPairType][minIndex];
 		double p = this->nbProportion[revPairType][minIndex];
 		if(p < 0.001) p = 0.001;
 		if(p > 0.3) p = 0.3;
-		ene = e*0.25 - (log(p)+6.0)*0.4;
-		if(ene > -0.01)
-			ene = -0.01;
-	}
-	else if(sep == -1 && minD < 1.2){
-		double e = this->nbEnergy[typeA*4+typeB][minIndex];
-		double p = this->nbProportion[typeA*4+typeB][minIndex];
-		if(p < 0.001) p = 0.001;
-		if(p > 0.3) p = 0.3;
-		ene = e*0.25 - (log(p)+6.0)*0.4;
+		ene = e - (log(p)+6.0)*0.4;
 		if(ene > -0.01)
 			ene = -0.01;
 	}
 	else if(sep == 2 && minD < 1.2) {
-		ene = (this->nnbEnergy[typeA*4+typeB][minIndex]-2.0)*0.25;
+		ene = this->nnbEnergy[typeA*4+typeB][minIndex];
 	}
 
 	if(ene > 0)
@@ -546,6 +583,8 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	int sep = 2;
 	if(baseA->connectToNeighbor(baseB))
 		sep = 1;
+	if(baseB->connectToNeighbor(baseA))
+		sep = -1;
 
 	double ene = 0.0;
 	LocalFrame csA = baseA->getCoordSystem();
@@ -558,7 +597,7 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	int typeB = baseB->baseTypeInt;
 
 	ene = getEnergy(dm, typeA, typeB, sep);
-	if(sep == 1)
+	if(sep == 1 || sep == -1)
 		return ene;
 
 	int hbondNum = 0;
@@ -588,7 +627,7 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 			paListB.push_back(new PolarAtom(baseB, a->getName()));
 	}
 
-	double hbondEne = -7.0*0.25;
+	double hbondEne = -1.8;
 
 	if(o2A->hbondedTo(o2B)) ene += hbondEne;
 
@@ -635,78 +674,7 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	return ene;
 }
 
-double BasePairLib::getEnergyWithOxy(BaseDistanceMatrix dm, int typeA, int typeB, int sep){
 
-	if(typeA > 3)
-		typeA = typeA - 4;
-
-	if(typeB > 3)
-		typeB = typeB - 4;
-
-	if(typeA < 0 || typeA > 3) {
-		cout << "invalid base type: " << typeA << endl;
-		return -1;
-	}
-
-	if(typeB < 0 || typeB > 3) {
-		cout << "invalid base type: " << typeB << endl;
-		return -1;
-	}
-
-	double minD = 999.9;
-	int minIndex = -1;
-	int pairType = typeA*4+typeB;
-	double d;
-
-	if(sep == 1) { //neighbor base pair
-		int pairNum = nbBasePairNum[pairType];
-		for(int i=0;i<pairNum;i++){
-			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
-			if(d < minD){
-				minD = d;
-				minIndex = i;
-			}
-		}
-	}
-	else if(sep == -1){
-		int revPairType = typeB*4+typeA;
-		BaseDistanceMatrix revDM = dm.reverse();
-		int pairNum = nbBasePairNum[revPairType];
-		for(int i=0;i<pairNum;i++){
-			d = nbDMClusterCenters[revPairType][i].distanceTo(revDM);
-			if(d < minD){
-				minD = d;
-				minIndex = i;
-			}
-		}
-	}
-	else { //non-neighbor base pair
-		int pairNum = nnbBasePairNum[pairType];
-		for(int i=0;i<pairNum;i++){
-			d = nnbDMClusterCenters[pairType][i].distanceTo(dm);
-			if(d < minD){
-				minD = d;
-				minIndex = i;
-			}
-		}
-	}
-
-	double ene = 0.0;
-
-	if(sep == 1) {
-		double e = this->nbEnergy[typeA*4+typeB][minIndex];
-		ene = e*0.25;
-
-	}
-	else if(minD < 1.2) {
-		ene = this->nnbEnergy[typeA*4+typeB][minIndex]*0.25;
-	}
-
-	if(ene > 0)
-		ene = 0;
-
-	return ene;
-}
 
 BasePairLib::~BasePairLib() {
 	// TODO Auto-generated destructor stub

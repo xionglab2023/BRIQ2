@@ -29,7 +29,7 @@ class BasePair6DEnergyTableCG {
 public:
 
 	map<int, double> nbKeysEnergy[36000]; //16*2250, distacne 50 bins, dihedral 45 bins, sphere 2000*2000
-	map<int, double> nnbKeysEnergy[36000];
+	map<int, double> nnbKeysEnergy[36000]; //only 10 basepairs: AA, AU, AG, AG, UU, UG, UC, GG, GC, CC
 
 	CsMoveTo6DKey cm2Key;
 	map<int,double>::iterator it;
@@ -43,6 +43,10 @@ public:
 	double getEnergy(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance){
 		if(sep > 1 && minDistance >= 5.0) return 0;
 		if(minDistance < 1.5) return 0;
+
+		if(typeA > typeB && sep == 2){
+			return getEnergy(csB, csA, typeB, typeA, sep, minDistance);
+		}
 
 		double len = csA.origin_.distance(csB.origin_);
 		if(len >= 15.0)

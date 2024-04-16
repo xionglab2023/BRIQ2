@@ -1,7 +1,7 @@
 /*
  * ReplaceFragment.cpp
  *
- *  Created on: 2022Äê6ÔÂ5ÈÕ
+ *  Created on: 2022ï¿½ï¿½6ï¿½ï¿½5ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -12,7 +12,6 @@
 #include <iostream>
 #include "model/StructureModel.h"
 #include "predNA/BRFoldingTree.h"
-#include "predNA/MCRun.h"
 #include "forcefield/XPara.h"
 
 using namespace NSPmodel;

@@ -12,6 +12,9 @@
 
 namespace NSPpredNA {
 
+class EdgeInformation;
+class EdgeInformationLib;
+
 using namespace NSPmodel;
 
 class EdgeInformation{
@@ -31,10 +34,26 @@ public:
 	bool fixed;
 	CsMove cm;
 
-	string moveType; //"single", "multiple", "all"
+	string ssSepKey; //For example, nb-HH, rnb-HL, nnb-1-2, nnb-3-3
 
 	EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pairLib);
+
+	void copyClusterFrom(EdgeInformation* other){
+
+		this->totalClusterNum = other->totalClusterNum;
+		this->validClusterNum = other->validClusterNum;
+		for(int i=0;i<totalClusterNum;i++){
+			this->pCluster[i] = other->pCluster[i];
+		}
+		this->pContact = other->pContact;
+		this->weight = other->weight;
+	}
+
+
 	void updatePCluster(double* pList, double pContact, BasePairLib* pairLib);
+
+	void setToLibPCluster(const string& ssSepType, EdgeInformationLib* eiLib);
+
 	void setUniqueCluster(int clusterID, BasePairLib* pairLib);
 	void setClusterList(vector<int>& clusterList, vector<double>& pClusters, BasePairLib* pairLib);
 	void setFixed(CsMove& cm){
@@ -45,6 +64,16 @@ public:
 	}
 
 	virtual ~EdgeInformation();
+};
+
+class EdgeInformationLib{
+public:
+	map<string, EdgeInformation*> eiMap;
+	vector<string> keyList;
+
+	EdgeInformationLib(BasePairLib* pairLib);
+	virtual ~EdgeInformationLib();
+
 };
 
 } /* namespace NSPpredNA */

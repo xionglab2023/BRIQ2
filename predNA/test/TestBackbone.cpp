@@ -10,7 +10,10 @@
 #include <iostream>
 
 #include "model/StructureModel.h"
-#include "predNA/MCRun.h"
+#include "model/BaseRotamer.h"
+#include "model/BasePairLib.h"
+#include "model/RotamerLib.h"
+#include "predNA/BRNode.h"
 
 using namespace NSPmodel;
 using namespace NSPforcefield;

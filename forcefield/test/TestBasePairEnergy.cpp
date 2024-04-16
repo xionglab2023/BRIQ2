@@ -105,7 +105,6 @@ int main(int argc, char** argv){
 	cout << "init basePair lib" << endl;
 	BasePairLib* bpLib = new BasePairLib();
 
-	cout << "calculate energy" << endl;
 	for(int i=0;i<nodeList.size();i++){
 		nodeA = nodeList[i];
 		for(int j=i+1;j<nodeList.size();j++){
@@ -114,27 +113,12 @@ int main(int argc, char** argv){
 			nodeB = nodeList[j];
 
 			BaseDistanceMatrix dm(nodeA->baseConf->cs1, nodeB->baseConf->cs1);
-		
-			//int pairType = bpLib->getPairType(dm, nodeA->baseType, nodeB->baseType, sep);
 			int pairType = bpLib->getPairType(dm, nodeA->baseType, nodeB->baseType, 2);
 
-
-
 			if(pairType < 0) continue;
-
 			double eBB;
-			/*
-			if(sep == 1)
-				eBB = bpLib->nbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];
-			else
-				eBB = bpLib->nnbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];
-			*/
-
-			eBB = bpLib->nnbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];
-
-			//cout << "eBB" << endl;
-			//double eBB = getBaseBaseEnergy(nodeA, nodeB, sep, et, false);
-	
+			
+			eBB = bpLib->nnbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];	
 			double eBBClash = baseBaseClash(nodeA, nodeB, sep, et, false);
 
 			double eBR = getBaseRiboseEnergy(nodeA, nodeB, sep, et, false);
@@ -163,12 +147,10 @@ int main(int argc, char** argv){
 			if(eTot > 0)
 				eTot = 0.0;
 			
-			{
-				sprintf(xx, "%d %d %d %4d %8.3f", nodeA->baseType, nodeB->baseType, sep, pairType, eTot);
-				out << string(xx) << endl;
-				//printf("BB: %8.3f BR: %8.3f BP: %8.3f RR: %8.3f RP: %8.3f PP: %8.3f\n", eBB, eBR, eBP, eRR, eRP, ePP);
-				//printf("baseA: %3s baseB: %3s idA: %2d idB: %2d ePair: %8.3f eBB: %8.3f eTot: %8.3f\n", baseList[i]->baseID.c_str(), baseList[j]->baseID.c_str(),i, j, ePair, eBB, eTot);
-			}
+			
+			sprintf(xx, "%d %d %d %4d %8.3f", nodeA->baseType, nodeB->baseType, sep, pairType, eTot);
+			out << string(xx) << endl;
+			
 		}
 	}
 

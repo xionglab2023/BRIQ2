@@ -54,20 +54,20 @@ inline double nuBaseBaseEnergy(BaseConformer* baseConfA, BaseConformer* baseConf
 		}
 
 		if(minDD < 20.25){
+			bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
 
-			
-			if(sep == 1 || sep == -1){
-				/*test code, need to be modified*/
+			/*
+			if(sep == 1 && bpEnergy < -0.01){
 				BaseDistanceMatrix dm(baseConfA->cs1, baseConfB->cs1);
-				double pCluster = et->bpLib->getPairClusterProportion(dm, baseConfA->rot->baseType, baseConfB->rot->baseType, sep);
-				if(pCluster < et->para->pNbClusterCutoff){
-					bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, 2, sqrt(minDD));
-				}
-				else 
-					bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
+				int clusterID = et->bpLib->getNeighborPairFirstFiveClusterID(dm, baseConfA->rot->baseType, baseConfB->rot->baseType);
+				bpEnergy = bpEnergy * et->para->nbPairEnergyRescale[baseConfA->rot->baseType*4+baseConfB->rot->baseType][clusterID];
 			}
-			else 
-				bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
+			else if(sep == -1 && bpEnergy < -0.01){
+				BaseDistanceMatrix dm(baseConfB->cs1, baseConfA->cs1);
+				int clusterID = et->bpLib->getNeighborPairFirstFiveClusterID(dm, baseConfB->rot->baseType, baseConfA->rot->baseType);
+				bpEnergy = bpEnergy * et->para->nbPairEnergyRescale[baseConfB->rot->baseType*4+baseConfA->rot->baseType][clusterID];
+			}
+			*/
 		}
 	}
 

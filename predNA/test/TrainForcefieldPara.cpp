@@ -17,11 +17,11 @@ using namespace NSPtools;
 using namespace NSPthread;
 
 
-int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile){
+int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile){
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
     graph->initForMC(inputFile);
 	graph->initRandWeight();
 	NuTree* tree = new NuTree(graph);
@@ -34,12 +34,12 @@ int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const
     return (int)tree->totalSamp;
 }
 
-int testRefinement(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile, double* outEne, double* outRMS, int mpID){
+int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, double* outEne, double* outRMS, int mpID){
 
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
     graph->initForMC(inputFile);
 	graph->initRandWeight();
 	NuTree* tree = new NuTree(graph);
@@ -78,6 +78,8 @@ int main(int argc, char** argv){
 
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
 	moveLib->load();
+    BasePairLib* bpLib = new BasePairLib();
+    EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
 
     string inputFile = cmdArgs.getValue("-in");
     string tag = cmdArgs.getValue("-tag");
@@ -106,6 +108,7 @@ int main(int argc, char** argv){
         for(double x= 1.0; x < 10.0;x = x*1.3) {
            
            para->clashLamdaNb = x;
+           et->updateAtomic(para);
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
@@ -116,7 +119,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -153,7 +156,7 @@ int main(int argc, char** argv){
         for(double x= 1.0; x < 10.0;x = x*1.3) {
            
            para->clashLamdaNnb = x;
-
+            et->updateAtomic(para);
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
@@ -163,7 +166,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -195,6 +198,7 @@ int main(int argc, char** argv){
         for(double x= 0.03; x < 0.5;x = x*1.3) {
            
            para->hbLamda1 = x;
+           et->updateAtomic(para);
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
@@ -205,7 +209,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -237,6 +241,7 @@ int main(int argc, char** argv){
         for(double x= 0.1; x < 1.0;x = x*1.3) {
            
            para->hbLamda2 = x;
+            et->updateAtomic(para);
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
@@ -247,7 +252,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib,eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -279,6 +284,7 @@ int main(int argc, char** argv){
         for(double x= 0.3; x < 5.0;x = x*1.3) {
            
            para->wtHb = x;
+            et->updateAtomic(para);
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
@@ -289,7 +295,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -331,7 +337,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -373,7 +379,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -405,6 +411,7 @@ int main(int argc, char** argv){
         for(double x= 0.0; x < 2.0;x = x+0.2) {
            
            para->wtO4O2C2Nb = x;
+            et->updateAtomic(para);
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
@@ -415,7 +422,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -447,6 +454,7 @@ int main(int argc, char** argv){
         for(double x= 0.0; x < 1.21;x = x+0.2) {
            
            para->wtO4O2C2Nnb = x;
+            et->updateAtomic(para);
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
@@ -457,7 +465,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et,  inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -500,7 +508,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -543,7 +551,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -587,7 +595,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -617,7 +625,7 @@ int main(int argc, char** argv){
     }
 
     else if(tag == "test") {
-        int stepNum = testSamplingStepNum(moveLib, et, inputFile);
+        int stepNum = testSamplingStepNum(moveLib, eiLib, et, inputFile);
         out << stepNum << endl;
     }
 

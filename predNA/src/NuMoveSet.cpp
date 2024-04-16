@@ -529,8 +529,8 @@ IndividualNuPairMoveSet* NuPairMoveSetLibrary::getMoveSet(int type, int clusterI
 		else if(clusterID < this->revNbContactClusterNum[type]){
 			return this->revNbMoveList[type][clusterID];
 		}
-		else if(clusterID < this->nbContactClusterNum[type] + this->nbNonContactClusterNum) {
-			return this->nbNonContactMoveList[clusterID - this->nbContactClusterNum[type]];
+		else if(clusterID < this->revNbContactClusterNum[type] + this->nbNonContactClusterNum) {
+			return this->revNbNonContactMoveList[clusterID - this->revNbContactClusterNum[type]];
 		}
 		else {
 			cout << "invalid move set clusterID: " << clusterID << " pairType: " << type << endl;
@@ -568,11 +568,12 @@ MixedNuPairCluster::MixedNuPairCluster(int sep, int pairType, NuPairMoveSetLibra
 }
 
 void MixedNuPairCluster::updateEdgeInformation(EdgeInformation* ei){
-	double psum = 0;
-	this->type = ei->moveType;
 
+	double psum = 0;
+	this->type = ei->ssSepKey;
 	clusterIDList.clear();
 	clusterPList.clear();
+
 
 	for(int i=0;i<ei->totalClusterNum;i++){
 		double p = ei->pCluster[i];
@@ -616,8 +617,10 @@ CsMove MixedNuPairCluster::getRandomMove(){
 	}
 
 	int cluster = randPool[rand()%100000];
-	
+	IndividualNuPairMoveSet* selectMoveSet = moveLib->getMoveSet(pairType, cluster, sep);
+
 	CsMove cm = moveLib->getMoveSet(pairType, cluster, sep)->getRandomMove(moveLib->oi);
+
 	cm.clusterID = cluster;
 	return cm;
 }
@@ -659,6 +662,11 @@ CsMove MixedNuPairCluster::getRandomMoveWithFixedSP1000Index(CsMove& move) {
 
 void MixedNuPairCluster::printMoveSetInfo(){
 
+	cout << "move set info: " << endl;
+	cout << this->type << endl;
+	cout << this->pairType << endl;
+	cout << this->clusterIDList.size() << endl;
+
 	if(this->type == "all") {
 		cout << "all" << endl;
 		return;
@@ -668,6 +676,9 @@ void MixedNuPairCluster::printMoveSetInfo(){
 	for(int i=0;i<100000;i++){
 		clusterSet.insert(randPool[i]);
 	}
+
+	cout << "cluster num: " << clusterSet.size() << endl;
+
 	set<int>::iterator it;
 	for(it=clusterSet.begin();it!=clusterSet.end();it++){
 		cout << *it << " ";

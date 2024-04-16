@@ -13,7 +13,6 @@
 
 #include "model/StructureModel.h"
 #include "predNA/BackboneModelingTemplate.h"
-#include "predNA/MCRun.h"
 
 using namespace NSPmodel;
 using namespace NSPforcefield;

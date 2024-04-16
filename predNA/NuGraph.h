@@ -80,10 +80,10 @@ public:
 	vector<int> neighborList;
 	vector<int> connectionBreakPoints;
 
-	vector<NuNode*> baseGroupA; //base coordinate not changed, without masked nodes
-	vector<NuNode*> riboGroupA; //ribose coordinate not changed, without masked nodes
+	vector<NuNode*> baseGroupA; //base coordinate not changed
+	vector<NuNode*> riboGroupA; //ribose coordinate not changed
 
-	vector<NuNode*> phoGroupA; //pho coordinate not changed, without masked nodes
+	vector<NuNode*> phoGroupA; //pho coordinate not changed
 	vector<NuNode*> phoGroupC; //pho coordinate rotamer changed
 
 	double samplingFreq;
@@ -182,7 +182,7 @@ public:
 	NuEdge(NuNode* nodeA, NuNode* nodeB, NuGraph* graph);
 	NuEdge(NuNode* nodeA, NuNode* nodeB, int sep, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib);
 
-	void initNearNativeMoveSet();
+	void initNearNativeMoveSet(double distanceCutoff=1.2);
 	void fixNaiveMove();
 
 	void updateEdgeInfo(NuTree* tree);
@@ -211,7 +211,6 @@ public:
 
 	NuGraph* graph;
 
-	bool* masked; //
 	bool* adjMtx; //adjacency matrix, N*N matrix, (N-1)*2 true points
 	vector<NuEdge*> geList; //edge list, (N-1)
 
@@ -283,9 +282,10 @@ public:
 	int seqLen; //L
 	int* seq; //sequenceType: 0~7
 	int* wcPairPosID;
+	int* stemIndex;
+
 	bool* connectToDownstream; //bonded to 5' residue
 	int* sepTable; //sequence seperation: -1, 0, 1, 2
-	bool* masked; //masked residues do not participate in energy calculation and structure sampling, do not exist in NuTree
 	bool* fixed; //fixed residues, do not used for rms calculation
 
 	vector<BaseRotamer*> initBaseRotList;
@@ -299,15 +299,16 @@ public:
 	RotamerLib* rotLib;
 	AtomLib* atLib;
 	BasePairLib* pairLib;
+	EdgeInformationLib* eiLib;
 	NuPairMoveSetLibrary* moveLib;
 	RnaEnergyTable* et;
 	graphInfo* initInfo;
 
-	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et);
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int InitMode);
 
-	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& cst, const string& chainBreak);
+	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& csn, const string& cse, const string& chainBreak);
 	void initPho();
 	void initPho(PO3Builder* pb);
 	void initForMC(const string& inputFile);
@@ -319,9 +320,7 @@ public:
 	void printAllEdge();
 	void checkEnergy();
 	void checkEnergyCG();
-
 	double totalEnergy();
-
 	double nbEnergy();
 	double nnbEnergy();
 
@@ -338,6 +337,9 @@ public:
 
 	graphInfo* getGraphInfo();
 	graphInfo* getGraphInfoCG();
+
+	graphInfo* getGraphInfo(double ene);
+	graphInfo* getGraphInfoCG(double ene);
 
 	virtual ~NuGraph();
 };

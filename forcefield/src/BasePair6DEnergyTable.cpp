@@ -838,7 +838,7 @@ cm2Key(withBinary, binaryMode)
 				string fileName = path + "pairEne/nnb/"+pairType+".ene";
 				if(para->bwTag != "default") {
 //					fileName = path + "pairEne/nnb/"+pairType+".ene-" + para->bwTag;
-					fileName = path + "pairEne/nnb/"+pairType+".ene-adj";
+					fileName = path + "pairEne/nnb/"+pairType+".ene-adj2";
 				}
 				file.open(fileName.c_str());
 				if(!file.is_open()) {

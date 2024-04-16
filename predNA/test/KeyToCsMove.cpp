@@ -13,11 +13,8 @@
 #include <iostream>
 
 #include "model/StructureModel.h"
-#include "predNA/MCRun.h"
 
 using namespace NSPmodel;
-using namespace NSPforcefield;
-using namespace NSPpredna;
 using namespace std;
 
 LocalFrame getCsA(XYZ t, double dihed, double dist){

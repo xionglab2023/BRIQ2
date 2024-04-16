@@ -1,7 +1,7 @@
 /*
  * AssembleTwoFragments.cpp
  *
- *  Created on: 2022Äê5ÔÂ12ÈÕ
+ *  Created on: 2022ï¿½ï¿½5ï¿½ï¿½12ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -12,7 +12,6 @@
 #include <iostream>
 #include "model/StructureModel.h"
 #include "predNA/BRFoldingTree.h"
-#include "predNA/MCRun.h"
 
 using namespace NSPmodel;
 using namespace NSPforcefield;

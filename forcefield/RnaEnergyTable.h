@@ -112,6 +112,15 @@ public:
 		cout << "finish" << endl;
 	}
 
+	void updateAtomic(ForceFieldPara* para){
+		delete this->acET;
+		this->acET = new AtomicClashEnergy(para);
+
+		delete hbET;
+		this->hbET = new HbondEnergy(para);
+
+	}
+
 	void loadCoarseGrainedEnergy(){
 		pb = new PO3Builder(para);
 		bpcgET = new BasePair6DEnergyTableCG(para, true, 1);

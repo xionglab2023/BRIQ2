@@ -13,11 +13,9 @@
 #include <iostream>
 
 #include "model/StructureModel.h"
-#include "predNA/MCRun.h"
 #include "forcefield/XPara.h"
 
 using namespace NSPmodel;
-using namespace NSPforcefield;
 using namespace NSPpredna;
 using namespace std;
 

@@ -10,14 +10,10 @@
 #include <time.h>
 #include <stdlib.h>
 #include <iostream>
-
 #include "model/StructureModel.h"
-#include "predNA/MCRun.h"
 
 
 using namespace NSPmodel;
-using namespace NSPforcefield;
-using namespace NSPpredna;
 using namespace std;
 
 
@@ -118,7 +114,6 @@ int main(int argc, char** argv){
 	out.open("/lustre/home/pengx/rnaModeling/6dKeys/hbondKeyMove/km-"+string(argv[1]), ios::out);
 
 	XYZ atomCoordLocal[4];
-
 
 	atomCoordLocal[0] = XYZ(0.992 , -1.260 , -0.000); //O3'
 	atomCoordLocal[1] = XYZ(0.985 ,  1.251 , -0.000); //O5'

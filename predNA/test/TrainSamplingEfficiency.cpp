@@ -17,12 +17,12 @@ using namespace NSPtools;
 using namespace NSPthread;
 
 
-int testRefinement(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile, double* outEne, double* outRMS, int mpID){
+int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, double* outEne, double* outRMS, int mpID){
 
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
 	graph->initRandWeight();
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
@@ -72,6 +72,9 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
 	moveLib->load();
 
+    BasePairLib* pairLib = new BasePairLib();
+    EdgeInformationLib* eiLib = new EdgeInformationLib(pairLib);
+
     string inputFile = cmdArgs.getValue("-in");
     string tag = cmdArgs.getValue("-tag");
     string outputFile = cmdArgs.getValue("-out");
@@ -111,7 +114,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -182,7 +185,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testRefinement, moveLib, et, inputFile, outEneList, outRMSList, i-startID);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, outEneList, outRMSList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }

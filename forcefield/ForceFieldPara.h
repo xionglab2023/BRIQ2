@@ -37,8 +37,6 @@ public:
 	double wtPho;
 	double wtRibose;
 
-	double pNbClusterCutoff;
-
 	double rnaDihedImpD1D2Shift[6];
 	double rnaDihedImpD4D5Shift[6];
 	double rnaDihedD2D3D4Shift[6];
@@ -55,7 +53,6 @@ public:
 
 	double wtClash;
 	double lamdaClash;
-//	double bbClash;
 	string bwTag;
 
 	double T0;
@@ -68,30 +65,7 @@ public:
 	int kStepNum3;
 	double kNodeFreq;
 
-
-	double anneal;
-
-	double initShift;
-	double dShift;
-
-
-
-	int outFreq;
-
-	double initConnectWT;
-	double initClashWT;
-	double connectWTFactor;
-	double clashWTFactor;
-
-	bool loopRiboConnectMove;
-	bool ctRandMove;
-	bool f3Move;
-	bool singleBaseMove;
-	bool reverseRotMove;
-
-	string spType;
-	double phoRep;
-
+	double nbPairEnergyRescale[16][6];
 
 	ForceFieldPara();
 	ForceFieldPara(const string& paraFile);

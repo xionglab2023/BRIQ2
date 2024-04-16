@@ -16,6 +16,7 @@ using namespace NSPtools;
 using namespace NSPthread;
 
 
+
 class singlePredictionResult{
 public:
     int posNum;
@@ -56,75 +57,7 @@ public:
     }
 };
 
-int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile){
-    BasePairLib* pairLib = new BasePairLib();
-	RotamerLib* rotLib = new RotamerLib();
-	AtomLib* atLib = new AtomLib();
-	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
-	graph->initRandWeight();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->printEdges();
-	tree->updateNodeInfo();
-	tree->updateEdgeInfo();
-	tree->updateSamplingInfo();
-	tree->printNodeInfo();    
-    return (int)(tree->totalSamp);
-}
 
-int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, singlePredictionResult** outList, int mpID){
-	
-    NSPtools::InputParser input(inputFile);
-    string cst = input.getValue("cst");
-    char xx[200];
-
-    for(int i=0;i<cst.length();i++){
-        
-        if(cst[i] == 'F') continue;
-        sprintf(xx, "%s-%d", inputFile.c_str(), i);
-        string singlePosInput = string(xx);
-    
-        cout << "pos: " << i << " " << cst[i] << endl;
-        cout << "init graph" << endl;
-
-        NSPtools::InputParser input2(singlePosInput);
-        string cst2 = input2.getValue("cst");
-        int pos = -1;
-        for(int k=0;k<cst2.length();k++){
-            if(cst2[k] == '0')
-                pos = k;
-        }
-
-        NuGraph* graph = new NuGraph(singlePosInput, rotLib, atLib, pairLib, moveLib, eiLib, et);
-
-        cout << "init for single residue prediction" << endl;
-        graph->initForSingleResiduePrediction(singlePosInput, pos);
-	    graph->initRandWeight();
-        
-        cout << "new tree" << endl;
-        NuTree* tree = new NuTree(graph);
-        cout << "mst" << endl;
-	    graph->MST_kruskal(tree);
-
-	    tree->printEdges();
-	    tree->updateNodeInfo();
-	    tree->updateEdgeInfo();
-	    tree->updateSamplingInfo();
-        cout << "run mc" << endl;
-	    graphInfo* gi = tree->runAtomicMC();
-        double rms = gi->rmsd(graph->initInfo, pos);
-        gi->setRMS(rms);
-
-        outList[mpID]->addPos(pos, gi->ene, gi->rms);
-       
-        delete gi;
-	    delete tree;
-	    delete graph;
-    }
-
-
-    return 0;
-}
 
 int testSingleBasePredictionPosList(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFileList, singlePredictionResult** outList, int mpID){
 	
@@ -176,65 +109,10 @@ int testSingleBasePredictionPosList(NuPairMoveSetLibrary* moveLib, EdgeInformati
     return 0;
 }
 
-int testSingleBasePredictionPrintPDB(NuPairMoveSetLibrary* moveLib,EdgeInformationLib* eiLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, ofstream& out, const string& pdbFile, const string& pdbID){
-	
-    NSPtools::InputParser input(inputFile);
-    string cst = input.getValue("cst");
-
-    BasePairLib* bpLib = new BasePairLib();
-
-    string pdbTag = pdbFile.substr(0, pdbFile.length()-4);
-    char xx[200];
-    for(int i=0;i<cst.length();i++){
-        if(cst[i] == 'F') continue;
-
-        sprintf(xx, "%s-%d.pdb", pdbTag.c_str(), i);
-        string pdbout = string(xx);
-
-        sprintf(xx, "%s-%d", inputFile.c_str(), i);
-        string singlePosInput = string(xx);
-
-        NSPtools::InputParser input2(singlePosInput);
-        string cst2 = input2.getValue("cst");
-        int pos = -1;
-        for(int k=0;k<cst2.length();k++){
-            if(cst2[k] == '0')
-                pos = k;
-        }
-
-        NuGraph* graph = new NuGraph(singlePosInput, rotLib, atLib, pairLib, moveLib, eiLib, et);
-        graph->initForSingleResiduePrediction(singlePosInput, pos);
-	    graph->initRandWeight();
-        NuTree* tree = new NuTree(graph);
-	    graph->MST_kruskal(tree);
-
-	    tree->updateNodeInfo();
-	    tree->updateEdgeInfo();
-	    tree->updateSamplingInfo();
-        tree->printNodeInfo();
-        tree->printEdges();
-        
-	    graphInfo* gi = tree->runAtomicMC();
-        double rms = gi->rmsd(graph->initInfo, pos);
-        out  << pdbID << " " <<  i << " " <<  gi->ene  << " " << rms << endl;
-        gi->printPDB(pdbout);
-        //graph->printEnergy();
-
-        delete gi;
-	    delete tree;
-	    delete graph;
-    }
-    return 0;
-}
-
-void printHelp(){
-    cout << "testSamp -in $INPUTFILE -out $OUTPUTFILE -tag " << endl;
-}
-
 int main(int argc, char** argv){
-
+        
     if(argc == 1) {
-        printHelp();
+        cout << "trainSingle2 $inputList $bw $tag" << endl;
         return EXIT_SUCCESS;
     }
     CmdArgs cmdArgs{argc, argv};
@@ -244,16 +122,18 @@ int main(int argc, char** argv){
 	moveLib->load();
     BasePairLib* bpLib = new BasePairLib();
     EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
-    string inputFile = cmdArgs.getValue("-in");
-    string tag = cmdArgs.getValue("-tag");
+
+    string inputFileList = cmdArgs.getValue("-list");
     string outputFile = cmdArgs.getValue("-out");
+
+    string tag = cmdArgs.getValue("-tag");
     string bw = cmdArgs.getValue("-bw");
     string outpdb;
-    if(cmdArgs.specifiedOption("-outpdb"))
-        outpdb = cmdArgs.getValue("-outpdb");
-    string pdbID = "pdb";
-     if(cmdArgs.specifiedOption("-pdbID"))
-        pdbID = cmdArgs.getValue("-pdbID");
+    
+    int subParaIndex = 0;
+    if(cmdArgs.specifiedOption("-sub")){
+        subParaIndex = atoi(cmdArgs.getValue("-sub").c_str());
+    }
 
     ofstream out;
     out.open(outputFile.c_str(), ios::out);
@@ -305,7 +185,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -350,7 +230,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib,  eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -395,7 +275,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -440,7 +320,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib,  eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -485,7 +365,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -530,7 +410,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -574,7 +454,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -619,7 +499,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -664,54 +544,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
-                jid++;
-                thrPool->addTask(request);
-            }
-
-            while(true) {
-                sleep(1);
-                if(thrPool->getTaskCount() == 0) {
-                    break;
-                }
-             }
-
-            for(int i=1;i<mp;i++){
-                outList[0]->mergeResult(outList[i]);
-            }
-
-            double minEne = 0.0;
-            double minRMS = 0.0;
-            for(int i=0;i<outList[0]->posNum;i++){
-                minEne += outList[0]->eneList[i]/outList[0]->posNum;
-                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
-            }
-            
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
-            out << string(xx) << endl;
-
-        }
-
-        clock_t end1 = clock();
-	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
-    }
-    else if(tag == "wtBB") {
-        
-        for(double x= 0.1; x < -2.0;x = x+0.1) {
-           
-            para->wtRibose = x;
-            para->wtPho = x*0.7;
-            et->updateAtomic(para);
-
-            shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
-            size_t jid = 0; 
-
-            for(int i=0;i<mp;i++){
-                outList[i]->clear();
-            }   
-            for(int i=startID;i<startID+mp;i++) {
-                shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib,eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -759,7 +592,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -805,7 +638,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -854,7 +687,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -901,7 +734,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -950,7 +783,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -994,7 +827,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -1024,7 +857,6 @@ int main(int argc, char** argv){
     }
     else if(tag == "bw") {
         {
-         
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
@@ -1033,7 +865,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -1069,29 +901,22 @@ int main(int argc, char** argv){
             out << string(xx) << endl;
         }
     }
-    /*
-    else if(tag == "nbPCutoff"){
-        vector<double> xList;
-        xList.push_back(0.1);
-        xList.push_back(0.05);
-        xList.push_back(0.02);
-        xList.push_back(0.01);
-        xList.push_back(0.005);
-        xList.push_back(0.001);
-
-        for(int y=0;y<xList.size();y++) {
-            double x= xList[y];
-            para->pNbClusterCutoff = x;
-
+    else if(tag == "nbRescale"){
+        int pairType = subParaIndex/6;
+        int clusterID = subParaIndex%6;
+        for(double x= 0.3; x < 3.0;x = x*1.3) { 
+           
+            para->nbPairEnergyRescale[pairType][clusterID] = x;
+            
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
                 outList[i]->clear();
-            }   
+            }
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -1114,17 +939,9 @@ int main(int argc, char** argv){
                 minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
             }
             
-            sprintf(xx, "%5.3f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
             out << string(xx) << endl;
-
         }
-
-        clock_t end1 = clock();
-	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;        
-    }
-    */
-    else if(tag == "pdb") {
-        testSingleBasePredictionPrintPDB(moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, out, outpdb, pdbID);
     }
 
     out.close();
@@ -1139,5 +956,7 @@ int main(int argc, char** argv){
         delete outList[i];
     }
     delete [] outList;
+
+    
 
 }

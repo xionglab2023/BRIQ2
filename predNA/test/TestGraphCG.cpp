@@ -23,17 +23,23 @@ using namespace NSPtools;
 using namespace NSPthread;
 
 
-int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
+int runCGMC(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
 
  	srand(randSeed);
 	BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-    et->loadCoarseGrainedEnergy();
 
-	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+
+
+    cout << "init graph" << endl;
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
+
+    cout << "init CGMC" << endl;
 	graph->initForCGMC(inputFile);
+    cout << "init rand weight" << endl;
 	graph->initRandWeight();
+    cout << "print edge: " << endl;
 	graph->printAllEdge();
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
@@ -84,8 +90,11 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
 	moveLib->load();
 
+    BasePairLib* bpLib = new BasePairLib();
+    EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
+
 	RnaEnergyTable* et = new RnaEnergyTable();
-	et->loadAtomicEnergy();
+	et->loadCoarseGrainedEnergy();
 
     string inputFile = cmdArgs.getValue("-in");
     string outputFile = cmdArgs.getValue("-out");
@@ -98,6 +107,8 @@ int main(int argc, char** argv){
     }
 
     int mp = atoi(cmdArgs.getValue("-mp").c_str());
+
+
     int startID = 0;
     if(cmdArgs.specifiedOption("-id")) {
         startID = atoi(cmdArgs.getValue("-id").c_str());
@@ -112,7 +123,7 @@ int main(int argc, char** argv){
         shared_ptr<IntFuncTask> request(new IntFuncTask);
         sprintf(xx, "%s-%d.pdb", outputFile.substr(0, outputFile.length()-4).c_str(), i);
         string outFile2 = string(xx);
-        request->asynBind(runCGMC, moveLib, et, inputFile, outFile2, time(0)+i);
+        request->asynBind(runCGMC, moveLib, eiLib, et, inputFile, outFile2, time(0)+i);
         jid++;
         thrPool->addTask(request);
     }
@@ -126,6 +137,8 @@ int main(int argc, char** argv){
     clock_t end1 = clock();
 	cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
 
+    delete bpLib;
+    delete eiLib;
     delete moveLib;
     delete et;
 }

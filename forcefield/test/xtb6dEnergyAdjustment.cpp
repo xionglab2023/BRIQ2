@@ -10,12 +10,15 @@
 #include <iostream>
 #include "geometry/xyz.h"
 #include "model/StructureModel.h"
-#include "predNA/MCRun.h"
+#include "model/BaseDistanceMatrix.h"
+#include "model/BasePairLib.h"
+#include "model/BaseRotamerLib.h"
 
 
 using namespace NSPforcefield;
 using namespace NSPgeometry;
 using namespace std;
+using namespace NSPmodel;
 
 LocalFrame getCsA(XYZ t, double dihed, double dist){
 	double x = t.x_;

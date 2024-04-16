@@ -173,7 +173,6 @@ void NuNode::updateNodeInformation(NuTree* tree){
 
 
 	for(i=0;i<graph->seqLen;i++){
-		if(graph->masked[i]) continue;
 
 		if(i != this->seqID) {
 			baseGroupA.push_back(graph->allNodes[i]);
@@ -235,7 +234,6 @@ void NuNode::updateNodeInformationCG(NuTree* tree){
 
 
 	for(i=0;i<graph->seqLen;i++){
-		if(graph->masked[i]) continue;
 		if(i != this->seqID){
 			baseGroupA.push_back(graph->allNodes[i]);
 			riboGroupA.push_back(graph->allNodes[i]);
@@ -1015,9 +1013,9 @@ NuEdge::NuEdge(NuNode* nodeA, NuNode* nodeB, NuGraph* graph){
 	int typeB = nodeB->baseType%4;
 
 	this->ei = new EdgeInformation(sep, typeA, typeB, graph->pairLib);
-	this->moveSet = nullptr;
-	// this->moveSet = new MixedNuPairCluster(sep, typeA*4+typeB, graph->moveLib);
-	// this->moveSet->updateEdgeInformation(this->ei);
+	this->moveSet = new MixedNuPairCluster(sep, typeA*4+typeB, graph->moveLib);
+	this->moveSet->updateEdgeInformation(this->ei);
+
 	this->weight = this->ei->weight;
 
 	this->weightRand = weight;
@@ -1075,15 +1073,14 @@ NuEdge::~NuEdge(){
 	delete this->moveSet;
 }
 
-void NuEdge::initNearNativeMoveSet(){
+void NuEdge::initNearNativeMoveSet(double distanceCutoff){
 
 	BaseDistanceMatrix dm(nodeA->baseConf->cs1, nodeB->baseConf->cs1);
 	vector<int> neighborClusters;
 	vector<double> distanceToClusterCenters;
-
-	pairLib->getNeighborClusters(dm, nodeA->baseType, nodeB->baseType, sep, neighborClusters, distanceToClusterCenters);
-
 	vector<double> pList;
+
+	pairLib->getNeighborClusters(dm, nodeA->baseType, nodeB->baseType, sep, neighborClusters, distanceToClusterCenters, distanceCutoff);
 
 	if(neighborClusters.size() > 0) {
 		double pSum = 0;
@@ -1103,6 +1100,9 @@ void NuEdge::initNearNativeMoveSet(){
 	this->weight = this->ei->weight;
 	this->weightRand = this->weight;
 	this->samplingFreq = this->ei->validClusterNum;
+	if(this->samplingFreq > 20) 
+		this->samplingFreq = 20;
+
 }
 
 void NuEdge::fixNaiveMove(){
@@ -2595,10 +2595,6 @@ bool NuEdge::isWC() {
 NuTree::NuTree(NuGraph* graph){
 	this->graph = graph;
 	this->adjMtx = new bool[graph->seqLen*graph->seqLen];
-	this->masked = new bool[graph->seqLen];
-	for(int i=0;i<graph->seqLen;i++){
-		this->masked[i] = graph->masked[i];
-	}
 	this->poolSize = 100000;
 	this->sampFreqNode = 0.5;
 	this->sampFreqEdge = 0.5;
@@ -2607,13 +2603,11 @@ NuTree::NuTree(NuGraph* graph){
 
 NuTree::~NuTree(){
 	delete [] adjMtx;
-	delete [] masked;
 }
 
 void NuTree::updateNodeInfo(){
 	int i,j;
 	for(i=0;i<graph->seqLen;i++){
-		if(masked[i]) continue;
 		graph->allNodes[i]->updateNodeInformation(this);
 	}
 }
@@ -2621,7 +2615,6 @@ void NuTree::updateNodeInfo(){
 void NuTree::updateNodeInfoCG(){
 	int i,j;
 	for(i=0;i<graph->seqLen;i++){
-		if(masked[i]) continue;
 		graph->allNodes[i]->updateNodeInformationCG(this);
 	}
 }
@@ -2639,17 +2632,13 @@ void NuTree::updateEdgeInfo(){
 	int i,j;
 
 	for(i=0;i<graph->seqLen;i++){
-		if(masked[i]) continue;
 		for(j=0;j<graph->seqLen;j++){
-			if(masked[j]) continue;
 			if(i==j) continue;
 			graph->allEdges[i*graph->seqLen+j]->updateEdgeInfo(this);
 		}
 	}
 
 	for(i=0;i<geList.size();i++){
-		if(masked[geList[i]->indexA]) continue;
-		if(masked[geList[i]->indexB]) continue;
 		tmpGeList.push_back(geList[i]);
 	}
 
@@ -2786,19 +2775,25 @@ void NuTree::randomInit(){
 	for(int i=0;i<geList.size();i++){
 
 		randEdge = geList[i];
-		cout << "rand edge: " << randEdge->indexA << " " << randEdge->indexB << endl;
-		cout << "rand edge sampling freq: " << randEdge->samplingFreq << endl;
+		//cout << "rand edge: " << randEdge->indexA << " " << randEdge->indexB << endl;
+		//cout << "edge cluster num: " << randEdge->moveSet->clusterIDList.size() << endl;
+
+
+		//cout << "rand edge sampling freq: " << randEdge->samplingFreq << endl;
 		if(randEdge->samplingFreq == 0) continue;
 
+		//cout << "rand move" << endl;
 		randMove = randEdge->moveSet->getRandomMove();
+		//cout << randMove.toString() << endl;
 
-		/*
+		
 		BaseDistanceMatrix dm0(randEdge->cm);
 		BaseDistanceMatrix dm1(randMove);
 		int pairtype = graph->pairLib->getPairType(dm1, randEdge->nodeA->baseType, randEdge->nodeB->baseType, randEdge->sep);
 		double d = graph->pairLib->distanceToClusterCenter(dm1, randEdge->nodeA->baseType, randEdge->nodeB->baseType, randEdge->sep);
 		double dist = dm0.distanceTo(dm1);
-		*/
+		cout << "rand edge distance: " << d << " " << dist << endl;
+
 	
 		randEdge->updateCsMove(randMove);
 
@@ -2843,7 +2838,7 @@ void NuTree::printEdges(){
 	for(int i=0;i<geList.size();i++){
 		NuEdge* e = geList[i];
 		printf("%-3d %-3d %7.3f\n", e->indexA, e->indexB, e->weight);
-		e->moveSet->printMoveSetInfo();
+		//e->moveSet->printMoveSetInfo();
 	}
 }
 
@@ -2873,10 +2868,10 @@ graphInfo* NuTree::runAtomicMC(){
 	
 	bool debug = false;
 
-	if(debug) {
-		cout << "random init" << endl;
-	}
+
+	cout << "random init" << endl;
 	randomInit();
+	cout << "run: " << endl;
 
 	double T0 = this->graph->et->para->T0;
 	double T1 = this->graph->et->para->T1;
@@ -2899,6 +2894,7 @@ graphInfo* NuTree::runAtomicMC(){
 	if(debug) {
 		cout << "calculate total energy" << endl;
 	}
+
 
 	double curEne = graph->totalEnergy();
 
@@ -2923,6 +2919,7 @@ graphInfo* NuTree::runAtomicMC(){
 		graph->checkEnergy();
 	}
 
+	cout << "start MC: " << endl;
 	for(T=T0;T>T1;T=T*anneal){
 		nAc = 0;
 		eAc = 0;
@@ -2987,7 +2984,7 @@ graphInfo* NuTree::runAtomicMC(){
 				eTot ++;
 				randPos = randPoolEdge[rand()%poolSize];
 				if(debug) {
-					cout << "edge mut: pos: " << randPos << endl;
+					cout << "edge mut: edge: " << geList[randPos]->indexA << " " << geList[randPos]->indexB << endl;
 				}
 				
 				randEdge = geList[randPos];
@@ -3012,10 +3009,8 @@ graphInfo* NuTree::runAtomicMC(){
 					cout << "edge mut, edge: " << randEdge->indexA << " " << randEdge->indexB << " mutE: " << mutE << endl;
 					graph->checkEnergy();
 				}
-
 				
 				if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
-			
 					randEdge->acceptMutation();
 					curEne += mutE;
 					eAc++;
@@ -3305,17 +3300,22 @@ void NuTree::runCoarseGrainedMC(const string& output){
 	}
 
 	cout << "total step num: " << count << endl;
-
+	cout << "cg to all atom" << endl;
 	graph->cgToAllAtom();
-	graphInfo* gi = graph->getGraphInfo();
-	gi->setRMS(gi->rmsd(this->graph->initInfo));
 
+	cout << "get graph info" << endl;
+	graphInfo* gi = graph->getGraphInfoCG();
+	double rms = gi->rmsdCG(this->graph->initInfo);
+	delete gi;
+
+	cout << "pring pdb" << endl;
+	gi = graph->getGraphInfo(0.0);
 	gi->printPDB(output);
 	delete gi;
+	
 }
 
 graphInfo::graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib, int mode){
-
 
 	this->seqLen = seqLen;
 	this->seq = new int[seqLen];
@@ -3377,7 +3377,7 @@ double graphInfo::rmsd(graphInfo* other){
 
 	int seqID = 0;
 	for(unsigned int i=0;i<this->seqLen;i++) {
-		if(fixed[i]) continue;
+
 		vector<Atom*> aList = nodes[i]->toAtomList(this->atLib);
 		for(int j=0;j<aList.size();j++)
 			tList1.push_back(aList[j]->coord);
@@ -3387,7 +3387,7 @@ double graphInfo::rmsd(graphInfo* other){
 	}
 
 	for(unsigned int i=0;i<this->seqLen;i++) {
-		if(fixed[i]) continue;
+
 		vector<Atom*> aList = other->nodes[i]->toAtomList(this->atLib);
 		for(int j=0;j<aList.size();j++)
 			tList2.push_back(aList[j]->coord);
@@ -3560,13 +3560,14 @@ void graphInfo::printAlignedPDB(graphInfo* alignTarget, const string& outputFile
 	}
 }
 
-NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et){
+NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et){
 
 	this->pairLib = pairLib;
 	this->rotLib = rotLib;
 	this->atLib = atLib;
 	this->moveLib = moveLib;
 	this->et = et;
+	this->eiLib = eiLib;
 	this->initInfo = NULL;
 
 }
@@ -3576,6 +3577,7 @@ NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, Ba
 	this->rotLib = rotLib;
 	this->atLib = atLib;
 	this->moveLib = NULL;
+	this->eiLib = NULL;
 	this->et = NULL;
 	this->initInfo = NULL;
 	initForMST(inputFile);
@@ -3586,6 +3588,7 @@ NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, Ba
 	this->rotLib = rotLib;
 	this->atLib = atLib;
 	this->moveLib = NULL;
+	this->eiLib = NULL;
 	this->et = et;
 	this->initInfo = NULL;
 	switch (initMode) {
@@ -3601,8 +3604,8 @@ NuGraph::~NuGraph() {
 
 	delete [] seq;
 	delete [] wcPairPosID;
+	delete [] stemIndex;
 	delete [] connectToDownstream;
-	delete [] masked;
 	delete [] fixed;
 	delete [] sepTable;
 
@@ -3625,7 +3628,7 @@ NuGraph::~NuGraph() {
 		delete initInfo;
 }
 
-void NuGraph::init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& cst, const string& chainBreak){
+void NuGraph::init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& csn, const string& cst, const string& chainBreak){
 	int i,j,k;
 
 	/*
@@ -3634,7 +3637,7 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	 * 		refinement: fixed cluster type refinement
 	 */
 
-
+	cout << "task: " << task << endl;  
 
 	/*
 	vector<string> templates = input.getMultiValues("template");
@@ -3645,19 +3648,15 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 
 	seqLen = baseSeq.length();
 
-	cout << "sequence length: " <<  seqLen << endl;
-
 	this->seq = new int[seqLen];
 	this->wcPairPosID = new int[seqLen];
+	this->stemIndex = new int[seqLen];
 	this->connectToDownstream = new bool[seqLen];
 	this->sepTable = new int[seqLen*seqLen];
 	this->allNodes = new NuNode*[seqLen];
 	this->allEdges = new NuEdge*[seqLen*seqLen];
-	this->masked = new bool[seqLen];
 	this->fixed = new bool[seqLen];
 
-
-	cout << "read chain break" << endl;
 
 	/*
 	 * read chain break points
@@ -3688,8 +3687,6 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 		}
 	}
 
-	cout << "init nodes" << endl;
-
 	/*
 	 * init NuNodes
 	 */
@@ -3707,6 +3704,11 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	else if(cst.length() != baseSeq.length()){
 		cout << "invalid cst " << endl;
 		cout << cst << endl;
+		exit(1);
+	}
+	else if(csn.length() != baseSeq.length()){
+		cout << "invalid csn " << endl;
+		cout << csn << endl;
 		exit(1);
 	}
 
@@ -3747,7 +3749,6 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 		else if(i>0 && i<seqLen-1 && connectToDownstream[i-1] == false && connectToDownstream[i] == false){
 			this->allNodes[i]->samplingFreq = 0;
 		}
-		cout << "pos: " << i << " sampFreq: " << this->allNodes[i]->samplingFreq << endl;
 		this->allNodes[i]->connectToNeighbor = connectToDownstream[i];
 		this->allNodes[i]->graph = this;
 	}
@@ -3800,20 +3801,205 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 		wcPairPosID[preIndex] = i;
 	}
 
+	int currentStemID = 1;
+	int curStemLen = 0;
+	for(int i=0;i<seqLen;i++){
+		this->stemIndex[i] = 0;
+	}
+	for(int i=0;i<seqLen-1;i++) {
+		if(wcPairPosID[i] < 0 ) continue;
+		if(wcPairPosID[i] > i && wcPairPosID[i+1] == wcPairPosID[i]-1 && connectToDownstream[i] && connectToDownstream[wcPairPosID[i+1]]) {
+			stemIndex[i] = currentStemID;
+			stemIndex[i+1] = currentStemID;
+			stemIndex[wcPairPosID[i]] = currentStemID;
+			stemIndex[wcPairPosID[i+1]] = currentStemID;
+			curStemLen ++;
+		}
+		else if(curStemLen > 0) {
+			curStemLen = 0;
+			currentStemID++;
+		}
+	}
+
+	cout << "stems: " << endl;
+	for(i=0;i<seqLen;i++){
+		cout << stemIndex[i];
+	}
+	cout << endl;
+
+
 	cout << "init edges" << endl;
 	/*
 	 * init NuEdges
 	 */
-	for(int i=0;i<seqLen;i++){
-		for(int j=0;j<seqLen;j++){
-			#ifdef DEBUG
-				cout << "i=" <<i<<", j="<<j<<endl;
-			#endif
+
+	string augc = "AUGC";
+
+	vector<int> h3List;
+	vector<int> h5List;
+	vector<int> h3IDList;
+	vector<int> h5IDList;
+	for(i=0;i<seqLen;i++) {
+			
+			if(stemIndex[i] == 0) {
+				int h3Sep = -1;
+				int h3Id = -1;
+				int h5Sep = -1;
+				int h5Id = -1;
+				
+				for(int j=i-1;j>=0;j--) {
+					if(!connectToDownstream[j]) break;
+					if(stemIndex[j] > 0) {
+						h3Sep = (i-j);
+						h3Id = j;
+						break;
+					}
+				}
+				
+				for(int j=i;j<seqLen;j++) {
+					if(!connectToDownstream[j]) break;
+					if(stemIndex[j] >0) {
+						h5Sep = (j-i);
+						h5Id = j;
+						break;
+					}
+				}
+				
+				h3List.push_back(h3Sep);
+				h3IDList.push_back(h3Id);
+				h5List.push_back(h5Sep);
+				h5IDList.push_back(h5Id);
+			}
+			else if(i< seqLen-1 && stemIndex[i]>0 && stemIndex[i+1]==0) {
+				int h3Sep = 0;
+				int h3Id = i;
+				int h5Sep = -1;
+				int h5Id = -1;
+				h3List.push_back(h3Sep);
+				h3IDList.push_back(h3Id);
+				h5List.push_back(h5Sep);
+				h5IDList.push_back(h5Id);
+			}
+			else if(i>0 && stemIndex[i]>0 && stemIndex[i-1]==0) {
+				int h3Sep = -1;
+				int h3Id = -1;
+				int h5Sep = 0;
+				int h5Id = i;
+				h3List.push_back(h3Sep);
+				h3IDList.push_back(h3Id);
+				h5List.push_back(h5Sep);
+				h5IDList.push_back(h5Id);
+			}
+			else {
+				h3List.push_back(-1);
+				h3IDList.push_back(-1);
+				h5List.push_back(-1);
+				h5IDList.push_back(-1);
+			}
+	}
+
+	char xs[200];
+	for(i=0;i<seqLen;i++){
+		for(j=0;j<seqLen;j++){
+			
 			this->allEdges[i*seqLen+j] = new NuEdge(allNodes[i], allNodes[j], this);
 			this->allEdges[i*seqLen+j]->graph = this;
 			this->allEdges[i*seqLen+j]->weight = 0.0;
+			sprintf(xs, "%c%c", augc[this->allNodes[i]->baseType], augc[this->allNodes[j]->baseType]);
+			string pairType = string(xs);
+
+			if(i==j) continue;
+
+			string ssSepType = "UNK";
+			int sep = this->allEdges[i*seqLen+j]->sep;
+			int pairID1 = this->wcPairPosID[i];
+			int pairID2 = this->wcPairPosID[j];
+
+			if(sep == 1) {
+				ssSepType = "nb-"+pairType+"-";
+				if(pairID1 >=0 && pairID2 >=0 && stemIndex[i] == stemIndex[j])
+					ssSepType = ssSepType + "HH";
+				else if(pairID1 >=0 && pairID2 >=0)
+					ssSepType = ssSepType + "Hh";
+				else if(pairID1 >= 0)
+					ssSepType = ssSepType + "HL";
+				else if(pairID2 >= 0)
+					ssSepType = ssSepType + "LH";
+				else 
+					ssSepType = ssSepType + "LL";
+			}
+			else if(sep == -1) {
+				ssSepType = "rnb-"+pairType+"-";
+				if(pairID1 >=0 && pairID2 >=0 && stemIndex[i] == stemIndex[j])
+					ssSepType = ssSepType + "HH";
+				else if(pairID1 >=0 && pairID2 >=0)
+					ssSepType = ssSepType + "Hh";
+				else if(pairID1 >= 0)
+					ssSepType = ssSepType + "HL";
+				else if(pairID2 >= 0)
+					ssSepType = ssSepType + "LH";
+				else 
+					ssSepType = ssSepType + "LL";				
+			}
+			else if(sep == 2){
+				
+				int h3SepA = h3List[i];
+				int h3IDA = h3IDList[i];
+				int h5SepA = h5List[i];
+				int h5IDA = h5IDList[i];
+
+				int h3SepB = h3List[j];
+				int h3IDB = h3IDList[j];
+
+				int h5SepB = h5List[j];
+				int h5IDB = h5IDList[j];
+
+				if(wcPairPosID[i] == j){ //WC pair
+					sprintf(xs, "wc-%s",pairType.c_str());
+					ssSepType = string(xs);
+				}
+				else if(h3IDA >=0 && wcPairPosID[h3IDA] == h5IDB && h3IDB >=0 && wcPairPosID[h3IDB] == h5IDA){
+					if(h3SepA + h5SepB < h3SepB + h5SepA){
+						sprintf(xs, "nnb-%s-3P5P-%d-%d",pairType.c_str(), h3SepA, h5SepB);
+						ssSepType = string(xs);
+					}
+					else {
+						sprintf(xs, "nnb-%s-5P3P-%d-%d",pairType.c_str(), h5SepA, h3SepB);
+						ssSepType = string(xs);
+					}
+				}
+				else if(h3IDA >=0 && wcPairPosID[h3IDA] == h5IDB){
+					sprintf(xs, "nnb-%s-3P5P-%d-%d",pairType.c_str(), h3SepA, h5SepB);
+					ssSepType = string(xs);
+				}
+				else if(h3IDB >=0 && wcPairPosID[h3IDB] == h5IDA){
+					sprintf(xs, "nnb-%s-5P3P-%d-%d",pairType.c_str(), h5SepA, h3SepB);
+					ssSepType = string(xs);
+				}
+				else {
+					ssSepType = "UNK";
+				}
+			}
+
+			if(ssSepType != "UNK") {
+				cout << "edge: " << i << " " << j << " " << ssSepType << endl;
+			}
+
+
 			if(task == "refinement"){
+				//cout << "init near native move set" << endl;
 				this->allEdges[i*seqLen+j]->initNearNativeMoveSet();
+			}
+			else if(task == "singleBasePredict"){
+				this->allEdges[i*seqLen+j]->initNearNativeMoveSet(2.0);
+			}
+			else if(task == "cgModeling"){
+				if(eiLib == NULL) {
+					cout << "edgeInformation lib not initialized" << endl;
+					exit(0);
+				}
+				if(ssSepType != "UNK")
+					this->allEdges[i*seqLen+j]->ei->setToLibPCluster(ssSepType, eiLib);
 			}
 			else if(task == "analysis") {
 				NuNode* nodeA = this->allEdges[i*seqLen+j]->nodeA;
@@ -3824,6 +4010,17 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 				this->allEdges[i*seqLen+j]->weight = this->allEdges[i*seqLen+j]->ei->weight;
 				this->allEdges[i*seqLen+j]->weightRand = this->allEdges[i*seqLen+j]->weight;
 			}
+		}
+	}
+
+	cout << "print edge information: " << endl;
+	for(int i=0;i<seqLen;i++){
+		for(int j=0;j<seqLen;j++){
+			printf("edge: %d-%d clusterNum: %d ", i, j, this->allEdges[i*seqLen+j]->moveSet->clusterIDList.size());
+			if(this->allEdges[i*seqLen+j]->moveSet->clusterIDList.size() > 0){
+				cout << this->allEdges[i*seqLen+j]->moveSet->clusterIDList[0];
+			}
+			cout << endl;
 		}
 	}
 
@@ -3850,27 +4047,9 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 		}
 	}
 
-	cout << "init masked residue" << endl;
-	/*
-	 * init masked residues
-	 */
-	for(i=0;i<seqLen;i++) {
-		char c = cst[i];
-		if(c == '-') {
-			this->masked[i] = true;
-			this->fixed[i] = true;
-			this->allNodes[i]->samplingFreq = 0.0;
-			if(i > 0)
-				this->connectToDownstream[i-1] = false;
-		}
-		else if(c == 'F') {
-			this->masked[i] = false;
-			this->fixed[i] = true;
-		}
-		else {
-			this->masked[i] = false;
-			this->fixed[i] = false;
-		}
+	for(i=0;i<seqLen;i++){
+		if(csn[i] == 'F')
+			this->allNodes[i]->samplingFreq = 0;
 	}
 
 	for(i=0;i<seqLen;i++){
@@ -3878,7 +4057,7 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 			this->geList.push_back(allEdges[i*seqLen+j]);
 		}
 	}
-	cout << "finish init" << endl;
+	//cout << "finish init" << endl;
 }
 
 void NuGraph::initPho(){
@@ -3918,12 +4097,18 @@ void NuGraph::initForMC(const string& inputFile){
 	string baseSeq = input.getValue("seq");
 	string baseSec = input.getValue("sec");
 	string cst = input.getValue("cst");
+	string csn = input.getValue("csn");
+	if(csn.length() == 0){
+		for(int i=0;i<baseSeq.length();i++){
+			csn = csn + "0";
+		}
+	}
 	string chainBreak = input.getValue("break");
 
-	init(task, pdbFile, baseSeq, baseSec, cst, chainBreak);
+	init(task, pdbFile, baseSeq, baseSec, csn, cst, chainBreak);
 	
 	initPho();
-	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, masked, allNodes, 0.0, atLib, 0);	
+	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 0);	
 }
 
 void NuGraph::initForCGMC(const string& inputFile){
@@ -3942,10 +4127,16 @@ void NuGraph::initForCGMC(const string& inputFile){
 	string baseSeq = input.getValue("seq");
 	string baseSec = input.getValue("sec");
 	string cst = input.getValue("cst");
+	string csn = input.getValue("csn");
+	if(csn.length() == 0){
+		for(int i=0;i<baseSeq.length();i++){
+			csn = csn + "0";
+		}
+	}
 	string chainBreak = input.getValue("break");
 
-	init(task, pdbFile, baseSeq, baseSec, cst, chainBreak);
-	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, masked, allNodes, 0.0, atLib, 1);	
+	init(task, pdbFile, baseSeq, baseSec, csn, cst, chainBreak);
+	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 1);	
 }
 
 void NuGraph::initForMST(const string& inputFile){
@@ -3964,9 +4155,15 @@ void NuGraph::initForMST(const string& inputFile){
 	string baseSeq = input.getValue("seq");
 	string baseSec = input.getValue("sec");
 	string cst = input.getValue("cst");
+	string csn = input.getValue("csn");
+	if(csn.length() == 0){
+		for(int i=0;i<baseSeq.length();i++){
+			csn = csn + "0";
+		}
+	}
 	string chainBreak = input.getValue("break");
 
-	init(task, pdbFile, baseSeq, baseSec, cst, chainBreak);
+	init(task, pdbFile, baseSeq, baseSec, csn, cst, chainBreak);
 }
 
 void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
@@ -3985,59 +4182,20 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 	string baseSec = input.getValue("sec");
 
 	string cst = input.getValue("cst");
+	string csn = input.getValue("csn");
+	if(csn.length() == 0){
+		for(int i=0;i<baseSeq.length();i++){
+			csn = csn + "0";
+		}
+	}
 	string chainBreak = input.getValue("break");
 
-	init(task, pdbFile, baseSeq, baseSec, cst, chainBreak);
+	init(task, pdbFile, baseSeq, baseSec, csn, cst, chainBreak);
 	initPho();
-	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, masked, allNodes, 0.0, atLib, 0);	
-
-	set<int> maskedPositions;
+	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 0);	
 	NuNode* nodeTarget = allNodes[pos];
-
 	double d;
 	int i,j,k;
-
-	//mask residues with minD > 10.0 
-
-	/*
-	vector<XYZ> coordTarget;
-	for(i=0;i<nodeTarget->baseConf->rot->atomNum;i++){
-		coordTarget.push_back(nodeTarget->baseConf->coords[i]);
-	}
-	for(i=0;i<nodeTarget->riboseConf->rot->atomNum;i++){
-		coordTarget.push_back(nodeTarget->riboseConf->coords[i]);
-	}
-	for(i=0;i<4;i++){
-		coordTarget.push_back(nodeTarget->phoConf->coords[i]);
-	}
-
-	for(i=0;i<seqLen;i++){
-		if(i==pos) continue;
-		NuNode* nodeA = allNodes[i];
-		vector<XYZ> coordA;
-		for(j=0;j<nodeA->baseConf->rot->atomNum;j++){
-			coordA.push_back(nodeA->baseConf->coords[j]);
-		}
-		for(j=0;j<nodeA->riboseConf->rot->atomNum;j++){
-			coordA.push_back(nodeA->riboseConf->coords[j]);
-		}
-		for(j=0;j<4;j++){
-			coordA.push_back(nodeA->phoConf->coords[j]);
-		}
-		double minD = 99.9;
-		for(int j=0;j<coordTarget.size();j++){
-			for(int k=0;k<coordA.size();k++){
-				d = coordTarget[j].distance(coordA[k]);
-				if(d < minD){
-					minD = d;
-				}
-			}
-		}
-		if(minD > 10.0) {
-			maskedPositions.insert(i);
-		}
-	}
-	*/
 
 	int seqLen = baseSeq.length();
 	char xx[seqLen+1];
@@ -4053,16 +4211,6 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 		if(allNodes[i]->samplingFreq > 0.0)
 			allNodes[i]->samplingFreq = 0.2;
 	}
-
-	for(i=0;i<seqLen;i++){
-		if(maskedPositions.find(i) != maskedPositions.end())
-			xx[i] = '-';
-		else if(i==pos)
-			xx[i] = '0';
-		else 
-			xx[i] = 'F';
-	}
-	cst = string(xx);
 
 	cout << "single residue prediction cst: " << endl;
 	cout << cst << endl;
@@ -4085,24 +4233,19 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 		}
 	}
 
+	for(i=0;i<seqLen;i++){
+		if(csn[i] == 'F')
+			this->allNodes[i]->samplingFreq = 0;
+	}
 
 	for(i=0;i<seqLen;i++) {
 		char c = cst[i];
-		if(c == '-') {
-			this->masked[i] = true;
-			this->fixed[i] = true;
-			this->allNodes[i]->samplingFreq = 0.0;
-			if(i > 0)
-				this->connectToDownstream[i-1] = false;
-		}
-		else if(c >= 'A' && c <= 'Z') {
-			this->masked[i] = false;
+		if(c >= 'A' && c <= 'Z') {
 			this->fixed[i] = true;
 			if(this->allNodes[i]->samplingFreq != 0)
 				this->allNodes[i]->samplingFreq = 0.3;
 		}
 		else {
-			this->masked[i] = false;
 			this->fixed[i] = false;
 		}
 	}
@@ -4182,13 +4325,10 @@ void NuGraph::printAllEdge(){
 
 void NuGraph::checkEnergy(){
 	for(int i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		allNodes[i]->checkEnergy();
 	}
 	for(int i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		for(int j=0;j<seqLen;j++){
-			if(masked[j]) continue;
 			if(i==j) continue;
 			allEdges[i*seqLen+j]->checkEnergy();
 			allEdges[i*seqLen+j]->checkReversePair();
@@ -4198,13 +4338,10 @@ void NuGraph::checkEnergy(){
 
 void NuGraph::checkEnergyCG(){
 	for(int i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		allNodes[i]->checkEnergyCG();
 	}
 	for(int i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		for(int j=0;j<seqLen;j++){
-			if(masked[j]) continue;
 			if(i==j) continue;
 			allEdges[i*seqLen+j]->checkEnergyCG();
 			allEdges[i*seqLen+j]->checkReversePairCG();
@@ -4217,15 +4354,12 @@ double NuGraph::totalEnergy(){
 	int i,j,k, sep, sepR;
 	for(i=0;i<seqLen;i++){
 
-		if(masked[i]) continue;
 		ene += allNodes[i]->riboseConf->rot->energy;
 		ene += allNodes[i]->phoConf->ene;
 	}
 
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		for(j=i+1;j<seqLen;j++){
-			if(masked[j]) continue;
 			sep = sepTable[i*seqLen+j];
 			sepR = sepTable[j*seqLen+i];
 			ene += nuBaseBaseEnergy(allNodes[i]->baseConf, allNodes[j]->baseConf, sep, et);
@@ -4247,15 +4381,12 @@ double NuGraph::nbEnergy() {
 	int i,j,k, sep, sepR;
 	for(i=0;i<seqLen;i++){
 
-		if(masked[i]) continue;
 		ene += allNodes[i]->riboseConf->rot->energy;
 		ene += allNodes[i]->phoConf->ene;
 	}
 
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		for(j=i+1;j<seqLen;j++){
-			if(masked[j]) continue;
 			sep = sepTable[i*seqLen+j];
 			sepR = sepTable[j*seqLen+i];
 			if(sep == 1)
@@ -4270,15 +4401,12 @@ double NuGraph::nnbEnergy() {
 	int i,j,k, sep, sepR;
 	for(i=0;i<seqLen;i++){
 
-		if(masked[i]) continue;
 		ene += allNodes[i]->riboseConf->rot->energy;
 		ene += allNodes[i]->phoConf->ene;
 	}
 
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		for(j=i+1;j<seqLen;j++){
-			if(masked[j]) continue;
 			sep = sepTable[i*seqLen+j];
 			sepR = sepTable[j*seqLen+i];
 			if(sep > 1)
@@ -4292,15 +4420,12 @@ double NuGraph::totalEnergyCG(){
 		double ene = 0.0;
 	int i,j,k, sep, sepR;
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		ene += allNodes[i]->riboseConfCG->rot->energy;
 		ene += allNodes[i]->bbcg;
 	}
 
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		for(j=i+1;j<seqLen;j++){
-			if(masked[j]) continue;
 			sep = sepTable[i*seqLen+j];
 			sepR = sepTable[j*seqLen+i];
 			ene += nuBaseBaseEnergyCG(allNodes[i]->baseConfCG, allNodes[j]->baseConfCG, sep, et);
@@ -4316,15 +4441,12 @@ double NuGraph::totalEnergyCGTmp(){
 	double ene = 0.0;
 	int i,j,k, sep, sepR;
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		ene += allNodes[i]->riboseConfCGTmp->rot->energy;
 		ene += allNodes[i]->bbcgTmp;
 	}
 
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		for(j=i+1;j<seqLen;j++){
-			if(masked[j]) continue;
 			sep = sepTable[i*seqLen+j];
 			sepR = sepTable[j*seqLen+i];
 			ene += nuBaseBaseEnergyCG(allNodes[i]->baseConfCGTmp, allNodes[j]->baseConfCGTmp, sep, et);
@@ -4340,15 +4462,12 @@ double NuGraph::totalEnergyTmp(){
 	double ene = 0.0;
 	int i,j,k, sep, sepR;
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		ene += allNodes[i]->riboseConfTmp->rot->energy;
 		ene += allNodes[i]->phoConfTmp->ene;
 	}
 
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		for(j=i+1;j<seqLen;j++){
-			if(masked[j]) continue;
 			sep = sepTable[i*seqLen+j];
 			sepR = sepTable[j*seqLen+i];
 			ene += nuBaseBaseEnergy(allNodes[i]->baseConfTmp, allNodes[j]->baseConfTmp, sep, et);
@@ -4369,14 +4488,11 @@ double NuGraph::totalEnergy2(){
 	double ene = 0.0;
 	int i,j,k, sep, sepR;
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		ene += allNodes[i]->ene;
 	}
 
 	for(i=0;i<seqLen;i++){
-		if(masked[i]) continue;
 		for(j=i+1;j<seqLen;j++){
-			if(masked[j]) continue;
 			for(k=0;k<9;k++)
 				ene += allEdges[i*seqLen+j]->pairEne[k];
 		}
@@ -4423,12 +4539,22 @@ void NuGraph::cgToAllAtom(){
 }
 
 graphInfo* NuGraph::getGraphInfo(){
-	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, masked, allNodes, totalEnergy(), atLib, 0);
+	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, totalEnergy(), atLib, 0);
 	return gi;
 }
 
 graphInfo* NuGraph::getGraphInfoCG(){
-	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, masked, allNodes, totalEnergyCG(), atLib, 1);
+	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, totalEnergyCG(), atLib, 1);
+	return gi;
+}
+
+graphInfo* NuGraph::getGraphInfo(double ene){
+	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, ene, atLib, 0);
+	return gi;
+}
+
+graphInfo* NuGraph::getGraphInfoCG(double ene){
+	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, ene, atLib, 1);
 	return gi;
 }
 

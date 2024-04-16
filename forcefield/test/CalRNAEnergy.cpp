@@ -54,7 +54,7 @@ int main(int argc, char** argv){
 
 	cout << "init et" << endl;
 	ForceFieldPara* ffp = new ForceFieldPara();
-	ffp->bwTag = "adj";
+	ffp->bwTag = "bw6";
 
 	RnaEnergyTable* et = new RnaEnergyTable(ffp);
 	et->loadAtomicEnergy();

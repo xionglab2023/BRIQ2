@@ -41,6 +41,8 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
 	moveLib->load();
 
+	EdgeInformationLib* eiLib = new EdgeInformationLib(pairLib);
+
 	cout << "load energy table" << endl;
 
 	RnaEnergyTable* et = new RnaEnergyTable();
@@ -52,7 +54,7 @@ int main(int argc, char** argv){
 	et->loadAtomicEnergy();
 
 	cout << "init graph" << endl;
-	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
 	graph->initForMC(inputFile);
 	
 	//graph->initInfo->printPDB(output);
@@ -85,9 +87,6 @@ int main(int argc, char** argv){
 	graphInfo* gi = tree->runAtomicMC();
 	gi->printPDB(output);
 	delete gi;
-
-	
-//	graph->printEnergy();
 
 	delete pairLib;
 	delete rotLib;

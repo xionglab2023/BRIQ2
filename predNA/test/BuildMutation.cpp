@@ -1,7 +1,7 @@
 /*
  * BuildMutation.cpp
  *
- *  Created on: 2022Äê5ÔÂ11ÈÕ
+ *  Created on: 2022ï¿½ï¿½5ï¿½ï¿½11ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -14,7 +14,6 @@
 #include "model/StructureModel.h"
 #include "predNA/BRNode.h"
 #include "predNA/BRFoldingTree.h"
-#include "predNA/MCRun.h"
 
 using namespace NSPmodel;
 using namespace NSPforcefield;

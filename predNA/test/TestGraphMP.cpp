@@ -17,13 +17,13 @@ using namespace NSPtools;
 using namespace NSPthread;
 
 
-int runRefinement(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
+int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
 
     srand(randSeed);
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
     graph->initForMC(inputFile);
 	graph->initRandWeight();
 	NuTree* tree = new NuTree(graph);
@@ -73,6 +73,9 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
 	moveLib->load();
 
+    BasePairLib* bpLib = new BasePairLib();
+    EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
+
 	RnaEnergyTable* et = new RnaEnergyTable();
 	et->loadAtomicEnergy();
 
@@ -100,7 +103,7 @@ int main(int argc, char** argv){
         shared_ptr<IntFuncTask> request(new IntFuncTask);
         sprintf(xx, "%s-%d.pdb", outputFile.substr(0, outputFile.length()-4).c_str(), i);
         string outFile2 = string(xx);
-        request->asynBind(runRefinement, moveLib, et, inputFile, outFile2, time(0)+i);
+        request->asynBind(runRefinement, moveLib, eiLib, et, inputFile, outFile2, time(0)+i);
         jid++;
         thrPool->addTask(request);
     }
@@ -115,5 +118,7 @@ int main(int argc, char** argv){
 	cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
 
     delete moveLib;
+    delete bpLib;
+    delete eiLib;
     delete et;
 }

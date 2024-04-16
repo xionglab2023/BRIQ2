@@ -12,7 +12,6 @@
 #include <iostream>
 #include "model/StructureModel.h"
 #include "predNA/BRFoldingTree.h"
-#include "predNA/MCRun.h"
 #include "forcefield/XPara.h"
 
 using namespace NSPmodel;

@@ -15,7 +15,7 @@ using namespace std;
 using namespace NSPtools;
 using namespace NSPthread;
 
-int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, const string& outpdb, int pos){
+int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, const string& outpdb, int pos){
 	
     int baseNum = 0;
     double totEne = 0.0;
@@ -26,7 +26,7 @@ int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, 
     {
         cout << "pos: " << pos << " " << cst[pos] << endl;
         cout << "init graph" << endl;
-        NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, et);
+        NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
 
         cout << "init for single residue prediction" << endl;
         graph->initForSingleResiduePrediction(inputFile, pos);
@@ -66,6 +66,7 @@ int main(int argc, char** argv){
 
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
 	moveLib->load();
+   
 
     CmdArgs cmdArgs{argc, argv};
 
@@ -95,6 +96,15 @@ int main(int argc, char** argv){
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
+    EdgeInformationLib* eiLib = new EdgeInformationLib(pairLib);
 
-    testSingleBasePrediction(moveLib, et, pairLib, rotLib, atLib, inputFile, outpdb, pos);
+    testSingleBasePrediction(moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outpdb, pos);
+
+    delete moveLib;
+    delete para;
+    delete et;
+    delete pairLib;
+    delete rotLib;
+    delete atLib;
+    delete eiLib;
 }

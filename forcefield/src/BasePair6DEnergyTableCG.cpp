@@ -60,7 +60,7 @@ cm2Key(withBinary, binaryMode)
         bb->read(ins);
         ins.close();
 		for(int i=0; i<4; i++) {
-			for(int j=0;j<4;j++) {
+			for(int j=i;j<4;j++) {
 				string tN = string(augc.substr(i,1)) + augc.substr(j,1) + ".ene";
 				BinaryTable* btab = bb->tables_map.at(tN);
 				auto& indexACol = get<BinaryColumn<int>>(*(btab->cols[0]));
@@ -87,6 +87,12 @@ cm2Key(withBinary, binaryMode)
 					this->nbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
 				}
 				file.close();
+			}
+		}
+
+		for(int i=0;i<4;i++){
+			for(int j=i;j<4;j++){
+				string pairType = augc.substr(i,1) + augc.substr(j,1);
 
 				file.open(path + "pairEneCG/nnb/"+pairType+".ene");
 				if(!file.is_open()) {
