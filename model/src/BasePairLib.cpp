@@ -9,7 +9,7 @@
 
 namespace NSPmodel {
 
-BasePairLib::BasePairLib() {
+BasePairLib::BasePairLib(const string& libType){
 
 	string path = NSPdataio::datapath();
 	string nbCenter = path+"basePair/nb2/nb.merge.dm";
@@ -18,8 +18,19 @@ BasePairLib::BasePairLib() {
 	string nbContactCenter = path+"basePair/nb2/nb.contact.dm";
 	string nbNonContactCenter = path+"basePair/nb2/nb.noncontact.dm";
 
-	string nnbCenter = path+"basePair/adj-1.2/nnb.center.dm";
-	string nnbCenterInfo = path+"basePair/adj-1.2/nnb.center.info";
+	string nnbCenter, nnbCenterInfo;
+
+	if(libType == "xtb") {
+		nnbCenter = path+"basePair/xtb/nnb.center.dm";
+		nnbCenterInfo = path+"basePair/xtb/nnb.center.info";
+	}
+	else if(libType == "stat") {
+		nnbCenter = path+"basePair/bpDensityNnb/nnb.center.dm";
+		nnbCenterInfo = path+"basePair/bpDensityNnb/nnb.center.info";
+	}
+	else {
+		cout << "undefined base pair lib: " << endl;
+	}
 
 	ifstream file;
 	string s;
@@ -196,8 +207,6 @@ BasePairLib::BasePairLib() {
 	}
 	file.close();
 }
-
-
 
 int BasePairLib::getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int sep){
 

@@ -1,7 +1,7 @@
 /*
  * TestBasePairLib.cpp
  *
- *  Created on: 2023Äê8ÔÂ23ÈÕ
+ *  Created on: 2023ï¿½ï¿½8ï¿½ï¿½23ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -28,6 +28,44 @@ using namespace NSPpredna;
 int main(int argc, char** argv){
 
 	BasePairLib* bpLib = new BasePairLib();
+	string path2 = "bpDensityNnb";
+	BasePairLib* bpLib2 = new BasePairLib(path2);
+	AtomLib* atLib = new AtomLib();
+	string augc = "AUGC";
+	char xx[200];
+	for(int i=0;i<16;i++){
+		int n = bpLib2->nnbBasePairNum[i];
+		for(int j=0;j<n;j++){
+			BaseDistanceMatrix dm2 = bpLib2->nnbDMClusterCenters[i][j];
+			double ene = bpLib2->nnbEnergy[i][j];
+			double p = bpLib2->nnbProportion[i][j];
+
+			if(ene > -9.0) continue;
+
+			int clusterID = bpLib->getPairType(dm2, i/4, i%4, 2);
+			BaseDistanceMatrix dm1 = bpLib->nnbDMClusterCenters[i][clusterID];
+
+			double dist = dm1.distanceTo(dm2);
+			if(dist < 0.5) continue;
+			sprintf(xx, "/public/home/pengx/briqx/basePair/finalBasePair/pdb/nnb/%c%c%d.pdb", augc[i/4], augc[i%4], j);
+			RNAPDB pdb(string(xx), "xxxx");
+			vector<RNABase*> baseList = pdb.getBaseList();
+			RNABase* baseA = baseList[0];
+			RNABase* baseB = baseList[1];
+			if(baseA->isStackingTo(baseB, atLib)) continue;
+			printf("%c%c cluster: %2d %4d ene: %7.3f p: %6.4f dist: %5.3f ", augc[i/4], augc[i%4], j, clusterID, ene, p, dm1.distanceTo(dm2));
+			for(int k=0;k<bpLib->nnbBasePairNum[i];k++){
+				BaseDistanceMatrix dm3 = bpLib->nnbDMClusterCenters[i][k];
+				if(dm3.distanceTo(dm2) < 1.2) {
+					cout << " " << k;
+				}
+			}
+			cout << endl;
+		}
+	}
+
+	/*
+
 	AtomLib* atLib = new AtomLib();
 
 	string listFile = "/public/home/pengx/pdbLib/rna/list_R2.7";
@@ -103,10 +141,14 @@ int main(int argc, char** argv){
 			}
 		}
 	}
-
-	out.close();
-	delete bpLib;
 	delete atLib;
+	out.close();
+	*/
+
+
+	
+	delete bpLib;
+	delete bpLib2;
 
 
 }

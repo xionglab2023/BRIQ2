@@ -17,6 +17,7 @@ public:
     int* clusterIDMtx; //seqLen*seqLen
     
     nuContactMatrix(int seqLen);
+
     virtual ~nuContactMatrix();
 };
 
@@ -66,7 +67,7 @@ public:
 	double totalSamp;
 
     NuSampling(NuGraph* graph, NuTree* tree);
-	void runCoarseGrainedMC(mixedContactInfo* out);
+	void runCoarseGrainedMC(map<string, double>& results, const string& outFile);
 
 };
 

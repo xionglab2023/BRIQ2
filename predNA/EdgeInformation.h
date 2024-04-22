@@ -49,8 +49,20 @@ public:
 		this->weight = other->weight;
 	}
 
-
 	void updatePCluster(double* pList, double pContact, BasePairLib* pairLib);
+	
+	double getRandomWeight() {
+		if(pContact == 1.0) 
+			return weight - rand()*1.0/RAND_MAX;
+		else if(sep < 2 && rand()*1.0/RAND_MAX < pContact)
+			return weight - rand()*1.0/RAND_MAX;
+		else if(sep == 2 && rand()*1.0/RAND_MAX < pContact*0.5)
+			return weight - rand()*1.0/RAND_MAX;
+		else if(sep < 2)
+			return 0.0;
+		else 
+			return 9.9;
+	}
 
 	void setToLibPCluster(const string& ssSepType, EdgeInformationLib* eiLib);
 

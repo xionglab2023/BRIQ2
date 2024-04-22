@@ -53,7 +53,7 @@ public:
 	double nnbProportion[16][3000];
 
 
-	BasePairLib();
+	BasePairLib(const string& libType = "xtb");
 
 	int getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int sep); //sep: sequence separation
 	int getNeighborPairFirstFiveClusterID(BaseDistanceMatrix& dm, int typeA, int typeB);

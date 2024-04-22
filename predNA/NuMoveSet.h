@@ -52,7 +52,7 @@ public:
 	IndividualNuPairMoveSet() {
 	};
 
-	IndividualNuPairMoveSet(int sep, int pairType, int clusterID, OrientationIndex* oi, BinaryBook* bb=nullptr);
+	IndividualNuPairMoveSet(const string& libType, int sep, int pairType, int clusterID, OrientationIndex* oi, BinaryBook* bb=nullptr);
 	/**
 	 * @brief dump object to binary cache
 	 * 
@@ -100,8 +100,8 @@ private:
 	vector<IndividualNuPairMoveSet*> revNbNonContactMoveList;
 
 	vector<IndividualNuPairMoveSet*> nnbMoveList[16];
-
-
+	
+	string libType;
 	/**
 	 * @brief Construct a new NuPairMoveSetLibrary object. 
 	 * 
@@ -112,7 +112,7 @@ private:
 
 public:
 	OrientationIndex* oi;
-	NuPairMoveSetLibrary(bool withBinary=true, int binaryMode=1);
+	NuPairMoveSetLibrary(const string& libType, bool withBinary=true, int binaryMode=1);
 	int dump();
 	int load();
 	void printMoveLibInfo();

@@ -318,6 +318,9 @@ public:
 	void initRandWeight();
 	void MST_kruskal(NuTree* output);
 	void printAllEdge();
+
+	string toContactMapHashKeyCG();
+
 	void checkEnergy();
 	void checkEnergyCG();
 	double totalEnergy();

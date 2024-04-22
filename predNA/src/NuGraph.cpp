@@ -2826,8 +2826,8 @@ void NuTree::randomInitCG(){
 		BaseDistanceMatrix dm1(randMove);
 		int pairtype = graph->pairLib->getPairType(dm1, randEdge->nodeA->baseType, randEdge->nodeB->baseType, randEdge->sep);
 
-		//double dist = dm0.distanceTo(dm1);
-		//printf("rand init edge %d-%d, distance = %5.3f\n", geList[i]->indexA, geList[i]->indexB, dist);
+		double dist = dm0.distanceTo(dm1);
+		printf("rand init edge %d-%d, distance = %5.3f\n", geList[i]->indexA, geList[i]->indexB, dist);
 
 		randEdge->updateCsMoveCG(randMove);
 		randEdge->acceptMutationCG();
@@ -2837,8 +2837,7 @@ void NuTree::randomInitCG(){
 void NuTree::printEdges(){
 	for(int i=0;i<geList.size();i++){
 		NuEdge* e = geList[i];
-		printf("%-3d %-3d %7.3f\n", e->indexA, e->indexB, e->weight);
-		//e->moveSet->printMoveSetInfo();
+		printf("%-3d %-3d %7.3f %7.3f %5.3f %s\n", e->indexA, e->indexB, e->weight, e->weightRand, e->ei->pContact, e->ei->ssSepKey.c_str());
 	}
 }
 
@@ -3163,6 +3162,8 @@ void NuTree::runCoarseGrainedMC(const string& output){
 	bool debug = false;
 	randomInitCG();
 
+	printEdgeInfo();
+
 	int stepNum = 100000;
 
 	double T0 = 5.0;
@@ -3183,6 +3184,8 @@ void NuTree::runCoarseGrainedMC(const string& output){
 	int len = graph->seqLen;
 
 	int count = 0;
+
+
 
 	for(T=T0;T>T1;T=T*anneal){
 		nAc = 0;
@@ -3998,8 +4001,14 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 					cout << "edgeInformation lib not initialized" << endl;
 					exit(0);
 				}
-				if(ssSepType != "UNK")
+				if(ssSepType != "UNK") {
+					cout << "init edge: " << i << "-" << j << " " << ssSepType << endl;
 					this->allEdges[i*seqLen+j]->ei->setToLibPCluster(ssSepType, eiLib);
+					this->allEdges[i*seqLen+j]->moveSet->updateEdgeInformation(this->allEdges[i*seqLen+j]->ei);
+					this->allEdges[i*seqLen+j]->weight = this->allEdges[i*seqLen+j]->ei->weight;
+					this->allEdges[i*seqLen+j]->weightRand = this->allEdges[i*seqLen+j]->weight;
+					//cout << this->allEdges[i*seqLen+j]->ei->totalClusterNum << " " << this->allEdges[i*seqLen+j]->ei->validClusterNum << endl;
+				}
 			}
 			else if(task == "analysis") {
 				NuNode* nodeA = this->allEdges[i*seqLen+j]->nodeA;
@@ -4266,8 +4275,9 @@ int MST_find(int* parent, int f){
 void NuGraph::initRandWeight(){
 
 	for(int i=0;i<seqLen;i++){
-		for(int j=0;j<seqLen;j++){
-			allEdges[i*seqLen+j]->weightRand = allEdges[i*seqLen+j]->weight - rand()*1.0/RAND_MAX;
+		for(int j=i+1;j<seqLen;j++){
+			allEdges[i*seqLen+j]->weightRand = allEdges[i*seqLen+j]->ei->getRandomWeight();
+			allEdges[j*seqLen+i]->weightRand = allEdges[i*seqLen+j]->weightRand;
 		}
 	}
 }
@@ -4321,6 +4331,40 @@ void NuGraph::printAllEdge(){
 			printf("%-3d %-3d %7.3f\n", i, j, e->weight);
 		}
 	}
+}
+
+
+string NuGraph::toContactMapHashKeyCG(){
+	string key = "";
+	int i,j, sep, clusterID;
+	char a,b;
+
+	for(i=0;i<seqLen;i++){
+		for(j=i+1;j<seqLen;j++){
+			sep = this->sepTable[i*seqLen+j];
+			if(this->allEdges[i*seqLen+j]->pairEneCG[0] < 0){
+				BaseDistanceMatrix dm(this->allNodes[i]->baseConfCG->cs1, allNodes[j]->baseConfCG->cs1);
+				clusterID = pairLib->getPairType(dm, allNodes[i]->baseType, allNodes[j]->baseType, sep);
+				if(clusterID < 0) continue;
+
+				a = i/90 + '!';
+				b = i%90 + '!';
+				key.push_back(a);
+				key.push_back(b);
+
+				a = j/90 + '!';
+				b = j%90 + '!';
+				key.push_back(a);
+				key.push_back(b);
+
+				a = clusterID/90 + '!';
+				b = clusterID%90 + '!';
+				key.push_back(a);
+				key.push_back(b);
+			}
+		}
+	}
+	return key;
 }
 
 void NuGraph::checkEnergy(){

@@ -47,7 +47,6 @@ EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pai
 		this->weight += pCluster[i]*e;
 	}
 
-	this->weight = weight*pContact;
 	this->fixed = false;
 	this->ssSepKey = "UNK";
 }
@@ -75,8 +74,6 @@ void EdgeInformation::updatePCluster(double* pList, double pContact, BasePairLib
 	}
 
 	this->pContact = pContact;
-	this->weight = weight*pContact;
-	this->ssSepKey = "UNK";
 }
 
 void EdgeInformation::setUniqueCluster(int clusterID, BasePairLib* pairLib){
@@ -202,25 +199,48 @@ EdgeInformationLib::EdgeInformationLib(BasePairLib* pairLib){
 		int totalClusterNum;
 		if(sepList[i] == 1)
 			totalClusterNum = pairLib->nbBasePairNum[typeAList[i]*4+typeBList[i]];
+		else if(sepList[i] == -1)
+			totalClusterNum = pairLib->nbBasePairNum[typeBList[i]*4+typeAList[i]];
 		else 
 			totalClusterNum = pairLib->nnbBasePairNum[typeAList[i]*4+typeBList[i]];
 
+		
 		double pList[totalClusterNum];
 		for(int j=0;j<totalClusterNum;j++){
 			pList[j] = 0.0;
 		}
 		int clusterID;
 		double p;
-		double pContact = 0.0;
+		double pContact = 1.0;
 
+		int n = 0;
 		while(file2 >> clusterID >> p){
+			n++;
 			if(clusterID < 0)
-				pContact = 1-p;
+				pContact = pContact-p;
 			else
 				pList[clusterID] = p;
 		}
+
+		if(sepList[i] == 1 ){
+			int contactPairNum = pairLib->nbContactBasePairNum[typeAList[i]*4+typeBList[i]];
+			pContact = 0.0;
+			for(int j=0;j<contactPairNum;j++){
+				pContact += pList[j];
+			}
+		}
+		else if(sepList[i] == -1){
+			int contactPairNum = pairLib->nbContactBasePairNum[typeBList[i]*4+typeAList[i]];
+			pContact = 0.0;
+			for(int j=0;j<contactPairNum;j++){
+				pContact += pList[j];
+			}
+		}
+
 		ei->updatePCluster(pList, pContact, pairLib);
 		this->eiMap[keyList[i]] = ei;
+
+		file2.close();
 	}
 
 	

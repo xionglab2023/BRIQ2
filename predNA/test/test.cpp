@@ -7,6 +7,8 @@
 #include <random>
 #include "model/StructureModel.h"
 #include "predNA/NuGraph.h"
+#include <string>
+#include <vector>
 
 using namespace NSPmodel;
 using namespace NSPforcefield;
@@ -32,7 +34,8 @@ using namespace std;
 		return e;
 	}
 
-int main(int argc, char** argv){
+int main(int argc, char** argv){	
+
 
 	double e;
 	double d0 = 2.9;

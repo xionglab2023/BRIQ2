@@ -64,7 +64,7 @@ int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* 
 int main(int argc, char** argv){
         
 
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("xtb", true, 1);
 	moveLib->load();
    
 

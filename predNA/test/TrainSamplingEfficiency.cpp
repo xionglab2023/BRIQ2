@@ -69,7 +69,7 @@ int main(int argc, char** argv){
     }
     CmdArgs cmdArgs{argc, argv};
 
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("xtb", true, 1);
 	moveLib->load();
 
     BasePairLib* pairLib = new BasePairLib();

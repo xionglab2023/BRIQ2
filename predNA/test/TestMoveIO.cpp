@@ -16,12 +16,16 @@ using namespace NSPdataio;
 using namespace NSPpredNA;
 using namespace std;
 
-int main() {
+int main(int argc, char** argv) {
+
+
+    string libType = string(argv[1]);
+
     struct timeval start, end;
     double timeTxt, timeBinaryTable, timeBinaryCache;
     cout << "Creating NuMoveSet from txt" << endl;
     gettimeofday(&start, NULL);  // gettimeofday 计现实时间，clock() 计cpu时钟数，受sleep() 和多线程影响
-    auto * set1 = new NuPairMoveSetLibrary(false);
+    auto * set1 = new NuPairMoveSetLibrary(libType, false);
     gettimeofday(&end, NULL);
     timeTxt = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
     cout << "time consumed: " << timeTxt << " seconds" << endl;
@@ -88,7 +92,7 @@ int main() {
 
     cout << "Creating NuMoveSet from binaryCache" << endl;
     gettimeofday(&start, NULL);
-    set1 = new NuPairMoveSetLibrary(true,1);
+    set1 = new NuPairMoveSetLibrary(libType, true,1);
     gettimeofday(&end, NULL);
     timeBinaryCache = end.tv_sec - start.tv_sec + (double)(end.tv_usec-start.tv_usec) /1e6;
     cout << "time consumed: " << timeBinaryCache << " seconds" << endl;

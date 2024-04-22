@@ -38,7 +38,7 @@ int main(int argc, char** argv){
 	AtomLib* atLib = new AtomLib();
 
 	cout << "load moveLib" << endl;
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("xtb", true, 1);
 	moveLib->load();
 
 	EdgeInformationLib* eiLib = new EdgeInformationLib(pairLib);

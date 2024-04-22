@@ -14,6 +14,7 @@
 #include "predNA/NuGraph.h"
 #include "tools/CmdArgs.h"
 #include "tools/ThreadPool.h"
+#include "predNA/NuSampling.h"
 
 using namespace NSPmodel;
 using namespace NSPforcefield;
@@ -23,7 +24,42 @@ using namespace NSPtools;
 using namespace NSPthread;
 
 
-int runCGMC(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
+class cgResult{
+public:
+    map<string, double> keyMap;
+
+    cgResult(){
+    }
+
+    void mergeResult(cgResult* other){
+       map<string,double>::iterator it, it2;
+       for(it = other->keyMap.begin();it != other->keyMap.end();++it){
+            it2 = keyMap.find(it->first);
+            if(it2 != keyMap.end()){
+                if(it->second < it2->second)
+                    keyMap[it->first] = it->second;
+                else
+                    keyMap[it->first] = it2->second;
+            }
+            else {
+                keyMap[it->first] = it->second;
+            }
+       }
+    }
+
+    void clear(){
+        this->keyMap.clear();
+    }
+
+    void print(){
+        map<string,double>::iterator it, it2;
+        for(it = keyMap.begin();it!=keyMap.end();++it){
+            cout << it->first << " " << it->second << endl;
+        }
+    }
+};
+
+int runCGMC(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, cgResult* result, int randSeed){
 
  	srand(randSeed);
 	BasePairLib* pairLib = new BasePairLib();
@@ -61,9 +97,14 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyT
 
 	clock_t start = clock();
 
-	tree->runCoarseGrainedMC(outFile);
-	clock_t end1 = clock();
-	cout << "time1: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
+    tree->runCoarseGrainedMC(outFile);
+
+
+//    NuSampling* samp = new NuSampling(graph, tree);
+
+//	samp->runCoarseGrainedMC(result->keyMap, outFile);
+
+//    cout << "keyNum: " << result->keyMap.size() << endl;
 
 	delete pairLib;
 	delete rotLib;
@@ -87,7 +128,7 @@ int main(int argc, char** argv){
     CmdArgs cmdArgs{argc, argv};
 
 
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("stat", true, 1);
 	moveLib->load();
 
     BasePairLib* bpLib = new BasePairLib();
@@ -119,20 +160,37 @@ int main(int argc, char** argv){
     shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
     size_t jid = 0;
     char xx[200];
+
+    cgResult* resultList[mp];
+    for(int i=0;i<mp;i++){
+        resultList[i] = new cgResult();
+    }
+
     for(int i=startID;i<startID+mp;i++) {
         shared_ptr<IntFuncTask> request(new IntFuncTask);
         sprintf(xx, "%s-%d.pdb", outputFile.substr(0, outputFile.length()-4).c_str(), i);
         string outFile2 = string(xx);
-        request->asynBind(runCGMC, moveLib, eiLib, et, inputFile, outFile2, time(0)+i);
+
+
+        request->asynBind(runCGMC, moveLib, eiLib, et, inputFile, outFile2, resultList[i-startID], time(0)+i);
         jid++;
         thrPool->addTask(request);
     }
+
     while(true) {
         sleep(1);
         if(thrPool->getTaskCount() == 0) {
         break;
         }
     }
+
+    for(int i=1;i<mp;i++){
+        resultList[0]->mergeResult(resultList[1]);
+    }
+
+    resultList[0]->print();
+
+    cout << "total key num: " << resultList[0]->keyMap.size() << endl;
 
     clock_t end1 = clock();
 	cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;

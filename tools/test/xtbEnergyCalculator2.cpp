@@ -60,7 +60,10 @@ int main(int argc, char** argv){
             sprintf(xx, "%s %9.4f %9.4f %9.4f", conB.coords[i].x_, conB.coords[i].y_, conB.coords[i].z_, rotB.atomTypes[i].c_str());
             out << string(xx) << endl;
         }
-
+        
+        out << "$fix:" << endl;
+        out << "    elements: C,O,N" << endl;
+        out << "$end" << endl;
         out.close();
     }
 

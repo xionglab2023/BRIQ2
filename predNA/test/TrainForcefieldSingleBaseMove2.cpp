@@ -118,7 +118,7 @@ int main(int argc, char** argv){
     CmdArgs cmdArgs{argc, argv};
 
     cout << "load move lib: " << endl;
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(true, 1);
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("xtb", true, 1);
 	moveLib->load();
     BasePairLib* bpLib = new BasePairLib();
     EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);

@@ -103,7 +103,7 @@ int main(int argc, char** argv){
 	double clashEnergy;
 
 	cout << "init basePair lib" << endl;
-	BasePairLib* bpLib = new BasePairLib();
+	BasePairLib* bpLib = new BasePairLib("xtb");
 
 	for(int i=0;i<nodeList.size();i++){
 		nodeA = nodeList[i];
@@ -119,6 +119,9 @@ int main(int argc, char** argv){
 			double eBB;
 			
 			eBB = bpLib->nnbEnergy[nodeA->baseType*4+nodeB->baseType][pairType];	
+
+			//if(eBB > -1.6) continue;
+
 			double eBBClash = baseBaseClash(nodeA, nodeB, sep, et, false);
 
 			double eBR = getBaseRiboseEnergy(nodeA, nodeB, sep, et, false);
