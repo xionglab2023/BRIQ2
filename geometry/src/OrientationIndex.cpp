@@ -13,6 +13,7 @@ OrientationIndex::OrientationIndex(bool withBinary) {
 	if(withBinary) {
 		return;
 	}
+
 	ifstream file;
 	int keyIndex;
 	int spIndex;
@@ -28,7 +29,6 @@ OrientationIndex::OrientationIndex(bool withBinary) {
 		this->sphereKeyMap1000[keyIndex] = spIndex;
 	}
 	file.close();
-
 
 	fileName = NSPdataio::datapath() + "sphere/sphere2000.index";
 	file.open(fileName, ios::in);
@@ -72,7 +72,6 @@ OrientationIndex::OrientationIndex(bool withBinary) {
 	}
 	file.close();
 
-
 	fileName = NSPdataio::datapath() + "sphere/sphere500";
 	file.open(fileName, ios::in);
 	if(!file.is_open()) {
@@ -83,6 +82,7 @@ OrientationIndex::OrientationIndex(bool withBinary) {
 		this->tList500.push_back(t);
 	}
 	file.close();
+
 }
 
 int OrientationIndex::dump(ostream& outs) {

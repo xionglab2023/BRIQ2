@@ -1,7 +1,7 @@
 /*
  * AtomLib.cpp
  *
- *  Created on: 2022Äê8ÔÂ29ÈÕ
+ *  Created on: 2022ï¿½ï¿½8ï¿½ï¿½29ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -66,18 +66,18 @@ AtomLib::AtomLib() {
 	}
 
 	for(int i=0;i<20;i++) {
-		vector<int>* ids = new vector<int>();
-		vector<string>* atomNames = new vector<string>();
-		vector<string>* scAtomNames = new vector<string>();
+		vector<int> ids;
+		vector<string> atomNames;
+		vector<string> scAtomNames;
 		this->aaUniqueIDs.push_back(ids);
 		this->aaAtomNames.push_back(atomNames);
 		this->aaScAtomNames.push_back(scAtomNames);
 	}
 
 	for(int i=0;i<8;i++) {
-		vector<int>* ids = new vector<int>();
-		vector<string>* atomNames = new vector<string>();
-		vector<string>* scAtomNames = new vector<string>();
+		vector<int> ids;
+		vector<string> atomNames;
+		vector<string> scAtomNames;
 		this->baseUniqueIDs.push_back(ids);
 		this->baseAtomNames.push_back(atomNames);
 		this->baseScAtomNames.push_back(scAtomNames);
@@ -207,17 +207,17 @@ AtomLib::AtomLib() {
 			atomName = spt[2];
 			if(type == 'a'){
 				aaType = rn.triToInt(spt[1]);
-				this->aaUniqueIDs[aaType]->push_back(uniqueID);
-				this->aaAtomNames[aaType]->push_back(atomName);
+				this->aaUniqueIDs[aaType].push_back(uniqueID);
+				this->aaAtomNames[aaType].push_back(atomName);
 				if(atomName != "N" && atomName != "CA" && atomName != "C" && atomName != "O")
-					this->aaScAtomNames[aaType]->push_back(spt[2]);
+					this->aaScAtomNames[aaType].push_back(spt[2]);
 			}
 			else if(type == 'b'){
 				baseType = bn.stringToInt(spt[1]);
-				this->baseUniqueIDs[baseType]->push_back(uniqueID);
-				this->baseAtomNames[baseType]->push_back(atomName);
+				this->baseUniqueIDs[baseType].push_back(uniqueID);
+				this->baseAtomNames[baseType].push_back(atomName);
 				if(atomName.length() == 2)
-					this->baseScAtomNames[baseType]->push_back(atomName);
+					this->baseScAtomNames[baseType].push_back(atomName);
 			}
 			else {
 				generalAtomNames.push_back(atomName);
@@ -285,34 +285,40 @@ string AtomLib::uniqueIDToName(int uniqueID) const
 	return apList[uniqueID]->atomUniqueName;
 }
 
-vector<int>* AtomLib::getAminoAcidAtomIDs(int aaName)
+void AtomLib::getAminoAcidAtomIDs(int aaName, vector<int>& aminoAcidAtomIDs)
 {
 	if(aaName < 0 || aaName >= (int)this->aaUniqueIDs.size())
 	{
 		cerr << "invalid atom type: " << aaName << endl;
-		return NULL;
+		return;
 	}
-	return this->aaUniqueIDs[aaName];
+	aminoAcidAtomIDs.clear();
+	for(int i=0;i<this->aaUniqueIDs[aaName].size();i++)
+		aminoAcidAtomIDs.push_back(this->aaUniqueIDs[aaName][i]);
 }
 
-vector<string>* AtomLib::getAminoAcidAtomNames(int aaType)
+void AtomLib::getAminoAcidAtomNames(int aaType, vector<string>& aminoAcidNames)
 {
 	if(aaType < 0 || aaType >= (int)this->aaUniqueIDs.size())
 	{
 		cerr << "invalid atom type: " << aaType << endl;
-		return NULL;
+		return;
 	}
-	return this->aaAtomNames[aaType];
+	aminoAcidNames.clear();
+	for(int i=0;i<this->aaAtomNames[aaType].size();i++)
+		aminoAcidNames.push_back(this->aaAtomNames[aaType][i]);
 }
 
-vector<string>* AtomLib::getAminoAcidSidechainAtomNames(int aaType)
+void AtomLib::getAminoAcidSidechainAtomNames(int aaType, vector<string>& aminoAcidSidechainAtoms)
 {
 	if(aaType < 0 || aaType >= (int)this->aaUniqueIDs.size())
 	{
 		cerr << "invalid atom type: " << aaType << endl;
-		return NULL;
+		return;
 	}
-	return this->aaScAtomNames[aaType];
+	aminoAcidSidechainAtoms.clear();
+	for(int i=0;i<this->aaScAtomNames[aaType].size();i++)
+		aminoAcidSidechainAtoms.push_back(this->aaScAtomNames[aaType][i]);
 }
 
 AtomProperty* AtomLib::getAtomProperty(int uniqueID){
@@ -325,29 +331,33 @@ AtomProperty* AtomLib::getAtomProperty(int uniqueID){
 
 vector<int> AtomLib::getAASidechainUniqueIDs(int type){
 	vector<int> idList;
-	int n = aaUniqueIDs[type]->size();
+	int n = aaUniqueIDs[type].size();
 	for(int i=4;i<n;i++){
-		idList.push_back(aaUniqueIDs[type]->at(i));
+		idList.push_back(aaUniqueIDs[type][i]);
 	}
 	return idList;
 }
 
-vector<string>* AtomLib::getRnaAtomNames(int type) const{
+void AtomLib::getRnaAtomNames(int type, vector<string>& rnaAtomNames) const{
 	if(type < 0 || type >= (int)this->baseUniqueIDs.size())
 	{
 		cerr << "invalid atom type: " << type << endl;
-		return NULL;
+		return;
 	}
-	return this->baseAtomNames[type];
+	rnaAtomNames.clear();
+	for(int i=0;i<this->baseAtomNames[type].size();i++)
+		rnaAtomNames.push_back(this->baseAtomNames[type][i]);
 }
 
-vector<string>* AtomLib::getRnaSidechainAtoms(int type) const{
+void AtomLib::getRnaSidechainAtoms(int type,vector<string>& rnaScNames) const{
 	if(type < 0 || type >= (int)this->baseUniqueIDs.size())
 	{
 		cerr << "invalid atom type: " << type << endl;
-		return NULL;
+		return;
 	}
-	return this->baseScAtomNames[type];
+	rnaScNames.clear();
+	for(int i=0;i<this->baseScAtomNames[type].size();i++)
+		rnaScNames.push_back(this->baseScAtomNames[type][i]);
 }
 
 AtomLib::~AtomLib() {
@@ -356,6 +366,7 @@ AtomLib::~AtomLib() {
 		delete apList[i];
 	}
 
+/*
 	for(int i=0;i<8;i++){
 		delete this->baseUniqueIDs[i];
 		delete this->baseAtomNames[i];
@@ -367,6 +378,7 @@ AtomLib::~AtomLib() {
 		delete this->aaAtomNames[i];
 		delete this->aaScAtomNames[i];
 	}
+*/
 
 }
 

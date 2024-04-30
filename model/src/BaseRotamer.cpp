@@ -19,11 +19,13 @@ namespace NSPmodel {
 		baseTypes.push_back("DG");
 		baseTypes.push_back("DC");
 
-		vector<string>* scNames = atLib->baseScAtomNames[baseType];
+		vector<string> scNames;
+		atLib->getRnaSidechainAtoms(baseType, scNames);
+
 		this->baseType = baseType;
 
-		for(int i=0;i<scNames->size();i++){
-			string name = baseTypes[baseType]+"-"+scNames->at(i);
+		for(int i=0;i<scNames.size();i++){
+			string name = baseTypes[baseType]+"-"+scNames[i];
 			uniqueIDs[i] = atLib->uniqueNameToID(name);
 		}
 
@@ -176,8 +178,8 @@ namespace NSPmodel {
 			exit(0);
 		}
 
-		if(atomNum != scNames->size()){
-			cout << "atom number error: " << atomNum << " != "	 << scNames->size() << endl;
+		if(atomNum != scNames.size()){
+			cout << "atom number error: " << atomNum << " != "	 << scNames.size() << endl;
 		}
 	}
 

@@ -86,15 +86,15 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 	double T2 = 0.01;
 	double T3 = 0.001;
 
-	int stepNum1 = (int)(this->totalSamp * 5000);
-	int stepNum2 = (int)(this->totalSamp * 500);
-	int stepNum3 = (int)(this->totalSamp * 500);
+	int stepNum1 = (int)(this->totalSamp * graph->et->para->kStepNum1CG);
+	int stepNum2 = (int)(this->totalSamp * graph->et->para->kStepNum2CG);
+	int stepNum3 = (int)(this->totalSamp * graph->et->para->kStepNum3CG);
 
 	cout << "stepNum: " << stepNum1+stepNum2+stepNum3 << endl;
 	
 	double anneal = 0.95;
 
-	double curEne = graph->totalEnergyCG();
+	double curEne = graph->totalEnergyCG(1.0, 1.0);
 	double lastEne = curEne;
 	int i,j,k, randPos, nAc, eAc, nTot, eTot;
 	double T, randP, mutE;
@@ -103,21 +103,34 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 	RiboseRotamerCG* randRot;                     
 	CsMove randMove;
 
+	double initClashRescale = graph->et->para->clashRescale;
+	double initConnectRescale = graph->et->para->connectRescale;
+	double lamda = 1.05;
+
 	int len = graph->seqLen;
 	int count = 0;
 	int roundNum = 10;
 	map<string, double>::iterator it;
 	char xx[200];
 	for(int round=0;round<roundNum;round++) {
+		double clashRescale = initClashRescale;
+		double connectRescale = initConnectRescale;
 
+		cout << "init rand weight" << endl;
 		graph->initRandWeight();
+		cout << "init mst" << endl;
 		graph->MST_kruskal(tree);
-		tree->randomInitCG();
-		tree->updateNodeInfoCG();
-		tree->updateEdgeInfoCG();
+		cout << "update node info" << endl;
+		tree->updateNodeInfoCG(clashRescale, connectRescale);
+		cout << "update edge info" << endl;
+		tree->updateEdgeInfoCG(clashRescale, connectRescale);
+		cout << "update sampling info" << endl;
 		tree->updateSamplingInfo();
+		cout << "rand init cg" << endl;
+		tree->randomInitCG(clashRescale, connectRescale);
+		cout << "print edge" << endl;
 		tree->printEdges();
-		curEne = graph->totalEnergyCG();
+		curEne = graph->totalEnergyCG(clashRescale, connectRescale);
 		lastEne = curEne;
 
 		sprintf(xx, "%d", round);
@@ -142,7 +155,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 
 					randNode = graph->allNodes[randPos];
 					randRot = graph->rotLib->riboseRotLib->getRandomRotamerCG(randNode->baseType);
-					randNode->updateRiboseRotamerCG(randRot);
+					randNode->updateRiboseRotamerCG(randRot, clashRescale, connectRescale);
 					mutE = randNode->rotMutEnergyCG();
 
 					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
@@ -163,7 +176,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 					randEdge = tree->geList[randPos];
 					randMove = randEdge->moveSet->getRandomMove();
 
-					randEdge->updateCsMoveCG(randMove);
+					randEdge->updateCsMoveCG(randMove, clashRescale, connectRescale);
 
 					mutE = randEdge->mutEnergyCG();
 
@@ -177,12 +190,21 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 					}
 				}
 			}
-			double totEne = graph->totalEnergyCG();
+			double totEne = graph->totalEnergyCG(clashRescale, connectRescale);
 			graphInfo* gi = graph->getGraphInfoCG();
 			double rms = gi->rmsdCG(this->graph->initInfo);
 			delete gi;
-			printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
+			printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f clashRescale: %5.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms, clashRescale);
+
+			clashRescale = clashRescale * lamda;
+			connectRescale = connectRescale * lamda;
+			if(clashRescale > 1.0) clashRescale = 1.0;
+			if(connectRescale > 1.0) connectRescale = 1.0;
 		}
+
+
+		clashRescale = 1.0;
+		connectRescale = 1.0;
 
 		for(T=T1;T>T2;T=T*anneal){
 			nAc = 0;
@@ -203,7 +225,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 
 					randNode = graph->allNodes[randPos];
 					randRot = graph->rotLib->riboseRotLib->getRandomRotamerCG(randNode->baseType);
-					randNode->updateRiboseRotamerCG(randRot);
+					randNode->updateRiboseRotamerCG(randRot, clashRescale, connectRescale);
 					mutE = randNode->rotMutEnergyCG();
 
 					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
@@ -220,11 +242,15 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 					 * edge mut
 					 */
 					eTot ++;
+					//cout << "rand pos" << endl;
 					randPos = randPoolEdge[rand()%poolSize];
+					//cout << "rand edge" << endl;
 					randEdge = tree->geList[randPos];
+					//if(randEdge->cm.clusterID < 0)
+					//   cout << "rand move: " << randEdge->nodeA->baseType << " " << randEdge->nodeB->baseType << " " << randEdge->sep << " " << randEdge->cm.clusterID  << endl;
 					randMove = randEdge->moveSet->getRandomMoveWithFixedSubCluster(randEdge->cm);
-
-					randEdge->updateCsMoveCG(randMove);
+					//cout << "update edge" << endl;
+					randEdge->updateCsMoveCG(randMove, clashRescale, connectRescale);
 
 					mutE = randEdge->mutEnergyCG();
 
@@ -238,7 +264,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 					}
 				}
 			}
-			double totEne = graph->totalEnergyCG();
+			double totEne = graph->totalEnergyCG(clashRescale, connectRescale);
 			graphInfo* gi = graph->getGraphInfoCG();
 			double rms = gi->rmsdCG(this->graph->initInfo);
 			delete gi;
@@ -264,7 +290,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 
 					randNode = graph->allNodes[randPos];
 					randRot = graph->rotLib->riboseRotLib->getRandomRotamerCG(randNode->baseType);
-					randNode->updateRiboseRotamerCG(randRot);
+					randNode->updateRiboseRotamerCG(randRot, clashRescale, connectRescale);
 					mutE = randNode->rotMutEnergyCG();
 
 					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
@@ -284,7 +310,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 					randPos = randPoolEdge[rand()%poolSize];
 					randEdge = tree->geList[randPos];
 					randMove = randEdge->moveSet->getRandomMoveWithFixedSP1000Index(randEdge->cm);
-					randEdge->updateCsMoveCG(randMove);
+					randEdge->updateCsMoveCG(randMove, clashRescale, connectRescale);
 					mutE = randEdge->mutEnergyCG();
 
 					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
@@ -297,7 +323,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 					}
 				}
 			}
-			double totEne = graph->totalEnergyCG();
+			double totEne = graph->totalEnergyCG(clashRescale, connectRescale);
 			graphInfo* gi = graph->getGraphInfoCG();
 			double rms = gi->rmsdCG(this->graph->initInfo);
 			delete gi;
@@ -311,6 +337,277 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 		delete gi;
 
 		string key = graph->toContactMapHashKeyCG();
+		cout << key << endl;
+		graph->keyToContactMatrix(key);
+
+		it = results.find(key);
+		if(it != results.end()){
+			if(curEne < results[key])
+				results[key] = curEne;
+		}
+		else {
+			results[key] = curEne;
+		}
+	}
+
+	cout << "mc result key num: " << results.size() << endl;
+}
+
+void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
+	bool debug = false;
+
+	double T0 = 10.0;
+	double T1 = 0.1;
+	double T2 = 0.01;
+	double T3 = 0.001;
+
+	int stepNum1 = (int)(this->totalSamp * graph->et->para->kStepNum1CG);
+	int stepNum2 = (int)(this->totalSamp * graph->et->para->kStepNum2CG);
+	int stepNum3 = (int)(this->totalSamp * graph->et->para->kStepNum3CG);
+
+	cout << "stepNum: " << stepNum1+stepNum2+stepNum3 << endl;
+	
+	double anneal = 0.95;
+
+	double curEne = graph->totalEnergyCG(1.0, 1.0);
+	double lastEne = curEne;
+	int i,j,k, randPos, nAc, eAc, nTot, eTot;
+	double T, randP, mutE;
+	NuNode* randNode;
+	NuEdge* randEdge;
+	RiboseRotamerCG* randRot;                     
+	CsMove randMove;
+
+	double initClashRescale = graph->et->para->clashRescale;
+	double initConnectRescale = graph->et->para->connectRescale;
+	double lamda = 1.05;
+
+	int len = graph->seqLen;
+	int count = 0;
+
+	map<string, double>::iterator it;
+	char xx[200];
+	for(int round=0;round<roundNum;round++) {
+		double clashRescale = initClashRescale;
+		double connectRescale = initConnectRescale;
+
+		cout << "init rand weight" << endl;
+		graph->initRandWeight();
+		cout << "init mst" << endl;
+		graph->MST_kruskal(tree);
+		cout << "update node info" << endl;
+		tree->updateNodeInfoCG(clashRescale, connectRescale);
+		cout << "update edge info" << endl;
+		tree->updateEdgeInfoCG(clashRescale, connectRescale);
+		cout << "update sampling info" << endl;
+		tree->updateSamplingInfo();
+		cout << "rand init cg" << endl;
+		tree->randomInitCG(clashRescale, connectRescale);
+		cout << "print edge" << endl;
+		tree->printEdges();
+		curEne = graph->totalEnergyCG(clashRescale, connectRescale);
+		lastEne = curEne;
+		
+		for(T=T0;T>T1;T=T*anneal){
+			nAc = 0;
+			eAc = 0;
+			nTot = 0;
+			eTot = 0;
+
+			for(k=0;k<stepNum1;k++){
+				count++;
+
+				randP = rand()*1.0/RAND_MAX;
+				if(randP < tree->sampFreqNode){
+					/*
+					 * rotamer mut
+					 */
+					nTot ++;
+					randPos = randPoolNode[rand()%poolSize];
+
+					randNode = graph->allNodes[randPos];
+					randRot = graph->rotLib->riboseRotLib->getRandomRotamerCG(randNode->baseType);
+					randNode->updateRiboseRotamerCG(randRot, clashRescale, connectRescale);
+					mutE = randNode->rotMutEnergyCG();
+
+					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
+						randNode->acceptRotMutationCG();
+						curEne += mutE;
+						nAc++;
+					}
+					else {
+						randNode->clearRotMutationCG();					
+					}
+				}
+				else {
+					/*
+					 * edge mut
+					 */
+					eTot ++;
+					randPos = randPoolEdge[rand()%poolSize];
+					randEdge = tree->geList[randPos];
+					randMove = randEdge->moveSet->getRandomMove();
+
+					randEdge->updateCsMoveCG(randMove, clashRescale, connectRescale);
+
+					mutE = randEdge->mutEnergyCG();
+
+					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
+						randEdge->acceptMutationCG();
+						curEne += mutE;
+						eAc++;					
+					}
+					else {
+						randEdge->clearMutationCG();
+					}
+				}
+			}
+			double totEne = graph->totalEnergyCG(clashRescale, connectRescale);
+			graphInfo* gi = graph->getGraphInfoCG();
+			double rms = gi->rmsdCG(this->graph->initInfo);
+			delete gi;
+			printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f clashRescale: %5.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms, clashRescale);
+
+			clashRescale = clashRescale * lamda;
+			connectRescale = connectRescale * lamda;
+			if(clashRescale > 1.0) clashRescale = 1.0;
+			if(connectRescale > 1.0) connectRescale = 1.0;
+		}
+
+
+		clashRescale = 1.0;
+		connectRescale = 1.0;
+
+		for(T=T1;T>T2;T=T*anneal){
+			nAc = 0;
+			eAc = 0;
+			nTot = 0;
+			eTot = 0;
+
+			for(k=0;k<stepNum2;k++){
+				count++;
+
+				randP = rand()*1.0/RAND_MAX;
+				if(randP < tree->sampFreqNode){
+					/*
+					 * rotamer mut
+					 */
+					nTot ++;
+					randPos = randPoolNode[rand()%poolSize];
+
+					randNode = graph->allNodes[randPos];
+					randRot = graph->rotLib->riboseRotLib->getRandomRotamerCG(randNode->baseType);
+					randNode->updateRiboseRotamerCG(randRot, clashRescale, connectRescale);
+					mutE = randNode->rotMutEnergyCG();
+
+					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
+						randNode->acceptRotMutationCG();
+						curEne += mutE;
+						nAc++;
+					}
+					else {
+						randNode->clearRotMutationCG();					
+					}
+				}
+				else {
+					/*
+					 * edge mut
+					 */
+					eTot ++;
+					//cout << "rand pos" << endl;
+					randPos = randPoolEdge[rand()%poolSize];
+					//cout << "rand edge" << endl;
+					randEdge = tree->geList[randPos];
+					//if(randEdge->cm.clusterID < 0)
+					//   cout << "rand move: " << randEdge->nodeA->baseType << " " << randEdge->nodeB->baseType << " " << randEdge->sep << " " << randEdge->cm.clusterID  << endl;
+					randMove = randEdge->moveSet->getRandomMoveWithFixedSubCluster(randEdge->cm);
+					//cout << "update edge" << endl;
+					randEdge->updateCsMoveCG(randMove, clashRescale, connectRescale);
+
+					mutE = randEdge->mutEnergyCG();
+
+					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
+						randEdge->acceptMutationCG();
+						curEne += mutE;
+						eAc++;					
+					}
+					else {
+						randEdge->clearMutationCG();
+					}
+				}
+			}
+			double totEne = graph->totalEnergyCG(clashRescale, connectRescale);
+			graphInfo* gi = graph->getGraphInfoCG();
+			double rms = gi->rmsdCG(this->graph->initInfo);
+			delete gi;
+			printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
+		}
+
+		for(T=T2;T>T3;T=T*anneal){
+			nAc = 0;
+			eAc = 0;
+			nTot = 0;
+			eTot = 0;
+
+			for(k=0;k<stepNum3;k++){
+				count++;
+
+				randP = rand()*1.0/RAND_MAX;
+				if(randP < tree->sampFreqNode){
+					/*
+					 * rotamer mut
+					 */
+					nTot ++;
+					randPos = randPoolNode[rand()%poolSize];
+
+					randNode = graph->allNodes[randPos];
+					randRot = graph->rotLib->riboseRotLib->getRandomRotamerCG(randNode->baseType);
+					randNode->updateRiboseRotamerCG(randRot, clashRescale, connectRescale);
+					mutE = randNode->rotMutEnergyCG();
+
+					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
+						randNode->acceptRotMutationCG();
+						curEne += mutE;
+						nAc++;
+					}
+					else {
+						randNode->clearRotMutationCG();					
+					}
+				}
+				else {
+					/*
+					 * edge mut
+					 */
+					eTot ++;
+					randPos = randPoolEdge[rand()%poolSize];
+					randEdge = tree->geList[randPos];
+					randMove = randEdge->moveSet->getRandomMoveWithFixedSP1000Index(randEdge->cm);
+					randEdge->updateCsMoveCG(randMove, clashRescale, connectRescale);
+					mutE = randEdge->mutEnergyCG();
+
+					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
+						randEdge->acceptMutationCG();
+						curEne += mutE;
+						eAc++;					
+					}
+					else {
+						randEdge->clearMutationCG();
+					}
+				}
+			}
+			double totEne = graph->totalEnergyCG(clashRescale, connectRescale);
+			graphInfo* gi = graph->getGraphInfoCG();
+			double rms = gi->rmsdCG(this->graph->initInfo);
+			delete gi;
+			printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
+		}
+
+		cout << "to cg model" << endl;
+		graph->cgToAllAtom();
+		string key = graph->toContactMapHashKeyCG();
+		cout << key << endl;
+		graph->keyToContactMatrix(key);
+
 		it = results.find(key);
 		if(it != results.end()){
 			if(curEne < results[key])

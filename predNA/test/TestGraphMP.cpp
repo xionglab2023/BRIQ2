@@ -29,12 +29,12 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	tree->printEdges();
-	tree->updateNodeInfo();
+	tree->updateNodeInfo(1.0, 1.0);
 
 	for(int i=0;i<graph->seqLen;i++){
 		graph->allNodes[i]->printNodeInfo();
 	}
-	tree->updateEdgeInfo();
+	tree->updateEdgeInfo(1.0, 1.0);
 	for(int i=0;i<tree->geList.size();i++){
 		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
 		tree->geList[i]->printPartition();
@@ -74,7 +74,7 @@ int main(int argc, char** argv){
 	moveLib->load();
 
     BasePairLib* bpLib = new BasePairLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
 
 	RnaEnergyTable* et = new RnaEnergyTable();
 	et->loadAtomicEnergy();

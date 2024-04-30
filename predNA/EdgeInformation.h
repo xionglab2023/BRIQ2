@@ -33,12 +33,18 @@ public:
 
 	bool fixed;
 	CsMove cm;
-
+	
+	string pairLibType; //xtb or stat
 	string ssSepKey; //For example, nb-HH, rnb-HL, nnb-1-2, nnb-3-3
 
 	EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pairLib);
 
 	void copyClusterFrom(EdgeInformation* other){
+
+		if(this->totalClusterNum != other->totalClusterNum){
+			delete [] pCluster;
+			this->pCluster = new double[other->totalClusterNum];
+		}
 
 		this->totalClusterNum = other->totalClusterNum;
 		this->validClusterNum = other->validClusterNum;
@@ -47,6 +53,7 @@ public:
 		}
 		this->pContact = other->pContact;
 		this->weight = other->weight;
+		
 	}
 
 	void updatePCluster(double* pList, double pContact, BasePairLib* pairLib);
@@ -65,7 +72,6 @@ public:
 	}
 
 	void setToLibPCluster(const string& ssSepType, EdgeInformationLib* eiLib);
-
 	void setUniqueCluster(int clusterID, BasePairLib* pairLib);
 	void setClusterList(vector<int>& clusterList, vector<double>& pClusters, BasePairLib* pairLib);
 	void setFixed(CsMove& cm){
@@ -74,7 +80,15 @@ public:
 		this->cm = cm;
 		this->weight = -999.9;
 	}
-
+	void print(){
+		printf("edge information: sep: %d  type: %d %d\n", sep, typeA, typeB);
+		for(int i=0;i<totalClusterNum;i++){
+			double p = pCluster[i];
+			if(p > 0) {
+				printf("cluster %3d %7.5f\n", i, p);
+			}
+		}
+	}
 	virtual ~EdgeInformation();
 };
 
@@ -82,8 +96,7 @@ class EdgeInformationLib{
 public:
 	map<string, EdgeInformation*> eiMap;
 	vector<string> keyList;
-
-	EdgeInformationLib(BasePairLib* pairLib);
+	EdgeInformationLib();
 	virtual ~EdgeInformationLib();
 
 };

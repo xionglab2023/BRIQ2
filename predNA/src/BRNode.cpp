@@ -57,22 +57,23 @@ void BRNode::copyValueFrom(const BRNode& other) {
 vector<Atom*> BRNode::toAtomList(AtomLib& atLib) {
 
     vector<Atom*> list;
-    vector<string>* names = atLib.getRnaSidechainAtoms(this->baseType);
+	vector<string> names;
+    atLib.getRnaSidechainAtoms(this->baseType, names);
     vector<XYZ> tList;
     for(int i=0;i<baseConf->rot->atomNum;i++){
     	tList.push_back(baseConf->coords[i]);
     }
 
 
-    names->push_back("C1'");
-    names->push_back("C2'");
-    names->push_back("C3'");
-    names->push_back("C4'");
-    names->push_back("O4'");
-    names->push_back("O3'");
-    names->push_back("C5'");
+    names.push_back("C1'");
+    names.push_back("C2'");
+    names.push_back("C3'");
+    names.push_back("C4'");
+    names.push_back("O4'");
+    names.push_back("O3'");
+    names.push_back("C5'");
     if(riboseConf->hasO2)
-    	names->push_back("O2'");
+    	names.push_back("O2'");
 
     int n = 7;
     if(riboseConf->hasO2)
@@ -85,7 +86,7 @@ vector<Atom*> BRNode::toAtomList(AtomLib& atLib) {
 
     vector<Atom*> atomList;
     for(int i=0;i<tList.size();i++){
-    	atomList.push_back(new Atom(names->at(i), tList[i]));
+    	atomList.push_back(new Atom(names[i], tList[i]));
     }
 
     return atomList;
@@ -93,15 +94,15 @@ vector<Atom*> BRNode::toAtomList(AtomLib& atLib) {
 
 vector<Atom*> BRNode::toBaseAtomList(AtomLib& atLib) {
 
-
-    vector<string>* names = atLib.getRnaSidechainAtoms(this->baseType);
+	vector<string> names;
+    atLib.getRnaSidechainAtoms(this->baseType, names);
     vector<XYZ> tList;
     for(int i=0;i<baseConf->rot->atomNum;i++){
     	tList.push_back(baseConf->coords[i]);
     }
     vector<Atom*> atomList;
     for(int i=0;i<tList.size();i++){
-    	atomList.push_back(new Atom(names->at(i), tList[i]));
+    	atomList.push_back(new Atom(names[i], tList[i]));
     }
     return atomList;
 }
@@ -120,22 +121,23 @@ vector<Atom*> BRNode::phoAtoms(){
 vector<Atom*> BRNode::toTmpAtomList(AtomLib& atLib) {
 
     vector<Atom*> list;
-    vector<string>* names = atLib.getRnaSidechainAtoms(this->baseType);
+	vector<string> names;
+    atLib.getRnaSidechainAtoms(this->baseType, names);
     vector<XYZ> tList;
     for(int i=0;i<baseConf->rot->atomNum;i++){
     	tList.push_back(baseConf->coords[i]);
     }
 
 
-    names->push_back("C1'");
-    names->push_back("C2'");
-    names->push_back("C3'");
-    names->push_back("C4'");
-    names->push_back("O4'");
-    names->push_back("O3'");
-    names->push_back("C5'");
+    names.push_back("C1'");
+    names.push_back("C2'");
+    names.push_back("C3'");
+    names.push_back("C4'");
+    names.push_back("O4'");
+    names.push_back("O3'");
+    names.push_back("C5'");
     if(riboseConf->hasO2)
-    	names->push_back("O2'");
+    	names.push_back("O2'");
 
 
     int n = 7;
@@ -149,7 +151,7 @@ vector<Atom*> BRNode::toTmpAtomList(AtomLib& atLib) {
 
     vector<Atom*> atomList;
     for(int i=0;i<tList.size();i++){
-    	atomList.push_back(new Atom(names->at(i), tList[i]));
+    	atomList.push_back(new Atom(names.at(i), tList[i]));
     }
 
     if(connectToNeighbor) {

@@ -41,7 +41,6 @@ public:
 	HbondEnergy* hbET;
 	BackboneConnectionEnergyCG* bbcgET;
 
-	BasePairLib* bpLib;
 
 	ForceFieldPara* para;
 	bool deleteTag;
@@ -57,7 +56,6 @@ public:
 		pb = NULL;
 		hbET = NULL;
 		bbcgET = NULL;
-		bpLib = NULL;
 	}
 
 	RnaEnergyTable(const string& paraFile){
@@ -71,7 +69,6 @@ public:
 		pb = NULL;
 		hbET = NULL;
 		bbcgET = NULL;
-		bpLib = NULL;
 	}
 
 	RnaEnergyTable(ForceFieldPara* para){
@@ -84,7 +81,6 @@ public:
 		pb = NULL;
 		hbET = NULL;
 		bbcgET = NULL;
-		bpLib = NULL;
 	}
 
 	void loadEnergyWithout6D(){
@@ -107,16 +103,15 @@ public:
 		pb = new PO3Builder(para);
 		cout << "load hb" << endl;
 		hbET = new HbondEnergy(para);
-		cout << "load bp" << endl;
-		bpLib = new BasePairLib();
-		cout << "finish" << endl;
 	}
 
 	void updateAtomic(ForceFieldPara* para){
-		delete this->acET;
+		if(this->acET != NULL)
+			delete this->acET;
 		this->acET = new AtomicClashEnergy(para);
 
-		delete hbET;
+		if(this->bpET != NULL)
+			delete hbET;
 		this->hbET = new HbondEnergy(para);
 
 	}
@@ -127,7 +122,6 @@ public:
 		bpcgET->load();
 		acET = new AtomicClashEnergy(para);
 		bbcgET = new BackboneConnectionEnergyCG(para);
-		bpLib = new BasePairLib();
 	}	
 
 	virtual ~RnaEnergyTable();

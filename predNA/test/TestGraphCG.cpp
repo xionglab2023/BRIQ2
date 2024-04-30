@@ -59,17 +59,18 @@ public:
     }
 };
 
-int runCGMC(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, cgResult* result, int randSeed){
+int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, cgResult* result, int randSeed){
 
  	srand(randSeed);
-	BasePairLib* pairLib = new BasePairLib();
+	BasePairLib* pairLibXtb = new BasePairLib("xtb");
+    BasePairLib* pairLibStat = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
 
 
     cout << "init graph" << endl;
-	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLibXtb, pairLibStat, moveLib, eiLib, et);
 
     cout << "init CGMC" << endl;
 	graph->initForCGMC(inputFile);
@@ -80,35 +81,31 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyT
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	tree->printEdges();
-	tree->updateNodeInfoCG();
-    
-	for(int i=0;i<graph->seqLen;i++){
-		graph->allNodes[i]->printNodeInfo();
-	}
-
-	tree->updateEdgeInfoCG();
-
-	for(int i=0;i<tree->geList.size();i++){
-		tree->geList[i]->printPartition();
-	}
-
+	tree->updateNodeInfoCG(1.0, 1.0);
+	tree->updateEdgeInfoCG(1.0, 1.0);
 	tree->updateSamplingInfo();
 	tree->printNodeInfo();
+    tree->printEdgeInfo();
 
+    string initKey = graph->toContactMapHashKeyCG();
+    cout << "initKey: " << initKey << endl;
+    graph->keyToContactMatrix(initKey);
 	clock_t start = clock();
+    cout << "run mc" << endl;
+    //tree->runCoarseGrainedMC(outFile);
 
-    tree->runCoarseGrainedMC(outFile);
 
+    NuSampling* samp = new NuSampling(graph, tree);
 
-//    NuSampling* samp = new NuSampling(graph, tree);
-
-//	samp->runCoarseGrainedMC(result->keyMap, outFile);
+    samp->runCoarseGrainedMC(result->keyMap, outFile);
 
 //    cout << "keyNum: " << result->keyMap.size() << endl;
 
-	delete pairLib;
+	delete pairLibXtb;
+    delete pairLibStat;
 	delete rotLib;
 	delete atLib;
+    delete eiLib;
 	delete tree;
 	delete graph;
 
@@ -131,10 +128,12 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("stat", true, 1);
 	moveLib->load();
 
-    BasePairLib* bpLib = new BasePairLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
+    ForceFieldPara* para = new ForceFieldPara();
+    para->libType = "stat";
+    para->clashRescale = 0.1;
+    para->connectRescale = 0.1;
 
-	RnaEnergyTable* et = new RnaEnergyTable();
+	RnaEnergyTable* et = new RnaEnergyTable(para);
 	et->loadCoarseGrainedEnergy();
 
     string inputFile = cmdArgs.getValue("-in");
@@ -148,7 +147,6 @@ int main(int argc, char** argv){
     }
 
     int mp = atoi(cmdArgs.getValue("-mp").c_str());
-
 
     int startID = 0;
     if(cmdArgs.specifiedOption("-id")) {
@@ -172,7 +170,7 @@ int main(int argc, char** argv){
         string outFile2 = string(xx);
 
 
-        request->asynBind(runCGMC, moveLib, eiLib, et, inputFile, outFile2, resultList[i-startID], time(0)+i);
+        request->asynBind(runCGMC, moveLib, et, inputFile, outFile2, resultList[i-startID], time(0)+i);
         jid++;
         thrPool->addTask(request);
     }
@@ -195,8 +193,6 @@ int main(int argc, char** argv){
     clock_t end1 = clock();
 	cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
 
-    delete bpLib;
-    delete eiLib;
     delete moveLib;
     delete et;
 }

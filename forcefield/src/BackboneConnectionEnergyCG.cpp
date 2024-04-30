@@ -17,6 +17,7 @@ BackboneConnectionEnergyCG::BackboneConnectionEnergyCG(ForceFieldPara* ffp){
         this->et[a*192000 + b*4800 + c*120 + d] = e;
     }
     file.close();
+    this->para = ffp;
 }
 
 double BackboneConnectionEnergyCG::getEnergy(double d, double ang1, double ang2, double dihed){
@@ -62,7 +63,11 @@ double BackboneConnectionEnergyCG::getEnergy(double d, double ang1, double ang2,
         iDihed = 120;
     }
 
-    return this->et[iD*192000+iAng1*4800+iAng2*120+iDihed] + outOfBoundaryEnergy1 + outOfBoundaryEnergy2+ outOfBoundaryEnergy3;
+    double e = this->et[iD*192000+iAng1*4800+iAng2*120+iDihed] + outOfBoundaryEnergy1 + outOfBoundaryEnergy2+ outOfBoundaryEnergy3;
+    if(e > 0)
+        return e*para->connectRescale * e;
+    else    
+        return this->et[iD*192000+iAng1*4800+iAng2*120+iDihed] + outOfBoundaryEnergy1 + outOfBoundaryEnergy2+ outOfBoundaryEnergy3;
 }
 
 BackboneConnectionEnergyCG::~BackboneConnectionEnergyCG(){

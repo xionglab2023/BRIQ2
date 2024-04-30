@@ -25,12 +25,13 @@ BasePair::BasePair(RNABase* baseA, RNABase* baseB, AtomLib* atLib) {
 	sprintf(xx, "%c%c", baseA->baseType, baseB->baseType);
 	this->type = string(xx);
 
-
-	vector<string>* baseAtomListA = atLib->getRnaAtomNames(baseA->baseTypeInt);
-	vector<string>* baseAtomListB = atLib->getRnaAtomNames(baseB->baseTypeInt);
-
-	for(int i=0;i<baseAtomListA->size();i++){
-		Atom* a = baseA->getAtom(baseAtomListA->at(i));
+	vector<string> baseAtomListA;
+	vector<string> baseAtomListB;
+	atLib->getRnaAtomNames(baseA->baseTypeInt, baseAtomListA);
+	atLib->getRnaAtomNames(baseB->baseTypeInt, baseAtomListB);
+	
+	for(int i=0;i<baseAtomListA.size();i++){
+		Atom* a = baseA->getAtom(baseAtomListA[i]);
 		if(a == NULL){
 			continue;
 		}
@@ -39,9 +40,9 @@ BasePair::BasePair(RNABase* baseA, RNABase* baseB, AtomLib* atLib) {
 
 		if(pa.isEmpty()) continue;
 
-		for(int j=0;j<baseAtomListB->size();j++){
+		for(int j=0;j<baseAtomListB.size();j++){
 
-			Atom* b = baseB->getAtom(baseAtomListB->at(j));
+			Atom* b = baseB->getAtom(baseAtomListB[j]);
 			if(b == NULL){
 				continue;
 			}

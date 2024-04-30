@@ -835,11 +835,8 @@ cm2Key(withBinary, binaryMode)
 		for(int i=0;i<4;i++) {
 			for(int j=i;j<4;j++) {
 				string pairType = augc.substr(i,1) + augc.substr(j,1);
-				string fileName = path + "pairEne/nnb/"+pairType+".ene";
-				if(para->bwTag != "default") {
-//					fileName = path + "pairEne/nnb/"+pairType+".ene-" + para->bwTag;
-					fileName = path + "pairEne/nnb/"+pairType+".ene-adj2";
-				}
+				string fileName = fileName = path + "pairEne/nnb/"+pairType+".ene-adj2";
+				
 				file.open(fileName.c_str());
 				if(!file.is_open()) {
 					cout << "can't open file " << fileName << endl;
@@ -857,9 +854,8 @@ int BasePair6DEnergyTable::dump(ForceFieldPara* para) {
 	// serialized dump method
 	string outpath = datapath() + "../binaryCache";
 	string fileName = "BasePair6DEnergyTable";
-	if(para->bwTag != "default") {
-		fileName = "BasePair6DEnergyTable-"+para->bwTag;
-	}
+	fileName = "BasePair6DEnergyTable-"+para->libType;
+
 	char z0[4] = {'\0'};
 	if(! makeDirs(outpath)) {
 		throw("[Error]Unable to create " + outpath);
@@ -915,12 +911,8 @@ int BasePair6DEnergyTable::dump(ForceFieldPara* para) {
 
 int BasePair6DEnergyTable::load(ForceFieldPara* para) {
 	ifstream ins;
-	string fileName = datapath() + "../binaryCache/BasePair6DEnergyTable";
-	if(para->bwTag != "default") {
-		
-		fileName = datapath() + "../binaryCache/BasePair6DEnergyTable-"+para->bwTag;
-		cout << "load: " << fileName << endl;
-	}
+	string fileName = datapath() + "../binaryCache/BasePair6DEnergyTable-"+para->libType;
+	
 	ins.open(fileName, ios::in|ios::binary);
 	if(!ins.is_open()) {
 		throw("[Error]Fail to open " + fileName);

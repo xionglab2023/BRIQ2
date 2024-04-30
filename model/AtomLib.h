@@ -1,7 +1,7 @@
 /*
  * AtomLib.h
  *
- *  Created on: 2022Äê8ÔÂ29ÈÕ
+ *  Created on: 2022ï¿½ï¿½8ï¿½ï¿½29ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -66,13 +66,13 @@ public:
 	vector<string> uniqueNames;
 	map<string,int> uniqueNameToUniqueID;
 
-	vector<vector<int>*> aaUniqueIDs;
-	vector<vector<string>*> aaAtomNames;
-	vector<vector<string>*> aaScAtomNames;
+	vector<vector<int>> aaUniqueIDs;
+	vector<vector<string>> aaAtomNames;
+	vector<vector<string>> aaScAtomNames;
 
-	vector<vector<int>*> baseUniqueIDs;
-	vector<vector<string>*> baseAtomNames;
-	vector<vector<string>*> baseScAtomNames;
+	vector<vector<int>> baseUniqueIDs;
+	vector<vector<string>> baseAtomNames;
+	vector<vector<string>> baseScAtomNames;
 
 	vector<string> generalAtomNames;
 	map<string, int> generalAtomTypeToInt; //index start from 0
@@ -164,15 +164,15 @@ public:
 	int uniqueNameToID(const string& uniqueName) const;
 	string uniqueIDToName(int uniqueID) const;
 
-	vector<int>* getAminoAcidAtomIDs(int intName);
-	vector<string>* getAminoAcidAtomNames(int intName);
-	vector<string>* getAminoAcidSidechainAtomNames(int intName);
+	void getAminoAcidAtomIDs(int intName, vector<int>& aminoAcidAtomIDs);
+	void getAminoAcidAtomNames(int intName, vector<string>& aminoAcidNames);
+	void getAminoAcidSidechainAtomNames(int intName, vector<string>& aminoAcidSideChainNames);
 	AtomProperty* getAtomProperty(int uniqueID);
 	vector<int> getAASidechainUniqueIDs(int aaType);
 
 
-	vector<string>* getRnaAtomNames(int type) const;
-	vector<string>* getRnaSidechainAtoms(int type) const;
+	void getRnaAtomNames(int type, vector<string>& rnaNames) const;
+	void getRnaSidechainAtoms(int type, vector<string>& rnaSidechainNames) const;
 
 
 	virtual ~AtomLib();

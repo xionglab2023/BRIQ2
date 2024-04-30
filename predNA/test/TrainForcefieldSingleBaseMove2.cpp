@@ -59,8 +59,11 @@ public:
 
 
 
-int testSingleBasePredictionPosList(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFileList, singlePredictionResult** outList, int mpID){
+int testSingleBasePredictionPosList(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& libType,  const string& inputFileList, singlePredictionResult** outList, int mpID){
 	
+    BasePairLib* pairLib = new BasePairLib(libType);
+    RotamerLib* rotLib = new RotamerLib();
+    AtomLib* atLib = new AtomLib();
 
     ifstream file;
     file.open(inputFileList.c_str(), ios::in);
@@ -91,8 +94,8 @@ int testSingleBasePredictionPosList(NuPairMoveSetLibrary* moveLib, EdgeInformati
         cout << "mst" << endl;
 	    graph->MST_kruskal(tree);
 	    tree->printEdges();
-	    tree->updateNodeInfo();
-	    tree->updateEdgeInfo();
+	    tree->updateNodeInfo(1.0, 1.0);
+	    tree->updateEdgeInfo(1.0, 1.0);
 	    tree->updateSamplingInfo();
 
 	    graphInfo* gi = tree->runAtomicMC();
@@ -106,42 +109,48 @@ int testSingleBasePredictionPosList(NuPairMoveSetLibrary* moveLib, EdgeInformati
 	    delete graph;
     }
 
+    delete pairLib;
+    delete rotLib;
+    delete atLib;
+
     return 0;
 }
 
 int main(int argc, char** argv){
         
     if(argc == 1) {
-        cout << "trainSingle2 $inputList $bw $tag" << endl;
+        cout << "trainSingle2 $inputList $list -lib $LIBTYPE -tag $tag" << endl;
         return EXIT_SUCCESS;
     }
     CmdArgs cmdArgs{argc, argv};
 
-    cout << "load move lib: " << endl;
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("xtb", true, 1);
-	moveLib->load();
-    BasePairLib* bpLib = new BasePairLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
 
     string inputFileList = cmdArgs.getValue("-list");
     string outputFile = cmdArgs.getValue("-out");
 
     string tag = cmdArgs.getValue("-tag");
-    string bw = cmdArgs.getValue("-bw");
+    string libType = cmdArgs.getValue("-lib");
+
+
+    cout << "load move lib: " << endl;
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(libType, true, 1);
+	moveLib->load();
+
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
+
+
     string outpdb;
-    
-    int subParaIndex = 0;
-    if(cmdArgs.specifiedOption("-sub")){
-        subParaIndex = atoi(cmdArgs.getValue("-sub").c_str());
-    }
 
     ofstream out;
-    out.open(outputFile.c_str(), ios::out);
+
 
     char xx[200];
     int mp = 16;
     int startID = 0;
 	clock_t start = clock();
+
+    if(cmdArgs.specifiedOption("-mp"))
+        mp = atoi(cmdArgs.getValue("-mp").c_str());
 
     singlePredictionResult** outList = new singlePredictionResult*[mp];
     for(int i=0;i<mp;i++){
@@ -149,12 +158,13 @@ int main(int argc, char** argv){
     }
 
     ForceFieldPara* para = new ForceFieldPara();
-    para->bwTag = bw;
 
-    para->kStepNum1 = 100;
+    para->kStepNum1 = 200;
     para->kStepNum2 = 300;
     para->kStepNum3 = 600;
     para->kNodeFreq = 0.8;
+
+    para->libType = libType;
 
     srand(time(0));
 
@@ -162,16 +172,12 @@ int main(int argc, char** argv){
     RnaEnergyTable* et = new RnaEnergyTable(para);
 	et->loadAtomicEnergy();
 
-    cout << "init pairLib rotLib atLib" << endl;
-    BasePairLib* pairLib = new BasePairLib();
-	RotamerLib* rotLib = new RotamerLib();
-	AtomLib* atLib = new AtomLib();
-
 
     cout << "task: " << tag << endl;
     cout << "a" << endl;
 
     if(tag == "clashNb") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 1.0; x < 10.0;x = x*1.3) {
            
            para->clashLamdaNb = x;
@@ -185,7 +191,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -217,6 +223,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "clashNnb") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 1.0; x < 10.0;x = x*1.3) {
            
             para->clashLamdaNnb = x;
@@ -230,7 +237,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                 request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -262,6 +269,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "hbLamda1") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 0.03; x < 0.5;x = x*1.3) {
            
             para->hbLamda1 = x;
@@ -275,7 +283,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -307,6 +315,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "hbLamda2") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 0.1; x < 1.0;x = x*1.3) {
            
             para->hbLamda2 = x;
@@ -320,7 +329,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib,  eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -352,6 +361,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "wtHb") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 0.3; x < 5.0;x = x*1.3) {
            
             para->wtHb = x;
@@ -365,7 +375,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+               request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -397,6 +407,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "wtBp1") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 0.3; x < 6.0;x = x*1.3) {
            
            para->wtBp1 = x;
@@ -410,7 +421,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                 request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -442,6 +453,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "wtBp2") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 0.3; x < 6.0;x = x*1.3) {
            
            para->wtBp2 = x;
@@ -454,7 +466,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+               request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -486,6 +498,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "wtO4O2C2Nb") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 0.0; x < 2.0;x = x+0.2) {
            
             para->wtO4O2C2Nb = x;
@@ -499,7 +512,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -531,6 +544,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "wtO4O2C2Nnb") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 0.0; x < 1.21;x = x+0.2) {
            
             para->wtO4O2C2Nnb = x;
@@ -544,7 +558,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+               request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -576,6 +590,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "wtOxy") {
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 0.1; x < 4.0;x = x+0.2) {
             for(int k=0;k<16;k++) {
                 para->wtRiboseOxy[k] = x;
@@ -592,7 +607,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -624,6 +639,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "T0"){
+        out.open(outputFile.c_str(), ios::out);
         for(double x= 2.0; x < 50.0;x = x*1.3) {
             para->T0 = x;
             para->T1 = para->T0*0.1;
@@ -638,7 +654,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -670,6 +686,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;       
     }
     else if(tag == "step1"){
+        out.open(outputFile.c_str(), ios::out);
     
         for(double x= 50; x < 1000;x = x*1.5) {
            
@@ -687,7 +704,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+               request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -716,6 +733,7 @@ int main(int argc, char** argv){
         }
     }
     else if(tag == "step2"){
+        out.open(outputFile.c_str(), ios::out);
     
         for(double x= 50; x < 1000;x = x*1.5) {
            
@@ -734,7 +752,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -766,6 +784,7 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;       
     }
     else if(tag == "step3"){
+        out.open(outputFile.c_str(), ios::out);
     
         for(double x= 50; x < 1000;x = x*1.5) {
            
@@ -783,7 +802,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+               request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -812,6 +831,7 @@ int main(int argc, char** argv){
         }
    }
     else if(tag == "kNode"){
+        out.open(outputFile.c_str(), ios::out);
     
         for(double x= 0.1; x < 5.0;x = x*1.5) {
            
@@ -827,7 +847,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -856,6 +876,7 @@ int main(int argc, char** argv){
         }
     }
     else if(tag == "bw") {
+        out.open(outputFile.c_str(), ios::out);
         {
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
@@ -865,7 +886,7 @@ int main(int argc, char** argv){
             }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+               request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -901,22 +922,22 @@ int main(int argc, char** argv){
             out << string(xx) << endl;
         }
     }
-    else if(tag == "nbRescale"){
-        int pairType = subParaIndex/6;
-        int clusterID = subParaIndex%6;
-        for(double x= 0.3; x < 3.0;x = x*1.3) { 
-           
-            para->nbPairEnergyRescale[pairType][clusterID] = x;
-            
+    else if(tag == "test") {
+        for(int x=0;x<3;x++) {
+            ofstream out2;
+            sprintf(xx, "%s-%d", outputFile.c_str(), x);
+            string fileName2 = string(xx);
+            out2.open(fileName2.c_str(), ios::out);
+
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
             for(int i=0;i<mp;i++){
                 outList[i]->clear();
-            }
+            }   
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFileList, outList, i-startID);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
                 jid++;
                 thrPool->addTask(request);
             }
@@ -935,19 +956,16 @@ int main(int argc, char** argv){
             double minEne = 0.0;
             double minRMS = 0.0;
             for(int i=0;i<outList[0]->posNum;i++){
-                minEne += outList[0]->eneList[i]/outList[0]->posNum;
-                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
+                sprintf(xx, "%d %8.4f %8.4f", i, outList[0]->rmsList[i], outList[0]->eneList[i]);
+                out2 << string(xx) << endl;
             }
-            
-            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
-            out << string(xx) << endl;
+            out2.close();
         }
+
+        clock_t end1 = clock();
+	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;        
     }
 
-    out.close();
-    delete pairLib;
-    delete rotLib;
-    delete atLib;
     delete moveLib;
     delete et;
     delete para;

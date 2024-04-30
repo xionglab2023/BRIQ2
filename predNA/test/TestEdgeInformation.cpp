@@ -20,8 +20,8 @@ using namespace NSPthread;
 
 int main(int argc, char** argv){
 
-    BasePairLib* bpLib = new BasePairLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
+    BasePairLib* bpLib = new BasePairLib("stat");
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
     vector<string> list = eiLib->keyList;
     for(int i=0;i<list.size();i++){
         string key = list[i];
@@ -31,4 +31,9 @@ int main(int argc, char** argv){
 
         
     }
+    cout << "delete bpLib" << endl;
+    delete bpLib;
+    cout << "delete eiLib" << endl;
+    delete eiLib;
+    cout << "finish" << endl;
 }

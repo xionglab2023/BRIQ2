@@ -147,7 +147,8 @@ RNABase* RNABaseLib::getBase(const string& baseID, const string& chainID, int ba
 	string augc = "AUGC";
         RNABase* base = new RNABase(baseID, chainID, augc[baseType]);
         vector<Atom*> list;
-        vector<string>* names = atLib.getRnaSidechainAtoms(baseType);
+        vector<string> names;
+        atLib.getRnaSidechainAtoms(baseType, names);
         vector<XYZ> tList;
         if(baseType == 0){
             XYZ a = XYZ(1.468,   0.000,   0.000); //A-N9
@@ -233,7 +234,7 @@ RNABase* RNABaseLib::getBase(const string& baseID, const string& chainID, int ba
         }
 
         for(int i=0;i<tList.size();i++){
-    	        base->addAtom(new Atom(names->at(i), local2global(cs, tList[i])));
+    	        base->addAtom(new Atom(names.at(i), local2global(cs, tList[i])));
         }
         return base;
 }

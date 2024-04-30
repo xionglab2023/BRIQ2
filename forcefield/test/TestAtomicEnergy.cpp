@@ -87,10 +87,12 @@ int main(int argc, char** argv){
 	cout << "calculate clash energy" << endl;
 	for(int i=0;i<nodeList.size();i++){
 		nodeA = nodeList[i];
-		vector<string>* nameA = atLib->baseScAtomNames[nodeA->baseType];
+		vector<string> nameA;
+		atLib->getRnaSidechainAtoms(nodeA->baseType, nameA);
 		for(int j=i+1;j<nodeList.size();j++){
 			nodeB = nodeList[j];
-			vector<string>* nameB = atLib->baseScAtomNames[nodeB->baseType];
+			vector<string> nameB;
+			atLib->getRnaSidechainAtoms(nodeB->baseType, nameB);
 			int sep = seqSep[j] - seqSep[i];
 			if(squareDistance(nodeA->baseConf->coords[0], nodeB->baseConf->coords[0]) < 256.0) {
 				nA = nodeA->baseConf->rot->atomNum;
@@ -101,7 +103,7 @@ int main(int argc, char** argv){
 						if(dd < 16.0) {
 							clashEnergy = acET->getBaseBaseEnergy(nodeA->baseType, k, nodeB->baseType, l, dd, sep);
 							if(abs(clashEnergy) > 0.1){
-								printf("baseA: %3s %c baseB: %3s %c atomA: %3s atomB: %3s distance: %5.3f energy: %7.3f\n", baseList[i]->baseID.c_str(), baseList[i]->baseType, baseList[j]->baseID.c_str(), baseList[j]->baseType, nameA->at(k).c_str(), nameB->at(l).c_str(), sqrt(dd), clashEnergy);
+								printf("baseA: %3s %c baseB: %3s %c atomA: %3s atomB: %3s distance: %5.3f energy: %7.3f\n", baseList[i]->baseID.c_str(), baseList[i]->baseType, baseList[j]->baseID.c_str(), baseList[j]->baseType, nameA.at(k).c_str(), nameB.at(l).c_str(), sqrt(dd), clashEnergy);
 							}
 						}
 					}
@@ -117,11 +119,13 @@ int main(int argc, char** argv){
 	for(int i=0;i<nodeList.size();i++){
 		nodeA = nodeList[i];
 		int polarNumA = nodeA->baseConf->rot->polarAtomNum;
-		vector<string>* nameA = atLib->baseScAtomNames[nodeA->baseType];
+		vector<string> nameA;
+		atLib->getRnaSidechainAtoms(nodeA->baseType, nameA);
 		for(int j=i+1;j<nodeList.size();j++){
 			nodeB = nodeList[j];
 			int polarNumB = nodeB->baseConf->rot->polarAtomNum;
-			vector<string>* nameB = atLib->baseScAtomNames[nodeB->baseType];
+			vector<string> nameB;
+			atLib->getRnaSidechainAtoms(nodeB->baseType, nameB);
 			if(squareDistance(nodeA->baseConf->coords[0], nodeB->baseConf->coords[0]) < 256.0) {
 				for(int k=0;k<polarNumA;k++){
 					int indexA = nodeA->baseConf->rot->polarAtomIndex[k];
@@ -130,7 +134,7 @@ int main(int argc, char** argv){
 						double d = nodeA->baseConf->csPolar[k].origin_.distance(nodeB->baseConf->csPolar[l].origin_);
 						double hbEne = hbET->getEnergy(nodeA->baseConf->rot->polarAtomUniqueID[k], nodeA->baseConf->csPolar[k], nodeB->baseConf->rot->polarAtomUniqueID[l], nodeB->baseConf->csPolar[l]);
 						if(abs(hbEne)>0.2)
-							printf("baseA: %3s %c baseB: %3s %c atomA: %3s atomB: %3s dist: %5.3f energy: %7.3f\n", baseList[i]->baseID.c_str(), baseList[i]->baseType, baseList[j]->baseID.c_str(), baseList[j]->baseType, nameA->at(indexA).c_str(), nameB->at(indexB).c_str(),d, hbEne);
+							printf("baseA: %3s %c baseB: %3s %c atomA: %3s atomB: %3s dist: %5.3f energy: %7.3f\n", baseList[i]->baseID.c_str(), baseList[i]->baseType, baseList[j]->baseID.c_str(), baseList[j]->baseType, nameA.at(indexA).c_str(), nameB.at(indexB).c_str(),d, hbEne);
 					}
 				}
 			}

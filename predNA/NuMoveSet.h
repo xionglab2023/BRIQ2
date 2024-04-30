@@ -101,7 +101,7 @@ private:
 
 	vector<IndividualNuPairMoveSet*> nnbMoveList[16];
 	
-	string libType;
+	
 	/**
 	 * @brief Construct a new NuPairMoveSetLibrary object. 
 	 * 
@@ -111,6 +111,7 @@ private:
 	
 
 public:
+	string libType;
 	OrientationIndex* oi;
 	NuPairMoveSetLibrary(const string& libType, bool withBinary=true, int binaryMode=1);
 	int dump();
@@ -147,7 +148,9 @@ public:
 	CsMove getRandomMoveWithFixedCluster(CsMove& move);
 	CsMove getRandomMoveWithFixedSubCluster(CsMove& move);
 	CsMove getRandomMoveWithFixedSP1000Index(CsMove& move);
-
+	double minDistanceToMoveSet(CsMove& move, OrientationIndex* oi);
+	double maxDistanceToMoveSet(CsMove& move, OrientationIndex* oi);
+	
 	void printMoveSetInfo();
 
 	virtual ~MixedNuPairCluster();

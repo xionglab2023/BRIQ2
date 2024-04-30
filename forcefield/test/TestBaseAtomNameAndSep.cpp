@@ -1,7 +1,7 @@
 /*
  * TestBaseAtomNameAndSep.cpp
  *
- *  Created on: 2023Äê6ÔÂ8ÈÕ
+ *  Created on: 2023ï¿½ï¿½6ï¿½ï¿½8ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -44,11 +44,15 @@ int main(int argc, char** argv){
 	types.push_back("DC");
 
 	for(int k=0;k<8;k++){
-		vector<string>* names = atLib->getRnaAtomNames(k);
-		vector<string>* baseNames = atLib->getRnaSidechainAtoms(k);
+		vector<string> names;
+		atLib->getRnaAtomNames(k, names);
+		
+		vector<string> baseNames;
+
+		atLib->getRnaSidechainAtoms(k, baseNames);
 		cout << endl;
-		for(int i=0;i<baseNames->size();i++){
-			string atomName = baseNames->at(i);
+		for(int i=0;i<baseNames.size();i++){
+			string atomName = baseNames.at(i);
 			string uniqueName = types[k]+"-"+atomName;
 			int uniqueID = atLib->uniqueNameToUniqueID[uniqueName];
 			printf("%-7s %2d %3d\n", uniqueName.c_str(), i, uniqueID);

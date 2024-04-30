@@ -78,10 +78,10 @@ cm2Key(withBinary, binaryMode)
 		for(int i=0;i<4;i++){
 			for(int j=0;j<4;j++){
 				string pairType = augc.substr(i,1) + augc.substr(j,1);
-				file.open(path + "pairEneCG/nb/"+pairType+".ene");
+				file.open(path + "pairEneCG-raw/nb/"+pairType+".ene", ios::in);
 
 				if(!file.is_open()) {
-					cout << "can't open file " << path + "pairEneCG/nb/" +pairType+".ene" << endl;
+					cout << "can't open file " << path + "pairEneCG-raw/nb/" +pairType+".ene" << endl;
 				}
 				while(file >> indexA >> indexB >> ene >> clusterID){
 					this->nbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
@@ -94,9 +94,9 @@ cm2Key(withBinary, binaryMode)
 			for(int j=i;j<4;j++){
 				string pairType = augc.substr(i,1) + augc.substr(j,1);
 
-				file.open(path + "pairEneCG/nnb/"+pairType+".ene");
+				file.open(path + "pairEneCG-raw/nnb/"+pairType+".ene", ios::in);
 				if(!file.is_open()) {
-					cout << "can't open file " << path + "pairEneCG/nnb/" +pairType+".ene" << endl;
+					cout << "can't open file " << path + "pairEneCG-raw/nnb/" +pairType+".ene" << endl;
 				}
 				while(file >> indexA >> indexB >> ene >> clusterID){
 					this->nnbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;

@@ -50,15 +50,17 @@ int main(int argc, char** argv){
         RNABase* baseB = new RNABase("2", "A", augc[typeB]);
 
     	vector<Atom*> atomListA;
-	    vector<string>* namesA = atLib->getRnaSidechainAtoms(typeA);
+        vector<string> namesA;
+	    atLib->getRnaSidechainAtoms(typeA, namesA);
 	    for(int i=0;i<rotA->atomNum;i++){
-            baseA->addAtom(new Atom(namesA->at(i), confA->coords[i]));
+            baseA->addAtom(new Atom(namesA.at(i), confA->coords[i]));
 	    }
 
     	vector<Atom*> atomListB;
-	    vector<string>* namesB = atLib->getRnaSidechainAtoms(typeB);
+        vector<string> namesB;
+	    atLib->getRnaSidechainAtoms(typeB, namesB);
 	    for(int i=0;i<rotB->atomNum;i++){
-            baseB->addAtom(new Atom(namesB->at(i), confB->coords[i]));
+            baseB->addAtom(new Atom(namesB.at(i), confB->coords[i]));
 	    }
 
         RNAChain* rc = new RNAChain("A");
@@ -69,10 +71,10 @@ int main(int argc, char** argv){
 
         delete rc;
         for(int i=0;i<rotA->atomNum;i++){
-            delete new Atom(namesA->at(i), confA->coords[i]);
+            delete baseA->getAtomList()->at(i);
 	    }
 	    for(int i=0;i<rotB->atomNum;i++){
-            delete new Atom(namesB->at(i), confB->coords[i]);
+            delete baseB->getAtomList()->at(i);
 	    }
 
         delete baseA;
@@ -103,15 +105,17 @@ int main(int argc, char** argv){
         RNABase* baseB = new RNABase("2", "A", augc[typeB]);
 
     	vector<Atom*> atomListA;
-	    vector<string>* namesA = atLib->getRnaSidechainAtoms(typeA);
+        vector<string> namesA;
+	    atLib->getRnaSidechainAtoms(typeA, namesA);
 	    for(int i=0;i<rotA->atomNum;i++){
-            baseA->addAtom(new Atom(namesA->at(i), confA->coords[i]));
+            baseA->addAtom(new Atom(namesA.at(i), confA->coords[i]));
 	    }
 
     	vector<Atom*> atomListB;
-	    vector<string>* namesB = atLib->getRnaSidechainAtoms(typeB);
+        vector<string> namesB;
+	    atLib->getRnaSidechainAtoms(typeB, namesB);
 	    for(int i=0;i<rotB->atomNum;i++){
-            baseB->addAtom(new Atom(namesB->at(i), confB->coords[i]));
+            baseB->addAtom(new Atom(namesB.at(i), confB->coords[i]));
 	    }
 
         RNAChain* rc = new RNAChain("A");
@@ -122,10 +126,10 @@ int main(int argc, char** argv){
 
         delete rc;
         for(int i=0;i<rotA->atomNum;i++){
-            delete new Atom(namesA->at(i), confA->coords[i]);
+            delete baseA->getAtomList()->at(i);
 	    }
 	    for(int i=0;i<rotB->atomNum;i++){
-            delete new Atom(namesB->at(i), confB->coords[i]);
+            delete baseB->getAtomList()->at(i);
 	    }
 
         delete baseA;

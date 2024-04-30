@@ -27,12 +27,12 @@ int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, Rna
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	tree->printEdges();
-	tree->updateNodeInfo();
+	tree->updateNodeInfo(1.0, 1.0);
 
 	for(int i=0;i<graph->seqLen;i++){
 		graph->allNodes[i]->printNodeInfo();
 	}
-	tree->updateEdgeInfo();
+	tree->updateEdgeInfo(1.0, 1.0);
 	for(int i=0;i<tree->geList.size();i++){
 		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
 		tree->geList[i]->printPartition();
@@ -73,7 +73,7 @@ int main(int argc, char** argv){
 	moveLib->load();
 
     BasePairLib* pairLib = new BasePairLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib(pairLib);
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
 
     string inputFile = cmdArgs.getValue("-in");
     string tag = cmdArgs.getValue("-tag");

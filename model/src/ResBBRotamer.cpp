@@ -67,7 +67,7 @@ ResBBRotamer::ResBBRotamer(Residue* resP, Residue* res, AtomLib* atLib){
 
 	for(int i=0;i<4;i++)
 	{
-		this->uniqueID[i] = atLib->aaUniqueIDs[aaType]->at(i);
+		this->uniqueID[i] = atLib->aaUniqueIDs[aaType][i];
 	}
 }
 
@@ -122,7 +122,7 @@ ResBBRotamer::ResBBRotamer(Residue* res, AtomLib* atLib){
 
 	for(int i=0;i<4;i++)
 	{
-		this->uniqueID[i] = atLib->aaUniqueIDs[aaType]->at(i);
+		this->uniqueID[i] = atLib->aaUniqueIDs[aaType][i];
 	}
 }
 
@@ -171,7 +171,7 @@ ResBBRotamer::ResBBRotamer(const string& line, AtomLib* atLib) {
 
 	for(int i=0;i<4;i++)
 	{
-		this->uniqueID[i] = atLib->aaUniqueIDs[aaType]->at(i);
+		this->uniqueID[i] = atLib->aaUniqueIDs[aaType][i];
 	}
 }
 
@@ -179,7 +179,7 @@ void ResBBRotamer::setAAType(int aa, AtomLib* atLib){
 	this->aaType = aa;
 	for(int i=0;i<4;i++)
 	{
-		this->uniqueID[i] = atLib->aaUniqueIDs[aaType]->at(i);
+		this->uniqueID[i] = atLib->aaUniqueIDs[aaType][i];
 	}
 }
 

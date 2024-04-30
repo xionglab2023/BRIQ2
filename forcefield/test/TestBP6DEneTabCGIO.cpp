@@ -16,6 +16,8 @@ using namespace NSPforcefield;
 using namespace std;
 
 int main() {
+
+    
     struct timeval start, end;
 
     cout << "Initializing  ForceFieldPara from txt" << endl;

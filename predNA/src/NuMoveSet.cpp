@@ -47,9 +47,11 @@ IndividualNuPairMoveSet::IndividualNuPairMoveSet(const string& libType, int sep,
 	if(!bb){
 		string path;
 		if(libType == "xtb")
-			path = NSPdataio::datapath()+"pairMove4/";
+			path = NSPdataio::datapath()+"pairMove5/";
 		else if(libType == "stat")
 			path = NSPdataio::datapath()+"pairMoveCG/";
+		else if(libType == "adj")
+			path = NSPdataio::datapath()+"pairMove4/";
 
 		if(pairType == -1) //neighbor non-contact base pair
 		{
@@ -153,6 +155,8 @@ int IndividualNuPairMoveSet::load(istream& ins) {
 CsMove IndividualNuPairMoveSet::getRandomMove(OrientationIndex* oi){
 
 	int selectBin = rand()% 50;
+
+
 	int selectID = rand()% moveIndexList[selectBin].size();
 	
 	CsMove cm =  oi->index1000ToCsMoveWithRandPerturbation(moveIndexList[selectBin][selectID]);
@@ -320,7 +324,7 @@ NuPairMoveSetLibrary::NuPairMoveSetLibrary(const string& libType, bool withBinar
 
 	this->libType = libType;
 
-	if(libType != "xtb" && libType != "stat") {
+	if(libType != "xtb" && libType != "stat" && libType != "adj") {
 		cout << "undefined libType: " << libType << endl;
 	}
 
@@ -386,13 +390,14 @@ NuPairMoveSetLibrary::NuPairMoveSetLibrary(const string& libType, bool withBinar
 			string FileNnb = "";
 
 			if(libType == "xtb") {
-				FileNb = NSPdataio::datapath()+"../binaryData/pairMove4/nb";
-				FileNnb = NSPdataio::datapath()+"../binaryData/pairMove4/nnb";
+				FileNb = NSPdataio::datapath()+"../binaryData/pairMove5/nb";
+				FileNnb = NSPdataio::datapath()+"../binaryData/pairMove5/nnb";
 			}	
 			else if(libType == "stat") {
 				FileNb = NSPdataio::datapath()+"../binaryData/pairMoveCG/nb";
 				FileNnb = NSPdataio::datapath()+"../binaryData/pairMoveCG/nnb";
 			}
+
 
  		    ins.open(FileNb,ios::in | ios::binary);
 			if(!ins.is_open()) {
@@ -468,8 +473,11 @@ void NuPairMoveSetLibrary::printMoveLibInfo(){
 			int moveNum = 0;
 			for(int k=0;k<50;k++){
 				moveNum += nbMoveList[i][j]->moveIndexList[k].size();
+				if(nbMoveList[i][j]->moveIndexList[k].size() == 0){
+					cout << "error nb " << i << " " << j << endl; 
+				}
 			}
-			cout << "cluster: " << j << " moveNum: " << moveNum << endl;
+			cout << "nb: " << i << " cluster: " << j << " moveNum: " << moveNum << endl;
 		}
 	}
 
@@ -481,8 +489,11 @@ void NuPairMoveSetLibrary::printMoveLibInfo(){
 			int moveNum = 0;
 			for(int k=0;k<50;k++){
 				moveNum += revNbMoveList[i][j]->moveIndexList[k].size();
+				if(revNbMoveList[i][j]->moveIndexList[k].size() == 0){
+					cout << "error rnb " << i << " " << j << endl; 
+				}
 			}
-			cout << "cluster: " << j << " moveNum: " << moveNum << endl;
+			cout << "rnb: " << i << " cluster: " << j << " moveNum: " << moveNum << endl;
 		}
 	}
 
@@ -495,6 +506,7 @@ void NuPairMoveSetLibrary::printMoveLibInfo(){
 			moveNum += nbNonContactMoveList[j]->moveIndexList[k].size();
 		}
 		cout << "cluster: " << j << " moveNum: " << moveNum << endl;
+		
 	}
 
 	cout << "non-contact reverse neighbor move: " << endl;
@@ -516,8 +528,11 @@ void NuPairMoveSetLibrary::printMoveLibInfo(){
 			int moveNum = 0;
 			for(int k=0;k<50;k++){
 				moveNum += nnbMoveList[i][j]->moveIndexList[k].size();
+				if(nnbMoveList[i][j]->moveIndexList[k].size() == 0){
+					cout << "error nnb " << i << " " << j  << " " << k << endl; 
+				}
 			}
-			cout << "cluster: " << j << " moveNum: " << moveNum << endl;
+			cout << "nnb: " << i << " cluster: " << j << " moveNum: " << moveNum << endl;
 		}
 	}	
 }
@@ -611,6 +626,9 @@ void MixedNuPairCluster::updateEdgeInformation(EdgeInformation* ei){
 
 	if(psum == 0) {
 		cout << "edge information error: total probability is zero!" << endl;
+		cout << ei->pairLibType << endl;
+		cout << ei->totalClusterNum << endl;
+		cout << ei->validClusterNum << endl;
 		exit(0);
 	}
 
@@ -642,9 +660,10 @@ CsMove MixedNuPairCluster::getRandomMove(){
 	}
 
 	int cluster = randPool[rand()%100000];
+
 	IndividualNuPairMoveSet* selectMoveSet = moveLib->getMoveSet(pairType, cluster, sep);
 
-	CsMove cm = moveLib->getMoveSet(pairType, cluster, sep)->getRandomMove(moveLib->oi);
+	CsMove cm = selectMoveSet->getRandomMove(moveLib->oi);
 
 	cm.clusterID = cluster;
 	return cm;
@@ -683,6 +702,46 @@ CsMove MixedNuPairCluster::getRandomMoveWithFixedSubCluster(CsMove& move){
 
 CsMove MixedNuPairCluster::getRandomMoveWithFixedSP1000Index(CsMove& move) {
 	return moveLib->oi->fixIndex1000WithRandPerturbation(move);
+}
+
+double MixedNuPairCluster::minDistanceToMoveSet(CsMove& move, OrientationIndex* oi){
+	BaseDistanceMatrix dm(move);
+	double minD = 99.9;
+	for(int i=0;i<this->clusterIDList.size();i++){
+		IndividualNuPairMoveSet* selectMoveSet = moveLib->getMoveSet(pairType, clusterIDList[i], sep);
+		for(int j=0;j<50;j++){
+			for(int k=0;k<selectMoveSet->moveIndexList[j].size();k++){
+				int index = selectMoveSet->moveIndexList[j][k];
+				CsMove move2 = oi->index1000ToCsMove(index);
+				BaseDistanceMatrix dm2(move2);
+				double d = dm.distanceTo(dm2);
+				if(d < minD){
+					minD = d;
+				}
+			}
+		}
+	}
+	return minD;
+}
+
+double MixedNuPairCluster::maxDistanceToMoveSet(CsMove& move, OrientationIndex* oi){
+	BaseDistanceMatrix dm(move);
+	double maxD = 0.0;
+	for(int i=0;i<this->clusterIDList.size();i++){
+		IndividualNuPairMoveSet* selectMoveSet = moveLib->getMoveSet(pairType, clusterIDList[i], sep);
+		for(int j=0;j<50;j++){
+			for(int k=0;k<selectMoveSet->moveIndexList[j].size();k++){
+				int index = selectMoveSet->moveIndexList[j][k];
+				CsMove move2 = oi->index1000ToCsMove(index);
+				BaseDistanceMatrix dm2(move2);
+				double d = dm.distanceTo(dm2);
+				if(d > maxD){
+					maxD = d;
+				}
+			}
+		}
+	}
+	return maxD;
 }
 
 void MixedNuPairCluster::printMoveSetInfo(){

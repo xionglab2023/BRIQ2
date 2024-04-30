@@ -47,9 +47,9 @@ public:
     vector<nuContactMatrix*> scmList;
 
     mixedContactInfo(int seqLen, int* seq, bool* connectToDownstream, bool* fixed);
-    virtual ~mixedContactInfo();
     double totalConfEntropy();
     double relativeConfEntropy(singleContactInfo* natConf);
+    virtual ~mixedContactInfo();
 };
 
 class NuSampling{
@@ -67,7 +67,8 @@ public:
 	double totalSamp;
 
     NuSampling(NuGraph* graph, NuTree* tree);
-	void runCoarseGrainedMC(map<string, double>& results, const string& outFile);
+	void runCoarseGrainedMC(map<string, double>& results, int roundNum);
+    void runCoarseGrainedMC(map<string, double>& results, const string& outFile);
 
 };
 

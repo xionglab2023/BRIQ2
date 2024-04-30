@@ -32,6 +32,7 @@ EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pai
 	}
 	this->validClusterNum = totalClusterNum;
 
+
 	if(sep == 1 || sep == -1)
 		this->pContact = 1.0;
 	else if(sep == 0)
@@ -49,6 +50,9 @@ EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pai
 
 	this->fixed = false;
 	this->ssSepKey = "UNK";
+
+	this->pairLibType = pairLib->libType;
+
 }
 
 
@@ -57,12 +61,39 @@ EdgeInformation::~EdgeInformation() {
 }
 
 void EdgeInformation::updatePCluster(double* pList, double pContact, BasePairLib* pairLib){
+
+	if(this->pairLibType != pairLib->libType){
+		this->pairLibType = pairLib->libType;
+		delete [] this->pCluster;
+		if(sep == 1)
+			this->totalClusterNum = pairLib->nbBasePairNum[this->typeA*4+this->typeB];
+		else if(sep == -1)
+			this->totalClusterNum = pairLib->nbBasePairNum[this->typeB*4+this->typeA];
+		else if(sep == 0)
+			this->totalClusterNum = 1;
+		else
+			this->totalClusterNum = pairLib->nnbBasePairNum[this->typeA*4+this->typeB];
+		this->pCluster = new double[totalClusterNum];
+	}
+
+	
+
+
 	double sum = 0.0;
 	for(int i=0;i<totalClusterNum;i++){
 			sum += pList[i];
 	}
-	if(sum == 0.0) sum = 1.0;
-
+	if(sum == 0.0) {
+		
+		this->weight = 99.9;
+		this->validClusterNum = totalClusterNum;
+		for(int i=0;i<totalClusterNum;i++){
+			this->pCluster[i] = 1.0/totalClusterNum;
+		}
+		this->pContact = 0;
+		return;
+	}
+	
 	this->weight = 0;
 	this->validClusterNum = 0;
 	for(int i=0;i<totalClusterNum;i++){
@@ -77,6 +108,20 @@ void EdgeInformation::updatePCluster(double* pList, double pContact, BasePairLib
 }
 
 void EdgeInformation::setUniqueCluster(int clusterID, BasePairLib* pairLib){
+
+	if(this->pairLibType != pairLib->libType){
+		this->pairLibType = pairLib->libType;
+		delete [] this->pCluster;
+		if(sep == 1)
+			this->totalClusterNum = pairLib->nbBasePairNum[this->typeA*4+this->typeB];
+		else if(sep == -1)
+			this->totalClusterNum = pairLib->nbBasePairNum[this->typeB*4+this->typeA];
+		else if(sep == 0)
+			this->totalClusterNum = 1;
+		else
+			this->totalClusterNum = pairLib->nnbBasePairNum[this->typeA*4+this->typeB];
+		this->pCluster = new double[totalClusterNum];
+	}
 
 	this->ssSepKey = "UNK";
 	this->validClusterNum = 1;
@@ -116,6 +161,20 @@ void EdgeInformation::setToLibPCluster(const string& ssSepType, EdgeInformationL
 
 void EdgeInformation::setClusterList(vector<int>& clusterList, vector<double>& pList, BasePairLib* pairLib){
 	
+	if(this->pairLibType != pairLib->libType){
+		this->pairLibType = pairLib->libType;
+		delete [] this->pCluster;
+		if(sep == 1)
+			this->totalClusterNum = pairLib->nbBasePairNum[this->typeA*4+this->typeB];
+		else if(sep == -1)
+			this->totalClusterNum = pairLib->nbBasePairNum[this->typeB*4+this->typeA];
+		else if(sep == 0)
+			this->totalClusterNum = 1;
+		else
+			this->totalClusterNum = pairLib->nnbBasePairNum[this->typeA*4+this->typeB];
+		this->pCluster = new double[totalClusterNum];
+	}
+
 	double e, pSum;
 	if(clusterList.size() == 0) {
 		for(int i=0;i<totalClusterNum;i++){
@@ -158,9 +217,9 @@ void EdgeInformation::setClusterList(vector<int>& clusterList, vector<double>& p
 	}
 }
 
-EdgeInformationLib::EdgeInformationLib(BasePairLib* pairLib){
+EdgeInformationLib::EdgeInformationLib(){
 	string path = NSPdataio::datapath();
-
+	BasePairLib* pairLib = new BasePairLib("stat");
 	ifstream file1, file2;
 	string s;
 	
@@ -243,6 +302,8 @@ EdgeInformationLib::EdgeInformationLib(BasePairLib* pairLib){
 		file2.close();
 	}
 
+	delete pairLib;
+
 	
 }
 
@@ -250,6 +311,7 @@ EdgeInformationLib::~EdgeInformationLib(){
 	for(int i=0;i<this->keyList.size();i++){
 		delete eiMap[keyList[i]];
 	}
+
 }
 
 

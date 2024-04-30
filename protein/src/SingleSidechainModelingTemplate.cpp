@@ -234,10 +234,11 @@ void SingleSidechainModelingTemplate::printInit(const string& output, AtomLib* a
 	resTarget1->addAtom(new Atom("CA", targetNode->conf->bbConf->coords[2]));
 	resTarget1->addAtom(new Atom("C", targetNode->conf->bbConf->coords[3]));
 	resTarget1->addAtom(new Atom("O", targetNode->conf->bbConf->coords[4]));
-	vector<string>* scNames = atLib->getAminoAcidSidechainAtomNames(targetNode->aaType);
+	vector<string> scNames;
+	atLib->getAminoAcidSidechainAtomNames(targetNode->aaType, scNames);
 
 	for(int i=0;i<targetNode->conf->scConf->atomNum;i++){
-		resTarget1->addAtom(new Atom(scNames->at(i), targetNode->conf->bbConf->coords[i]));
+		resTarget1->addAtom(new Atom(scNames[i], targetNode->conf->bbConf->coords[i]));
 	}
 	pc1->addResidue(resTarget1);
 
@@ -254,9 +255,10 @@ void SingleSidechainModelingTemplate::printInit(const string& output, AtomLib* a
 		res->addAtom(new Atom("C", neighborNodes[i]->conf->bbConf->coords[3]));
 		res->addAtom(new Atom("O", neighborNodes[i]->conf->bbConf->coords[4]));
 
-		vector<string>* scList = atLib->getAminoAcidSidechainAtomNames(neighborNodes[i]->aaType);
+		vector<string> scList;
+		atLib->getAminoAcidSidechainAtomNames(neighborNodes[i]->aaType, scList);
 		for(int j=0;j<neighborNodes[i]->conf->scConf->atomNum;j++){
-			res->addAtom(new Atom(scList->at(j), neighborNodes[i]->conf->scConf->coords[j]));
+			res->addAtom(new Atom(scList[j], neighborNodes[i]->conf->scConf->coords[j]));
 		}
 		nbResList.push_back(res);
 		pc1->addResidue(res);
@@ -298,10 +300,11 @@ void SingleSidechainModelingTemplate::printPDB(const string& rawState, const str
 	resTarget1->addAtom(new Atom("CA", targetNode->conf->bbConf->coords[2]));
 	resTarget1->addAtom(new Atom("C", targetNode->conf->bbConf->coords[3]));
 	resTarget1->addAtom(new Atom("O", targetNode->conf->bbConf->coords[4]));
-	vector<string>* scNames = atLib->getAminoAcidSidechainAtomNames(targetNode->aaType);
+	vector<string> scNames;
+	atLib->getAminoAcidSidechainAtomNames(targetNode->aaType, scNames);
 
 	for(int i=0;i<targetNode->conf->scConf->atomNum;i++){
-		resTarget1->addAtom(new Atom(scNames->at(i), targetNode->conf->scConf->coords[i]));
+		resTarget1->addAtom(new Atom(scNames[i], targetNode->conf->scConf->coords[i]));
 	}
 	pc1->addResidue(resTarget1);
 
@@ -312,7 +315,7 @@ void SingleSidechainModelingTemplate::printPDB(const string& rawState, const str
 	resTarget2->addAtom(new Atom("O", targetNode->conf->bbConf->coords[4]));
 
 	for(int i=0;i<targetNode->conf->scConf->atomNum;i++){
-		resTarget2->addAtom(new Atom(scNames->at(i), targetNode->confTmp->scConf->coords[i]));
+		resTarget2->addAtom(new Atom(scNames[i], targetNode->confTmp->scConf->coords[i]));
 	}
 	pc2->addResidue(resTarget2);
 
@@ -328,9 +331,10 @@ void SingleSidechainModelingTemplate::printPDB(const string& rawState, const str
 		res->addAtom(new Atom("C", neighborNodes[i]->conf->bbConf->coords[3]));
 		res->addAtom(new Atom("O", neighborNodes[i]->conf->bbConf->coords[4]));
 
-		vector<string>* scList = atLib->getAminoAcidSidechainAtomNames(neighborNodes[i]->aaType);
+		vector<string> scList;
+		atLib->getAminoAcidSidechainAtomNames(neighborNodes[i]->aaType, scList);
 		for(int j=0;j<neighborNodes[i]->conf->scConf->atomNum;j++){
-			res->addAtom(new Atom(scList->at(j), neighborNodes[i]->conf->scConf->coords[j]));
+			res->addAtom(new Atom(scList.at(j), neighborNodes[i]->conf->scConf->coords[j]));
 		}
 		nbResList.push_back(res);
 		pc1->addResidue(res);

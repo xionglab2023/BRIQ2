@@ -33,15 +33,15 @@ int main(int argc, char** argv){
 
 	srand(randseed);
 
-	BasePairLib* pairLib = new BasePairLib();
+	BasePairLib* pairLib = new BasePairLib("adj");
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 
 	cout << "load moveLib" << endl;
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("xtb", true, 1);
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("adj", true, 1);
 	moveLib->load();
 
-	EdgeInformationLib* eiLib = new EdgeInformationLib(pairLib);
+	EdgeInformationLib* eiLib = new EdgeInformationLib();
 
 	cout << "load energy table" << endl;
 
@@ -67,13 +67,13 @@ int main(int argc, char** argv){
 	cout << "tree: " << endl;
 	tree->printEdges();
 	cout << "adde node info" << endl;
-	tree->updateNodeInfo();
+	tree->updateNodeInfo(1.0, 1.0);
 	for(int i=0;i<graph->seqLen;i++){
 		graph->allNodes[i]->printNodeInfo();
 	}
 
 	cout << "edgeInfo: " << endl;
-	tree->updateEdgeInfo();
+	tree->updateEdgeInfo(1.0, 1.0);
 	for(int i=0;i<tree->geList.size();i++){
 		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
 		tree->geList[i]->printPartition();

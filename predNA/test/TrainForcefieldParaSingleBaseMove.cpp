@@ -65,8 +65,8 @@ int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	tree->printEdges();
-	tree->updateNodeInfo();
-	tree->updateEdgeInfo();
+	tree->updateNodeInfo(1.0, 1.0);
+	tree->updateEdgeInfo(1.0, 1.0);
 	tree->updateSamplingInfo();
 	tree->printNodeInfo();    
     return (int)(tree->totalSamp);
@@ -107,8 +107,8 @@ int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* 
 	    graph->MST_kruskal(tree);
 
 	    tree->printEdges();
-	    tree->updateNodeInfo();
-	    tree->updateEdgeInfo();
+	    tree->updateNodeInfo(1.0, 1.0);
+	    tree->updateEdgeInfo(1.0, 1.0);
 	    tree->updateSamplingInfo();
         cout << "run mc" << endl;
 	    graphInfo* gi = tree->runAtomicMC();
@@ -158,8 +158,8 @@ int testSingleBasePredictionPosList(NuPairMoveSetLibrary* moveLib, EdgeInformati
         cout << "mst" << endl;
 	    graph->MST_kruskal(tree);
 	    tree->printEdges();
-	    tree->updateNodeInfo();
-	    tree->updateEdgeInfo();
+	    tree->updateNodeInfo(1.0, 1.0);
+	    tree->updateEdgeInfo(1.0, 1.0);
 	    tree->updateSamplingInfo();
 
 	    graphInfo* gi = tree->runAtomicMC();
@@ -181,7 +181,6 @@ int testSingleBasePredictionPrintPDB(NuPairMoveSetLibrary* moveLib,EdgeInformati
     NSPtools::InputParser input(inputFile);
     string cst = input.getValue("cst");
 
-    BasePairLib* bpLib = new BasePairLib();
 
     string pdbTag = pdbFile.substr(0, pdbFile.length()-4);
     char xx[200];
@@ -208,8 +207,8 @@ int testSingleBasePredictionPrintPDB(NuPairMoveSetLibrary* moveLib,EdgeInformati
         NuTree* tree = new NuTree(graph);
 	    graph->MST_kruskal(tree);
 
-	    tree->updateNodeInfo();
-	    tree->updateEdgeInfo();
+	    tree->updateNodeInfo(1.0, 1.0);
+	    tree->updateEdgeInfo(1.0, 1.0);
 	    tree->updateSamplingInfo();
         tree->printNodeInfo();
         tree->printEdges();
@@ -239,15 +238,19 @@ int main(int argc, char** argv){
     }
     CmdArgs cmdArgs{argc, argv};
 
+    string libType = "stat";
+
     cout << "load move lib: " << endl;
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("xtb", true, 1);
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(libType, true, 1);
 	moveLib->load();
-    BasePairLib* bpLib = new BasePairLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
+
+    BasePairLib* pairLib = new BasePairLib(libType);
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
+
     string inputFile = cmdArgs.getValue("-in");
     string tag = cmdArgs.getValue("-tag");
     string outputFile = cmdArgs.getValue("-out");
-    string bw = cmdArgs.getValue("-bw");
+    //string bw = cmdArgs.getValue("-bw");
     string outpdb;
     if(cmdArgs.specifiedOption("-outpdb"))
         outpdb = cmdArgs.getValue("-outpdb");
@@ -269,7 +272,8 @@ int main(int argc, char** argv){
     }
 
     ForceFieldPara* para = new ForceFieldPara();
-    para->bwTag = bw;
+   
+    para->libType = libType;
 
     para->kStepNum1 = 100;
     para->kStepNum2 = 300;
@@ -283,7 +287,7 @@ int main(int argc, char** argv){
 	et->loadAtomicEnergy();
 
     cout << "init pairLib rotLib atLib" << endl;
-    BasePairLib* pairLib = new BasePairLib();
+   
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 
@@ -516,6 +520,52 @@ int main(int argc, char** argv){
         clock_t end1 = clock();
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
+    else if(tag == "wtBp") {
+        for(double x= 0.5; x < 5.0;x = x*1.15) {
+           
+           para->wtBp1 = x;
+           para->wtBp2 = x;
+           et->bpET->updateForceFieldPara(para);
+
+            shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
+            size_t jid = 0; 
+
+            for(int i=0;i<mp;i++){
+                outList[i]->clear();
+            }   
+            for(int i=startID;i<startID+mp;i++) {
+                shared_ptr<IntFuncTask> request(new IntFuncTask);
+                request->asynBind(testSingleBasePrediction, moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
+                jid++;
+                thrPool->addTask(request);
+            }
+
+            while(true) {
+                sleep(1);
+                if(thrPool->getTaskCount() == 0) {
+                    break;
+                }
+             }
+
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
+            }
+
+            double minEne = 0.0;
+            double minRMS = 0.0;
+            for(int i=0;i<outList[0]->posNum;i++){
+                minEne += outList[0]->eneList[i]/outList[0]->posNum;
+                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
+            }
+            
+            sprintf(xx, "%4.2f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
+            out << string(xx) << endl;
+
+        }
+
+        clock_t end1 = clock();
+	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
+    }
     else if(tag == "wtBp1") {
         for(double x= 0.3; x < 6.0;x = x*1.3) {
            
@@ -697,7 +747,7 @@ int main(int argc, char** argv){
     }
     else if(tag == "wtBB") {
         
-        for(double x= 0.1; x < -2.0;x = x+0.1) {
+        for(double x= 0.1; x < 2.0;x = x+0.1) {
            
             para->wtRibose = x;
             para->wtPho = x*0.7;
@@ -1069,69 +1119,16 @@ int main(int argc, char** argv){
             out << string(xx) << endl;
         }
     }
-    /*
-    else if(tag == "nbPCutoff"){
-        vector<double> xList;
-        xList.push_back(0.1);
-        xList.push_back(0.05);
-        xList.push_back(0.02);
-        xList.push_back(0.01);
-        xList.push_back(0.005);
-        xList.push_back(0.001);
-
-        for(int y=0;y<xList.size();y++) {
-            double x= xList[y];
-            para->pNbClusterCutoff = x;
-
-            shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
-            size_t jid = 0; 
-
-            for(int i=0;i<mp;i++){
-                outList[i]->clear();
-            }   
-            for(int i=startID;i<startID+mp;i++) {
-                shared_ptr<IntFuncTask> request(new IntFuncTask);
-                request->asynBind(testSingleBasePrediction, moveLib, et, pairLib, rotLib, atLib, inputFile, outList, i-startID);
-                jid++;
-                thrPool->addTask(request);
-            }
-
-            while(true) {
-                sleep(1);
-                if(thrPool->getTaskCount() == 0) {
-                    break;
-                }
-             }
-
-            for(int i=1;i<mp;i++){
-                outList[0]->mergeResult(outList[i]);
-            }
-
-            double minEne = 0.0;
-            double minRMS = 0.0;
-            for(int i=0;i<outList[0]->posNum;i++){
-                minEne += outList[0]->eneList[i]/outList[0]->posNum;
-                minRMS += outList[0]->rmsList[i]/outList[0]->posNum;
-            }
-            
-            sprintf(xx, "%5.3f %8.4f %8.4f %d", x, minEne, minRMS, outList[0]->posNum);
-            out << string(xx) << endl;
-
-        }
-
-        clock_t end1 = clock();
-	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;        
-    }
-    */
     else if(tag == "pdb") {
         testSingleBasePredictionPrintPDB(moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, out, outpdb, pdbID);
     }
 
     out.close();
+    delete moveLib;
     delete pairLib;
+    delete eiLib;
     delete rotLib;
     delete atLib;
-    delete moveLib;
     delete et;
     delete para;
 

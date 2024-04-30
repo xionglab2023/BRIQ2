@@ -36,7 +36,7 @@ public:
 	BaseDistanceMatrix revNbDMClusterCenters[16][3000]; 
 	BaseDistanceMatrix nnbDMClusterCenters[16][3000];
 
-
+	
 
 	/*
 	 * all neighbor pairs
@@ -52,6 +52,7 @@ public:
 	double nnbEnergyWithOxy[16][3000];
 	double nnbProportion[16][3000];
 
+	string libType;
 
 	BasePairLib(const string& libType = "xtb");
 

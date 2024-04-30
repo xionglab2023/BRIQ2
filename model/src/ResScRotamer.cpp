@@ -152,12 +152,12 @@ ResScRotamer::ResScRotamer(Residue* res, AtomLib* atLib){
 	this->aaType= res->intName;
 	this->rotID = 0;
 
-	this->atomNum = atLib->aaScAtomNames[aaType]->size();
+	this->atomNum = atLib->aaScAtomNames[aaType].size();
 
 	LocalFrame csRes = res->getCoordSystem();
 
 	for(int i=0;i<atomNum;i++){
-		this->coordsLocal[i] = global2local(csRes, res->getAtom(atLib->aaScAtomNames[aaType]->at(i))->coord);
+		this->coordsLocal[i] = global2local(csRes, res->getAtom(atLib->aaScAtomNames[aaType][i])->coord);
 	}
 
 	vector<int> scIDs = atLib->getAASidechainUniqueIDs(aaType);

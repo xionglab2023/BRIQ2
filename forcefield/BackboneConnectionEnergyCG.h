@@ -36,6 +36,7 @@ public:
      */
 
     double et[2880000];
+    ForceFieldPara* para;
     BackboneConnectionEnergyCG(ForceFieldPara* pa);
     double getEnergy(double d, double ang1, double ang2, double dihed);
     virtual ~BackboneConnectionEnergyCG();

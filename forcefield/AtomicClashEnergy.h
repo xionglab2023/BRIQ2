@@ -105,9 +105,9 @@ public:
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) d0 = 2.8;
 		
 		if(abs(sep) == 1)
-			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)] * this->ffp->clashRescale;
 		else
-			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)] * this->ffp->clashRescale;
 	}
 
 	double getBaseRiboseEnergy(int baseTypeA, int atomTypeA, int riboseAtomTypeB, double dd, int sep){
@@ -118,9 +118,9 @@ public:
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
 		if(abs(sep) == 1)
-			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 		else
-			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 	}
 
 	double getBasePhoEnergy(int baseTypeA, int atomTypeA, int phoAtomTypeB, double dd, int sep){
@@ -131,9 +131,9 @@ public:
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
 		if(abs(sep) == 1)
-			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 		else
-			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 	}
 
 	double getRiboseRiboseEnergy(int riboseTypeA, int riboseTypeB, double dd, int sep){
@@ -151,9 +151,9 @@ public:
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
 		if(abs(sep) == 1)
-			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 		else
-			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 	}
 
 	double getRibosePhoEnergy(int riboseTypeA, int phoTypeB, double dd, int sep){
@@ -165,9 +165,9 @@ public:
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
 		if(abs(sep) == 1)
-			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 		else
-			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 	}
 
 	double getPhoPhoEnergy(int phoTypeA, int phoTypeB, double dd, int sep){
@@ -178,9 +178,9 @@ public:
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
 		if(abs(sep) == 1)
-			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 		else
-			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
+			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 	}
 
 	double getClashEnergyCG(int uniqueIDA, int uniqueIDB, double dd){
@@ -188,7 +188,7 @@ public:
 		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
 		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) d0 = 2.8;
 		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) d0 = 2.8;
-		return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)];
+		return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
 	}	
 
 

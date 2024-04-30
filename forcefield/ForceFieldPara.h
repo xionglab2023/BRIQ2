@@ -54,6 +54,8 @@ public:
 	double wtClash;
 	double lamdaClash;
 	string bwTag;
+	string libType;
+	string cgEneType;
 
 	double T0;
 	double T1;
@@ -65,7 +67,15 @@ public:
 	int kStepNum3;
 	double kNodeFreq;
 
+	int kStepNum1CG;
+	int kStepNum2CG;
+	int kStepNum3CG;
+
 	double nbPairEnergyRescale[16][6];
+
+	double clashRescale;
+	double connectRescale;
+
 
 	ForceFieldPara();
 	ForceFieldPara(const string& paraFile);

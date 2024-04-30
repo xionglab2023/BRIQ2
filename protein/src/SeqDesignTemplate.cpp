@@ -906,7 +906,8 @@ void SeqDesignTemplate::printPDB(const string& outFile){
 		char chainID = this->resList[i]->chainID;
 		string resID = this->resList[i]->resID;
 		char c = resID[resID.length()-1];
-		vector<string>* scNames = this->atLib->getAminoAcidSidechainAtomNames(nodeList[i]->conf->aaType);
+		vector<string> scNames;
+		this->atLib->getAminoAcidSidechainAtomNames(nodeList[i]->conf->aaType, scNames);
 
 		if(c >='0' && c <= '9'){
 			for(int j=0;j<4;j++){
@@ -918,8 +919,8 @@ void SeqDesignTemplate::printPDB(const string& outFile){
 				out << s << endl;
 				atomID++;
 			}
-			for(int j=0;j<scNames->size();j++){
-				string name = scNames->at(j);
+			for(int j=0;j<scNames.size();j++){
+				string name = scNames.at(j);
 				string type = name.substr(0,1);
 				string tri = rn->intToTri(nodeList[i]->conf->aaType);
 				XYZ coord = nodeList[i]->conf->scConf->coords[j];
@@ -938,8 +939,8 @@ void SeqDesignTemplate::printPDB(const string& outFile){
 				out << s << endl;
 				atomID++;
 			}
-			for(int j=0;j<scNames->size();j++){
-				string name = scNames->at(j);
+			for(int j=0;j<scNames.size();j++){
+				string name = scNames.at(j);
 				string type = name.substr(0,1);
 				string tri = rn->intToTri(nodeList[i]->conf->aaType);
 				XYZ coord = nodeList[i]->conf->scConf->coords[j];

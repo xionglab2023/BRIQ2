@@ -370,7 +370,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			minE = e;
 		}
 
-		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[dihed1][dihed2], minE*para->wtPho);
+		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[dihed1][dihed2], minE*para->wtPho*para->connectRescale);
 		return;
 	}
 
@@ -519,7 +519,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 	if(d0 > 3.9){
 		//If the distance between atom O3' and C5' is larger than 3.8 angstrom, we use default dihedral angles to build PO3
-		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[bestDihed1][bestDihed2], minE*para->wtPho);
+		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[bestDihed1][bestDihed2], minE*para->wtPho*para->connectRescale);
 		return;
 	}
 
@@ -757,7 +757,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
-		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[bestDihed1][bestDihed2], minE*para->wtPho);
+		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[bestDihed1][bestDihed2], minE*para->wtPho*para->connectRescale);
 
 		return;
 
@@ -885,7 +885,7 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
-		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[bestDihed1][bestDihed2], minE*para->wtPho);
+		outPhoConf->updateLocalFrameAndRotamer(cs2A, rotLib->prLib[bestDihed1][bestDihed2], minE*para->wtPho*para->connectRescale);
 		return;
 	}
 
@@ -1027,7 +1027,7 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		e += eImpD4D5[impIndexB*32400 + ((int)(xdihed4*0.5))*180 + (int)(xdihed5*0.5)] + para->rnaDihedImpD4D5Shift[regionIndexB];
 		e += eD2D4D3[((int)(dihed2*0.166666666))*10800 + ((int)(xdihed4*0.166666666))*180 + (int)(xdihed3*0.5)] + para->rnaDihedD2D3D4Shift[regionIndexC];
 
-		return minE*para->wtPho;
+		return minE*para->wtPho*para->connectRescale;
 	}
 
 
@@ -1130,7 +1130,7 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 
 	if(d0 > 3.9){
 		//If the distance between atom O3' and C5' is larger than 3.8 angstrom, we use default dihedral angles to build PO3
-		return minE*para->wtPho;
+		return minE*para->wtPho*para->connectRescale;
 	}
 
 	for(int i=0;i<d1d2LibSize;i++){
@@ -1326,7 +1326,7 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
-		return minE*para->wtPho;
+		return minE*para->wtPho*para->connectRescale;
 
 	}
 	else {
@@ -1423,7 +1423,7 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 			}
 		}
 		indexDD = bestDihed1 * 360 + bestDihed2;
-		return minE*para->wtPho;
+		return minE*para->wtPho*para->connectRescale;
 	}
 }
 
@@ -1586,7 +1586,7 @@ double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* ri
 
 	if(d0 > 3.9){
 		//If the distance between atom O3' and C5' is larger than 3.8 angstrom, we use default dihedral angles to build PO3
-		return minE*para->wtPho;
+		return minE*para->wtPho*para->connectRescale;
 	}
 
 	for(int i=0;i<d1d2LibSize;i++){
@@ -1681,10 +1681,8 @@ double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* ri
 			bestDihed2 = dihed2;
 			minE = e;
 		}
-
 	}
-
-	return minE*para->wtPho;
+	return minE*para->wtPho*para->connectRescale;
 
 }
 

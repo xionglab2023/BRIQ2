@@ -28,8 +28,11 @@ add_executable(trainSingleBase TrainForcefieldParaSingleBaseMove.cpp)
 add_executable(testSingle TestSingleBasePrediction.cpp)
 add_executable(trainSingle2 TrainForcefieldSingleBaseMove2.cpp)
 add_executable(eiLib TestEdgeInformation.cpp)
+add_executable(testMove TestMoveSet.cpp)
+add_executable(trainCG TrainCGModeling.cpp)
 
-
+target_link_libraries (trainCG briqx)
+target_link_libraries (testMove briqx)
 target_link_libraries (eiLib briqx)
 target_link_libraries (trainSingle2 briqx)
 target_link_libraries (testSingle briqx)
@@ -59,5 +62,5 @@ target_link_libraries (briq_InitPDB briqx)
 target_link_libraries (rnaScoring briqx)
 target_link_libraries (testMoveIO briqx)
 
-install(TARGETS testGraph testGraphCG testMoveIO testTree testGraphMP buildBB trainSamp testRand trainFFP trainSingleBase testSingle trainSingle2 eiLib
+install(TARGETS testGraph testGraphCG testMoveIO testTree testGraphMP buildBB trainSamp testRand trainFFP trainSingleBase testSingle trainSingle2 eiLib testMove trainCG
     RUNTIME DESTINATION bin)

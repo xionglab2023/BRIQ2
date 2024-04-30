@@ -30,7 +30,7 @@ namespace NSPpredNA {
 using namespace NSPmodel;
 using namespace std;
 
-inline double nuBaseBaseEnergy(BaseConformer* baseConfA, BaseConformer* baseConfB, int sep, RnaEnergyTable* et){
+inline double nuBaseBaseEnergy(BaseConformer* baseConfA, BaseConformer* baseConfB, int sep, RnaEnergyTable* et, double clashRescale){
 
 	double bpEnergy = 0.0;
 	double clashEnergy = 0.0;
@@ -71,10 +71,10 @@ inline double nuBaseBaseEnergy(BaseConformer* baseConfA, BaseConformer* baseConf
 		}
 	}
 
-	return bpEnergy+clashEnergy;
+	return bpEnergy+clashEnergy*clashRescale;
 }
 
-inline double nuBaseRiboseEnergy(BaseConformer* baseConf, RiboseConformer* riboseConf, int sep, RnaEnergyTable* et){
+inline double nuBaseRiboseEnergy(BaseConformer* baseConf, RiboseConformer* riboseConf, int sep, RnaEnergyTable* et, double clashRescale){
 	double baseOxyEnergy = 0.0;
 	double hbondEnergy = 0.0;
 	double clashEnergy = 0.0;
@@ -104,10 +104,13 @@ inline double nuBaseRiboseEnergy(BaseConformer* baseConf, RiboseConformer* ribos
 			}
 		}
 	}
-	return baseOxyEnergy + hbondEnergy + clashEnergy;
+	if(hbondEnergy > 0){
+		hbondEnergy = hbondEnergy*clashRescale;
+	}
+	return baseOxyEnergy + hbondEnergy + clashEnergy*clashRescale;
 }
 
-inline double nuBasePhoEnergy(BaseConformer* baseConf, PhosphateConformer* phoConf, int sep, RnaEnergyTable* et){
+inline double nuBasePhoEnergy(BaseConformer* baseConf, PhosphateConformer* phoConf, int sep, RnaEnergyTable* et, double clashRescale){
 
 	if(phoConf->rot == NULL) return 0.0;
 
@@ -137,10 +140,14 @@ inline double nuBasePhoEnergy(BaseConformer* baseConf, PhosphateConformer* phoCo
 				clashEnergy += et->acET->getBasePhoEnergy(baseConf->rot->baseType, i, j, dd, sep);
 		}
 	}
-	return baseOxyEnergy + hbondEnergy + clashEnergy;
+
+	if(hbondEnergy > 0){
+		hbondEnergy = hbondEnergy*clashRescale;
+	}
+	return baseOxyEnergy + hbondEnergy + clashEnergy*clashRescale;
 }
 
-inline double nuRiboseRiboseEnergy(RiboseConformer* riboseConfA, RiboseConformer* riboseConfB, int sep, RnaEnergyTable* et){
+inline double nuRiboseRiboseEnergy(RiboseConformer* riboseConfA, RiboseConformer* riboseConfB, int sep, RnaEnergyTable* et, double clashRescale){
 	int i,j, nA, nB;
 	double clashEnergy = 0;
 	double hbondEnergy = 0;
@@ -153,6 +160,7 @@ inline double nuRiboseRiboseEnergy(RiboseConformer* riboseConfA, RiboseConformer
 		if(abs(sep) >= 2)
 		{
 			hbondEnergy = et->hbET->getEnergy(O2UniqueID, riboseConfA->o2Polar, O2UniqueID, riboseConfB->o2Polar);
+			
 		}
 
 		double dO4O2C2AB = riboseConfA->coords[4].distance((riboseConfB->coords[7] + riboseConfB->coords[1])*0.5);
@@ -173,10 +181,13 @@ inline double nuRiboseRiboseEnergy(RiboseConformer* riboseConfA, RiboseConformer
 			}
 		}
 	}
-	return clashEnergy + hbondEnergy;
+
+	if(hbondEnergy > 0)
+		hbondEnergy = hbondEnergy*clashRescale;
+	return clashEnergy*clashRescale + hbondEnergy;
 }
 
-inline double nuRibosePhoEnergy(RiboseConformer* riboseConf, PhosphateConformer* phoConf, int sep, RnaEnergyTable* et){
+inline double nuRibosePhoEnergy(RiboseConformer* riboseConf, PhosphateConformer* phoConf, int sep, RnaEnergyTable* et, double clashRescale){
 
 	if(phoConf->rot == NULL) return 0.0;
 
@@ -194,6 +205,10 @@ inline double nuRibosePhoEnergy(RiboseConformer* riboseConf, PhosphateConformer*
 	hbondEnergy += et->hbET->getEnergy(O2UniqueID, riboseConf->o2Polar, uniqueIDOP1, phoConf->op1Polar);
 	hbondEnergy += et->hbET->getEnergy(O2UniqueID, riboseConf->o2Polar, uniqueIDOP2, phoConf->op2Polar);
 
+	if(hbondEnergy > 0){
+		hbondEnergy = hbondEnergy*clashRescale;
+	}
+
 	nA = riboseConf->rot->atomNum;
 	for(i=0;i<nA;i++){
 		for(j=1;j<4;j++){
@@ -202,10 +217,10 @@ inline double nuRibosePhoEnergy(RiboseConformer* riboseConf, PhosphateConformer*
 				clashEnergy += et->acET->getRibosePhoEnergy(i,j,dd, sep);
 		}
 	}
-	return clashEnergy + hbondEnergy;
+	return clashEnergy*clashRescale + hbondEnergy;
 }
 
-inline double nuPhoPhoEnergy(PhosphateConformer* phoConfA, PhosphateConformer* phoConfB, int sep, RnaEnergyTable* et){
+inline double nuPhoPhoEnergy(PhosphateConformer* phoConfA, PhosphateConformer* phoConfB, int sep, RnaEnergyTable* et, double clashRescale){
 
 	if(phoConfA->rot == NULL) return 0.0;
 	if(phoConfB->rot == NULL) return 0.0;
@@ -222,10 +237,10 @@ inline double nuPhoPhoEnergy(PhosphateConformer* phoConfA, PhosphateConformer* p
 				clashEnergy += et->acET->getPhoPhoEnergy(i,j,dd, sep);
 		}
 	}
-	return clashEnergy;
+	return clashEnergy*clashRescale;
 }
 
-inline double nuBaseBaseEnergyCG(BaseConformerCG* baseConfA, BaseConformerCG* baseConfB, int sep, RnaEnergyTable* et){
+inline double nuBaseBaseEnergyCG(BaseConformerCG* baseConfA, BaseConformerCG* baseConfB, int sep, RnaEnergyTable* et, double clashRescale){
 	double bpEnergy = 0.0;
 	double clashEnergy = 0.0;
 	double minDD, dd;
@@ -249,10 +264,10 @@ inline double nuBaseBaseEnergyCG(BaseConformerCG* baseConfA, BaseConformerCG* ba
 			bpEnergy = et->bpcgET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
 		}
 	}
-	return bpEnergy+clashEnergy;
+	return bpEnergy+clashEnergy*clashRescale;
 }
 
-inline double nuBaseRiboseEnergyCG(BaseConformerCG* baseConf, RiboseConformerCG* riboConf, int sep, RnaEnergyTable* et){
+inline double nuBaseRiboseEnergyCG(BaseConformerCG* baseConf, RiboseConformerCG* riboConf, int sep, RnaEnergyTable* et, double clashRescale){
 
 	double clashEnergy = 0.0;
 	int i,j;
@@ -270,10 +285,10 @@ inline double nuBaseRiboseEnergyCG(BaseConformerCG* baseConf, RiboseConformerCG*
 			}
 		}
 	}
-	return  clashEnergy;
+	return  clashEnergy*clashRescale;
 }
 
-inline double nuRiboseRiboseEnergyCG(RiboseConformerCG* riboConfA, RiboseConformerCG* riboConfB, int sep, RnaEnergyTable* et){
+inline double nuRiboseRiboseEnergyCG(RiboseConformerCG* riboConfA, RiboseConformerCG* riboConfB, int sep, RnaEnergyTable* et, double clashRescale){
 	double clashEnergy = 0.0;
 	int i,j;
 	double dd;
@@ -290,10 +305,10 @@ inline double nuRiboseRiboseEnergyCG(RiboseConformerCG* riboConfA, RiboseConform
 			}
 		}
 	}
-	return  clashEnergy;
+	return  clashEnergy*clashRescale;
 }
 
-inline double nuConnectionEnergyCG(RiboseConformerCG* riboConfA, RiboseConformerCG* riboConfB, RnaEnergyTable* et){
+inline double nuConnectionEnergyCG(RiboseConformerCG* riboConfA, RiboseConformerCG* riboConfB, RnaEnergyTable* et, double connectRescale){
 
 	XYZ c1A = riboConfA->coords[0];
 	XYZ o3A = riboConfA->coords[1];
@@ -304,7 +319,7 @@ inline double nuConnectionEnergyCG(RiboseConformerCG* riboConfA, RiboseConformer
 	double ang2 = angleX(o3A, c5B, c1B);
 	double dihed = dihedral(c1A, o3A, c5B, c1B);
 
-	return et->bbcgET->getEnergy(d, ang1, ang2, dihed);
+	return et->bbcgET->getEnergy(d, ang1, ang2, dihed)*connectRescale;
 }
 
 } /* namespace NSPpredNA */

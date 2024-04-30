@@ -87,7 +87,7 @@ public:
 
 		for(int i=0;i<4;i++)
 		{
-			this->uniqueID[i] = atLib->aaUniqueIDs[aaType]->at(i);
+			this->uniqueID[i] = atLib->aaUniqueIDs[aaType][i];
 		}
 	}
 

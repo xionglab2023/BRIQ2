@@ -39,8 +39,8 @@ int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* 
 	    graph->MST_kruskal(tree);
 
 	    tree->printEdges();
-	    tree->updateNodeInfo();
-	    tree->updateEdgeInfo();
+	    tree->updateNodeInfo(1.0, 1.0);
+	    tree->updateEdgeInfo(1.0, 1.0);
 	    tree->updateSamplingInfo();
 	    //tree->printNodeInfo();
         //tree->printEdgeInfo();
@@ -88,6 +88,7 @@ int main(int argc, char** argv){
 
     srand(time(0));
 
+
     cout << "load energy table" << endl;
     RnaEnergyTable* et = new RnaEnergyTable(para);
 	et->loadAtomicEnergy();
@@ -96,7 +97,7 @@ int main(int argc, char** argv){
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib(pairLib);
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
 
     testSingleBasePrediction(moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outpdb, pos);
 

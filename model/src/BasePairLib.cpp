@@ -11,6 +11,7 @@ namespace NSPmodel {
 
 BasePairLib::BasePairLib(const string& libType){
 
+	this->libType = libType;
 	string path = NSPdataio::datapath();
 	string nbCenter = path+"basePair/nb2/nb.merge.dm";
 	string nbCenterInfo = path+"basePair/nb2/nb.merge.info";
@@ -27,6 +28,10 @@ BasePairLib::BasePairLib(const string& libType){
 	else if(libType == "stat") {
 		nnbCenter = path+"basePair/bpDensityNnb/nnb.center.dm";
 		nnbCenterInfo = path+"basePair/bpDensityNnb/nnb.center.info";
+	}
+	else if(libType == "adj"){
+		nnbCenter = path+"basePair/adj-1.2/nnb.center.dm";
+		nnbCenterInfo = path+"basePair/adj-1.2/nnb.center.info";
 	}
 	else {
 		cout << "undefined base pair lib: " << endl;

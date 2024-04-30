@@ -50,8 +50,8 @@ int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	tree->printEdges();
-	tree->updateNodeInfo();
-	tree->updateEdgeInfo();
+	tree->updateNodeInfo(1.0, 1.0);
+	tree->updateEdgeInfo(1.0, 1.0);
 	tree->updateSamplingInfo();
 	tree->printNodeInfo();    
     return (int)tree->totalSamp;
@@ -59,7 +59,7 @@ int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib
 
 int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, motifPredictionResult** results, int mpID){
 
-    BasePairLib* pairLib = new BasePairLib("xtb");
+    BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
@@ -68,13 +68,13 @@ int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, Rna
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	tree->printEdges();
-	tree->updateNodeInfo();
-	tree->updateEdgeInfo();
+	tree->updateNodeInfo(1.0, 1.0);
+	tree->updateEdgeInfo(1.0, 1.0);
 	tree->updateSamplingInfo();
 	tree->printNodeInfo();
 
-	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();
+
     results[mpID]->setValue(gi->ene, gi->rms);
 
     delete gi;
@@ -83,6 +83,7 @@ int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, Rna
     delete atLib;
 	delete tree;
 	delete graph;
+
     return 0;
 }
 
@@ -98,10 +99,9 @@ int main(int argc, char** argv){
     }
     CmdArgs cmdArgs{argc, argv};
 
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("xtb", true, 1);
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("stat", true, 1);
 	moveLib->load();
-    BasePairLib* bpLib = new BasePairLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib(bpLib);
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
 
     string inputFile = cmdArgs.getValue("-in");
     string tag = cmdArgs.getValue("-tag");
@@ -112,11 +112,14 @@ int main(int argc, char** argv){
 
     char xx[200];
     
-    int mp = 16;
+    int mp = 1;
     int startID = 0;
 	clock_t start = clock();
 
     motifPredictionResult** results = new motifPredictionResult*[mp];
+    for(int i=0;i<mp;i++){
+        results[i] = new motifPredictionResult();
+    }
 
     ForceFieldPara* para = new ForceFieldPara();
     para->kStepNum1 = 600;
@@ -270,6 +273,7 @@ int main(int argc, char** argv){
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
             size_t jid = 0; 
 
+            cout << "start mp" << endl;
             for(int i=startID;i<startID+mp;i++) {
                 shared_ptr<IntFuncTask> request(new IntFuncTask);
                 request->asynBind(testRefinement, moveLib, eiLib, et, inputFile,results, i-startID);
@@ -282,12 +286,17 @@ int main(int argc, char** argv){
                     break;
                 }
              }
+
+            cout << "merge" << endl;
             for(int i=1;i<mp;i++){
                 results[0]->mergeResult(results[i]);
             }
 
+            
             double minEne = results[0]->ene;
             double minRms = results[0]->rms;
+
+            cout << "print " << endl;
             sprintf(xx, "%5.3f %8.4f %8.4f", x, minEne, minRms);
             out << string(xx) << endl;
         }
@@ -315,6 +324,8 @@ int main(int argc, char** argv){
                     break;
                 }
              }
+
+             cout << "merge" << endl;
             for(int i=1;i<mp;i++){
                 results[0]->mergeResult(results[i]);
             }
@@ -330,6 +341,39 @@ int main(int argc, char** argv){
     else if(tag == "wtBp2") {
         for(double x= 0.3; x < 6.0;x = x*1.3) {
            
+           para->wtBp2 = x;
+           et->bpET->updateForceFieldPara(para);
+
+            shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
+            size_t jid = 0; 
+  
+            for(int i=startID;i<startID+mp;i++) {
+                shared_ptr<IntFuncTask> request(new IntFuncTask);
+                request->asynBind(testRefinement, moveLib, eiLib, et, inputFile, results, i-startID);
+                jid++;
+                thrPool->addTask(request);
+            }
+            while(true) {
+                sleep(1);
+                if(thrPool->getTaskCount() == 0) {
+                    break;
+                }
+             }
+            for(int i=1;i<mp;i++){
+                results[0]->mergeResult(results[i]);
+            }
+
+            double minEne = results[0]->ene;
+            double minRms = results[0]->rms;
+            sprintf(xx, "%5.3f %8.4f %8.4f", x, minEne, minRms);
+            out << string(xx) << endl;
+        }
+        clock_t end1 = clock();
+	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
+    }
+        else if(tag == "wtBp") {
+        for(double x= 0.3; x < 6.0;x = x*1.3) {
+           para->wtBp1 = x;
            para->wtBp2 = x;
            et->bpET->updateForceFieldPara(para);
 

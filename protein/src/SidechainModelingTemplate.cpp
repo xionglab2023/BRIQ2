@@ -232,11 +232,12 @@ void SidechainModelingTemplate::runMC(EnergyCalculator* ec) {
 void SidechainModelingTemplate::printPDB(const string& outfile){
 	for(int i=0;i<resList.size();i++){
 		Residue* res = resList[i];
-		vector<string>* scNames = atLib->getAminoAcidSidechainAtomNames(res->intName);
+		vector<string> scNames;
+		atLib->getAminoAcidSidechainAtomNames(res->intName, scNames);
 		ResConformer* conf = nodeList[i]->conf;
-		int n = scNames->size();
+		int n = scNames.size();
 		for(int j=0;j<n;j++){
-			string name = scNames->at(j);
+			string name = scNames.at(j);
 			if(res->getAtom(name) != NULL){
 				res->getAtom(name)->setCoord(conf->scConf->coords[j]);
 			}
@@ -282,12 +283,13 @@ double SidechainModelingTemplate::rms2(){
 	int n = 0;
 
 	for(int i=0;i<resList.size();i++){
-		vector<string>* names = atLib->getAminoAcidSidechainAtomNames(resList[i]->intName);
-		int m = names->size();
+		vector<string> names;
+		atLib->getAminoAcidSidechainAtomNames(resList[i]->intName, names);
+		int m = names.size();
 		double dd = 0;
 
 		for(int j=0;j<m;j++){
-			Atom* a = resList[i]->getAtom(names->at(j));
+			Atom* a = resList[i]->getAtom(names.at(j));
 			XYZ coordPred = nodeList[i]->conf->scConf->coords[j];
 			if(a != NULL){
 				dd += a->coord.squaredDistance(nodeList[i]->conf->scConf->coords[j]);
@@ -306,13 +308,13 @@ void SidechainModelingTemplate::printRMS(ofstream& out){
 
 	char xx[200];
 	for(int i=0;i<resList.size();i++){
-
-		vector<string>* names = atLib->getAminoAcidSidechainAtomNames(resList[i]->intName);
-		int m = names->size();
+		vector<string> names;
+		atLib->getAminoAcidSidechainAtomNames(resList[i]->intName, names);
+		int m = names.size();
 		double dd = 0;
 
 		for(int j=0;j<m;j++){
-			Atom* a = resList[i]->getAtom(names->at(j));
+			Atom* a = resList[i]->getAtom(names.at(j));
 			XYZ coordPred = nodeList[i]->conf->scConf->coords[j];
 			if(a != NULL){
 				dd += a->coord.squaredDistance(nodeList[i]->conf->scConf->coords[j]);

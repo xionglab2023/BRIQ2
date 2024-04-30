@@ -311,10 +311,11 @@ bool Residue::contactToNeighbor(Residue* other){
 
 bool Residue::sidechainComplete(AtomLib* atomLib) const
 {
-	vector<string>* scAtoms = atomLib->getAminoAcidSidechainAtomNames(this->intName);
-	if(scAtoms == NULL) return false;
+	vector<string> scAtoms;
+	atomLib->getAminoAcidSidechainAtomNames(this->intName, scAtoms);
+	if(scAtoms.size() == 0) return false;
 	vector<string>::iterator it;
-	for(it=scAtoms->begin();it<scAtoms->end();it++)
+	for(it=scAtoms.begin();it<scAtoms.end();it++)
 	{
 		string s = *it;
 		if(!hasAtom(s))
@@ -534,9 +535,10 @@ void RNABase::updateCoordSystem() {
 }
 
 bool RNABase::sidechainComplete(AtomLib* atLib) const{
-	vector<string>* atomNames = atLib->getRnaSidechainAtoms(this->baseTypeInt);
-	for(unsigned int i=0;i<atomNames->size();i++) {
-		if(this->atomMap.find(atomNames->at(i)) == this->atomMap.end())
+	vector<string> atomNames;
+	atLib->getRnaSidechainAtoms(this->baseTypeInt, atomNames);
+	for(unsigned int i=0;i<atomNames.size();i++) {
+		if(this->atomMap.find(atomNames.at(i)) == this->atomMap.end())
 			return false;
 	}
 	return true;

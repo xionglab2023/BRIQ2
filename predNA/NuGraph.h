@@ -92,11 +92,13 @@ public:
 	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamerCG* baseRot, RiboseRotamerCG* riboRot, AtomLib* atLib);
 	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamer* baseRot, BaseRotamerCG* baseRotCG, RiboseRotamer* riboRot, RiboseRotamerCG* riboRotCG, AtomLib* atLib);
 
-	void updateNodeInformation(NuTree* tree);
-	void updateNodeInformationCG(NuTree* tree);
+	void updateEnergy(double clashRescale, double connectRescale);
+	void updateEnergyCG(double clashRescale, double connectRescale);
+	void updateNodeInformation(NuTree* tree, double clashRescale, double connectRescale);
+	void updateNodeInformationCG(NuTree* tree, double clashRescale, double connectRescale);
 	void printNodeInfo();
 
-	void updateRiboseRotamer(RiboseRotamer* rot);
+	void updateRiboseRotamer(RiboseRotamer* rot, double clashRescale, double connectRescale);
 	void acceptRotMutation();
 	void clearRotMutation();
 	void updateCoordinate(LocalFrame& cs);
@@ -105,14 +107,14 @@ public:
 	double rotMutEnergy();
 	bool checkEnergy();
 
-	void updateRiboseRotamerCG(RiboseRotamerCG* rot);
+	void updateRiboseRotamerCG(RiboseRotamerCG* rot, double clashRescale, double connectRescale);
 	void acceptRotMutationCG();
 	void clearRotMutationCG();
 	void updateCoordinateCG(LocalFrame& cs);
 	void acceptCoordMoveCG();
 	void clearCoordMoveCG();
 	double rotMutEnergyCG();
-	bool checkEnergyCG();
+	bool checkEnergyCG(double clashRescale, double connectRescale);
 
 
 	vector<Atom*> toAtomList(AtomLib* atLib);
@@ -185,22 +187,24 @@ public:
 	void initNearNativeMoveSet(double distanceCutoff=1.2);
 	void fixNaiveMove();
 
-	void updateEdgeInfo(NuTree* tree);
-	void updateEdgeInfoCG(NuTree* tree);
+	void updateEnergy(double clashRescale, double connectRescale);
+	void updateEnergyCG(double clashRescale, double connectRescale);
+	void updateEdgeInfo(NuTree* tree,double clashRescale, double connectRescale);
+	void updateEdgeInfoCG(NuTree* tree,double clashRescale, double connectRescale);
 
-	void updateCsMove(CsMove& cm);
+	void updateCsMove(CsMove& cm, double clashRescale, double connectRescale);
 	double mutEnergy();
 	void acceptMutation();
 	void clearMutation();
-	bool checkEnergy();
+	bool checkEnergy(double clashRescale, double connectRescale);
 	bool checkReversePair();
 	bool isWC();
 
-	void updateCsMoveCG(CsMove& cm);
+	void updateCsMoveCG(CsMove& cm, double clashRescale, double connectRescale);
 	double mutEnergyCG();
 	void acceptMutationCG();
 	void clearMutationCG();
-	bool checkEnergyCG();
+	bool checkEnergyCG(double clashRescale, double connectRescale);
 	bool checkReversePairCG();
 	void printPartition();
 	virtual ~NuEdge();
@@ -223,15 +227,15 @@ public:
 
 
 	NuTree(NuGraph* graph);
-	void updateNodeInfo();
-	void updateNodeInfoCG();
+	void updateNodeInfo(double clashRescale, double connectRescale);
+	void updateNodeInfoCG(double clashRescale, double connectRescale);
 	void printNodeInfo();
-	void updateEdgeInfo();
-	void updateEdgeInfoCG();
+	void updateEdgeInfo(double clashRescale, double connectRescale);
+	void updateEdgeInfoCG(double clashRescale, double connectRescale);
 	void updateSamplingInfo();
 	
-	void randomInit();
-	void randomInitCG();
+	void randomInit(double clashRescale, double connectRescale);
+	void randomInitCG(double clashRescale, double connectRescale);
 
 	void printEdges();
 	void printEdgeInfo(const string& output);
@@ -298,15 +302,23 @@ public:
 	vector<NuEdge*> geList; //L*(L-1)/2 edges
 	RotamerLib* rotLib;
 	AtomLib* atLib;
+
 	BasePairLib* pairLib;
+	BasePairLib* pairLibXtb;
+	BasePairLib* pairLibStat;
 	EdgeInformationLib* eiLib;
 	NuPairMoveSetLibrary* moveLib;
+	OrientationIndex* oi;
 	RnaEnergyTable* et;
 	graphInfo* initInfo;
 
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int InitMode);
+
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLibXtb, BasePairLib* pairLibStat, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et);
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLibXtb, BasePairLib* pairLibStat);
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLibXtb, BasePairLib* pairLibStat, RnaEnergyTable* et, int InitMode);
 
 	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& csn, const string& cse, const string& chainBreak);
 	void initPho();
@@ -320,17 +332,18 @@ public:
 	void printAllEdge();
 
 	string toContactMapHashKeyCG();
+	void keyToContactMatrix(const string& key);
 
-	void checkEnergy();
-	void checkEnergyCG();
-	double totalEnergy();
-	double nbEnergy();
-	double nnbEnergy();
+	void checkEnergy(double clashRescale, double connectRescale);
+	void checkEnergyCG(double clashRescale, double connectRescale);
+	double totalEnergy(double clashRescale, double connectRescale);
+	double nbEnergy(double clashRescale, double connectRescale);
+	double nnbEnergy(double clashRescale, double connectRescale);
 
-	double totalEnergyCG();
-	double totalEnergyCGTmp();
+	double totalEnergyCG(double clashRescale, double connectRescale);
+	double totalEnergyCGTmp(double clashRescale, double connectRescale);
 	
-	double totalEnergyTmp();
+	double totalEnergyTmp(double clashRescale, double connectRescale);
 	double totalEnergy2();
 
 	void printEnergy();
