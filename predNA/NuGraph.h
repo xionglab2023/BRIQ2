@@ -104,8 +104,8 @@ public:
 	void updateCoordinate(LocalFrame& cs);
 	void acceptCoordMove();
 	void clearCoordMove();
-	double rotMutEnergy();
-	bool checkEnergy();
+	double rotMutEnergy(double connectRescale);
+	bool checkEnergy(double clashRescale, double connectRescale);
 
 	void updateRiboseRotamerCG(RiboseRotamerCG* rot, double clashRescale, double connectRescale);
 	void acceptRotMutationCG();
@@ -118,6 +118,7 @@ public:
 
 
 	vector<Atom*> toAtomList(AtomLib* atLib);
+	vector<Atom*> toPhoAtomList(AtomLib* atLib);
 	vector<Atom*> toAtomListOnlyBase(AtomLib* atLib);
 	vector<Atom*> toAtomListWithPho(AtomLib* atLib);
 	vector<Atom*> toAtomListCG(AtomLib* atLib);
@@ -185,6 +186,7 @@ public:
 	NuEdge(NuNode* nodeA, NuNode* nodeB, int sep, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib);
 
 	void initNearNativeMoveSet(double distanceCutoff=1.2);
+	void initMoveSet(BaseDistanceMatrix& dm, double distanceCutoff);
 	void fixNaiveMove();
 
 	void updateEnergy(double clashRescale, double connectRescale);
@@ -194,6 +196,7 @@ public:
 
 	void updateCsMove(CsMove& cm, double clashRescale, double connectRescale);
 	double mutEnergy();
+	
 	void acceptMutation();
 	void clearMutation();
 	bool checkEnergy(double clashRescale, double connectRescale);
@@ -202,6 +205,7 @@ public:
 
 	void updateCsMoveCG(CsMove& cm, double clashRescale, double connectRescale);
 	double mutEnergyCG();
+	void printMutEnergyCG();
 	void acceptMutationCG();
 	void clearMutationCG();
 	bool checkEnergyCG(double clashRescale, double connectRescale);
@@ -225,7 +229,6 @@ public:
 	int randPoolEdge[100000];
 	double totalSamp;
 
-
 	NuTree(NuGraph* graph);
 	void updateNodeInfo(double clashRescale, double connectRescale);
 	void updateNodeInfoCG(double clashRescale, double connectRescale);
@@ -233,10 +236,8 @@ public:
 	void updateEdgeInfo(double clashRescale, double connectRescale);
 	void updateEdgeInfoCG(double clashRescale, double connectRescale);
 	void updateSamplingInfo();
-	
 	void randomInit(double clashRescale, double connectRescale);
 	void randomInitCG(double clashRescale, double connectRescale);
-
 	void printEdges();
 	void printEdgeInfo(const string& output);
 	void printEdgeInfo();
@@ -304,8 +305,6 @@ public:
 	AtomLib* atLib;
 
 	BasePairLib* pairLib;
-	BasePairLib* pairLibXtb;
-	BasePairLib* pairLibStat;
 	EdgeInformationLib* eiLib;
 	NuPairMoveSetLibrary* moveLib;
 	OrientationIndex* oi;
@@ -316,11 +315,7 @@ public:
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int InitMode);
 
-	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLibXtb, BasePairLib* pairLibStat, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et);
-	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLibXtb, BasePairLib* pairLibStat);
-	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLibXtb, BasePairLib* pairLibStat, RnaEnergyTable* et, int InitMode);
-
-	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& csn, const string& cse, const string& chainBreak);
+	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& csn, const string& cst, const string& cnt, const string& contactKey, vector<string>& ctList);
 	void initPho();
 	void initPho(PO3Builder* pb);
 	void initForMC(const string& inputFile);
@@ -330,30 +325,32 @@ public:
 	void initRandWeight();
 	void MST_kruskal(NuTree* output);
 	void printAllEdge();
+	void updateEnergy(double clashRescale, double connectRescale);
+	void updateEnergyCG(double clashRescale, double connectRescale);
 
 	string toContactMapHashKeyCG();
+
 	void keyToContactMatrix(const string& key);
+	void keyToMatrixFile(const string& key, const string& outfile);
+	void printContactMatrix(const string& outfile);
+	double keyAccuracy(const string& key);
 
 	void checkEnergy(double clashRescale, double connectRescale);
 	void checkEnergyCG(double clashRescale, double connectRescale);
 	double totalEnergy(double clashRescale, double connectRescale);
 	double nbEnergy(double clashRescale, double connectRescale);
 	double nnbEnergy(double clashRescale, double connectRescale);
-
 	double totalEnergyCG(double clashRescale, double connectRescale);
 	double totalEnergyCGTmp(double clashRescale, double connectRescale);
-	
 	double totalEnergyTmp(double clashRescale, double connectRescale);
 	double totalEnergy2();
 
 	void printEnergy();
-	void printEnergyCG();
-
+	void printEnergyCG(double clashRescale);
 	void cgToAllAtom();
 
 	graphInfo* getGraphInfo();
 	graphInfo* getGraphInfoCG();
-
 	graphInfo* getGraphInfo(double ene);
 	graphInfo* getGraphInfoCG(double ene);
 

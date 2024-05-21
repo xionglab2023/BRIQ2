@@ -32,16 +32,22 @@ EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pai
 	}
 	this->validClusterNum = totalClusterNum;
 
+	this->weight = 999.9;
+	
+	if(sep == 1 || sep == -1) {
+		this->pContact = 1.0;
+		this->weight = 0.0;
+	}
 
-	if(sep == 1 || sep == -1)
+	else if(sep == 0) {
 		this->pContact = 1.0;
-	else if(sep == 0)
-		this->pContact = 1.0;
+		this->weight = 0.0;
+	}
 	else
-		this->pContact = 0.01;
+		this->pContact = 0.0;
 
 
-	this->weight = 0.0;
+	
 
 	for(int i=0;i<totalClusterNum;i++){
 		double e = pairLib->getEnergy(i, typeA, typeB, sep);
@@ -159,6 +165,25 @@ void EdgeInformation::setToLibPCluster(const string& ssSepType, EdgeInformationL
 	}
 }
 
+void EdgeInformation::setToLibReversePCluster(const string& ssSepType, EdgeInformationLib* eiLib){
+	if(eiLib->reverseType.find(ssSepType) == eiLib->reverseType.end()){
+		cout << "invalid ssSepType: " << this->ssSepKey << endl;
+		exit(0);
+	}
+
+	this->ssSepKey = eiLib->reverseType[ssSepType];
+
+	map<string, EdgeInformation*>::iterator it;
+	it = eiLib->eiMap.find(this->ssSepKey);
+	if(it != eiLib->eiMap.end()){
+		this->copyClusterFrom(it->second);
+	}
+	else {
+		cout << "invalid ssSepType: " << this->ssSepKey << endl;
+		exit(0);
+	}
+}
+
 void EdgeInformation::setClusterList(vector<int>& clusterList, vector<double>& pList, BasePairLib* pairLib){
 	
 	if(this->pairLibType != pairLib->libType){
@@ -237,12 +262,14 @@ EdgeInformationLib::EdgeInformationLib(){
 
 	string f;
 	int sep, typeA, typeB;
+	string revType;
 
-	while(file1 >> f >> sep >> typeA >> typeB){
+	while(file1 >> f >> sep >> typeA >> typeB >> revType){
 		this->keyList.push_back(f);
 		sepList.push_back(sep);
 		typeAList.push_back(typeA);
 		typeBList.push_back(typeB);
+		this->reverseType[f] = revType;
 	}
 	file1.close();
 

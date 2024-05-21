@@ -28,6 +28,22 @@ public:
         this->posNum = 0;
     }
 
+    double getMeanRMS(){
+        double rms = 0;
+        for(int i=0;i<rmsList.size();i++){
+            rms += rmsList[i];
+        }
+        return rms/rmsList.size();
+    }
+
+    double getMeanEne() {
+        double ene = 0;
+        for(int i=0;i<eneList.size();i++){
+            ene += eneList[i];
+        }
+        return ene/eneList.size();
+    }
+
     void addPos(int pos, double ene, double rms){
         posList.push_back(pos);
         if(rms > 2.5)
@@ -56,7 +72,6 @@ public:
         this->eneList.clear();
     }
 };
-
 
 
 int testSingleBasePredictionPosList(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& libType,  const string& inputFileList, singlePredictionResult** outList, int mpID){
@@ -129,7 +144,9 @@ int main(int argc, char** argv){
     string outputFile = cmdArgs.getValue("-out");
 
     string tag = cmdArgs.getValue("-tag");
-    string libType = cmdArgs.getValue("-lib");
+    string libType = "stat";
+    int pairType = atoi(cmdArgs.getValue("-p").c_str());
+    int clusterType = atoi(cmdArgs.getValue("-c").c_str());
 
 
     cout << "load move lib: " << endl;
@@ -145,7 +162,7 @@ int main(int argc, char** argv){
 
 
     char xx[200];
-    int mp = 16;
+    int mp = 8;
     int startID = 0;
 	clock_t start = clock();
 
@@ -961,6 +978,49 @@ int main(int argc, char** argv){
             }
             out2.close();
         }
+
+        clock_t end1 = clock();
+	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;        
+    }
+    else if(tag == "subEne") {
+
+        out.open(outputFile.c_str(), ios::out);
+
+        for(int x=0;x<10;x++) {
+            et->bpET->addSubEnergy(pairType, clusterType, x*0.1);
+
+           
+
+            shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
+            size_t jid = 0; 
+
+            for(int i=0;i<mp;i++){
+                outList[i]->clear();
+            }   
+            for(int i=startID;i<startID+mp;i++) {
+                shared_ptr<IntFuncTask> request(new IntFuncTask);
+                request->asynBind(testSingleBasePredictionPosList, moveLib, eiLib, et, libType, inputFileList, outList, i-startID);
+                jid++;
+                thrPool->addTask(request);
+            }
+
+            while(true) {
+                sleep(1);
+                if(thrPool->getTaskCount() == 0) {
+                    break;
+                }
+             }
+
+            for(int i=1;i<mp;i++){
+                outList[0]->mergeResult(outList[i]);
+            }
+
+            double meanEne = outList[0]->getMeanEne();
+            double meanRms = outList[0]->getMeanRMS();
+            out << x*0.1 << " " << meanRms << " " << meanEne << endl;
+     
+        }
+        out.close();
 
         clock_t end1 = clock();
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;        

@@ -171,16 +171,35 @@ public:
 	}
 
 	double getPhoPhoEnergy(int phoTypeA, int phoTypeB, double dd, int sep){
-		if(dd >= 16.00) return 0.0;
-		int uniqueIDA = phosphateUniqueID[phoTypeA];
-		int uniqueIDB = phosphateUniqueID[phoTypeB];
-		if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) return 0.0;
-		if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
-		double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
-		if(abs(sep) == 1)
-			return this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
-		else
-			return this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
+		if(dd >= 36.00) return 0.0;
+
+		double clashEne = 0;
+
+		if(dd < 16.0) {
+			int uniqueIDA = phosphateUniqueID[phoTypeA];
+			int uniqueIDB = phosphateUniqueID[phoTypeB];
+			if(isDonor[uniqueIDA] && isAcceptor[uniqueIDB]) return 0.0;
+			if(isDonor[uniqueIDB] && isAcceptor[uniqueIDA]) return 0.0;
+			double d0 = atomRadius[uniqueIDA] + atomRadius[uniqueIDB];
+
+			if(abs(sep) == 1)
+				clashEne = this->clashEnergyTableNb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
+			else	
+				clashEne = this->clashEnergyTableNnb[(int)(d0*100-200)][(int)(dd*100)]* this->ffp->clashRescale;
+		}
+
+		
+		double rep = 0;
+		if(phoTypeA > 1 && phoTypeB > 1) {
+			if(dd < 4.0) {
+				rep = -sqrt(dd);
+			}
+			else {
+				rep = 6.0/sqrt(dd) - 1.0;
+			}
+		}
+
+		return rep * this->ffp->phoRep + clashEne;
 	}
 
 	double getClashEnergyCG(int uniqueIDA, int uniqueIDB, double dd){

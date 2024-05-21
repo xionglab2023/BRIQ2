@@ -162,7 +162,7 @@ int main(int argc, char** argv){
 			{
 				//sprintf(xx, "%d %d %d %4d %8.3f", nodeA->baseType, nodeB->baseType, sep, pairType, eTot);
 				//sprintf(xx, "baseA: %3s baseB: %3s idA: %2d idB: %2d eBB: %8.3f eTot: %8.3f\n", baseList[i]->baseID.c_str(), baseList[j]->baseID.c_str(),i, j, eBB, eTot);
-				sprintf(xx, "baseA: %2d baseB: %2d BB: %8.3f BR: %8.3f BP: %8.3f RR: %8.3f RP: %8.3f PP: %8.3f", i, j, eBB, eBR, eBP, eRR, eRP, ePP);
+				sprintf(xx, "baseA: %2d baseB: %2d BB: %8.3f BBC: %8.3f BR: %8.3f BP: %8.3f RR: %8.3f RP: %8.3f PP: %8.3f", i, j, eBB, eBBClash, eBR, eBP, eRR, eRP, ePP);
 				out << string(xx) << endl;
 				//printf("BB: %8.3f BR: %8.3f BP: %8.3f RR: %8.3f RP: %8.3f PP: %8.3f\n", eBB, eBR, eBP, eRR, eRP, ePP);
 				//printf("baseA: %3s baseB: %3s idA: %2d idB: %2d ePair: %8.3f eBB: %8.3f eTot: %8.3f\n", baseList[i]->baseID.c_str(), baseList[j]->baseID.c_str(),i, j, ePair, eBB, eTot);

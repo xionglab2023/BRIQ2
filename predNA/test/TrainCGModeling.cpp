@@ -26,47 +26,62 @@ using namespace NSPthread;
 
 class cgResult{
 public:
-    map<string, double> keyMap;
+    map<string, double> keyToEnergy;
+    map<string, double> keyToAccuracy;
 
     cgResult(){
     }
 
     void mergeResult(cgResult* other){
        map<string,double>::iterator it, it2;
-       for(it = other->keyMap.begin();it != other->keyMap.end();++it){
-            it2 = keyMap.find(it->first);
-            if(it2 != keyMap.end()){
+       for(it = other->keyToEnergy.begin();it != other->keyToEnergy.end();++it){
+            it2 = keyToEnergy.find(it->first);
+            if(it2 != keyToEnergy.end()){
                 if(it->second < it2->second)
-                    keyMap[it->first] = it->second;
+                    keyToEnergy[it->first] = it->second;
                 else
-                    keyMap[it->first] = it2->second;
+                    keyToEnergy[it->first] = it2->second;
             }
             else {
-                keyMap[it->first] = it->second;
+                keyToEnergy[it->first] = it->second;
             }
        }
     }
 
     void clear(){
-        this->keyMap.clear();
+        this->keyToEnergy.clear();
+        this->keyToAccuracy.clear();
     }
 
-    void print(){
+    void updateAccuracy(NuGraph* natGraph){
+        this->keyToAccuracy.clear();
+        map<string,double>::iterator it;
+        for(it = keyToEnergy.begin();it != keyToEnergy.end();++it){
+            string key = it->first;
+            double accuracy = natGraph->keyAccuracy(key);
+            keyToAccuracy[key] = accuracy;
+        }
+    }
+
+    void print(ofstream& out){
         map<string,double>::iterator it, it2;
-        for(it = keyMap.begin();it!=keyMap.end();++it){
-            cout << it->first << " " << it->second << endl;
+        
+        
+        for(it = keyToEnergy.begin();it!=keyToEnergy.end();++it){
+            if(keyToAccuracy.find(it->first) == keyToAccuracy.end())
+                out << it->first << " " << it->second << " 0.0"  << endl;
+            else
+                out << it->first << " " << it->second << " " << keyToAccuracy[it->first] << endl;
         }
     }
 };
 
-int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, cgResult* result, int randSeed){
+int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib* eiLib, const string& inputFile, cgResult* result, int modelNum, int randSeed){
 
  	srand(randSeed);
-
     BasePairLib* pairLib = new BasePairLib("stat");
-	RotamerLib* rotLib = new RotamerLib();
-	AtomLib* atLib = new AtomLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib();
+	RotamerLib* rotLib = new RotamerLib(et->para);
+    AtomLib* atLib = new AtomLib();
 
 
     cout << "init graph" << endl;
@@ -94,22 +109,18 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inp
     cout << "run mc" << endl;
     //tree->runCoarseGrainedMC(outFile);
 
-
     NuSampling* samp = new NuSampling(graph, tree);
 
-    samp->runCoarseGrainedMC(result->keyMap, outFile);
-
-//    cout << "keyNum: " << result->keyMap.size() << endl;
+    samp->runCoarseGrainedMC(result->keyToEnergy, modelNum);
 
 	delete pairLib;
-	delete rotLib;
-	delete atLib;
-    delete eiLib;
+    delete rotLib;
+    delete atLib;
 	delete tree;
 	delete graph;
-
     return 0;
 }
+
 
 void printHelp(){
     cout << "testGraphCG -in $INPUTFILE -out $OUTPUTFILE -mp 64" << endl;
@@ -123,36 +134,37 @@ int main(int argc, char** argv){
     }
     CmdArgs cmdArgs{argc, argv};
 
+    string inputFile = cmdArgs.getValue("-in");
+    string outputFile = cmdArgs.getValue("-out");
+
+    double rescale = atof(cmdArgs.getValue("-rescale").c_str());
+    double increase = atof(cmdArgs.getValue("-increase").c_str());
+
 
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("stat", true, 1);
 	moveLib->load();
 
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
     ForceFieldPara* para = new ForceFieldPara();
     para->libType = "stat";
+    para->clashRescale = rescale*0.3; //default 0.03
+    para->connectRescale = rescale; //default 0.1
+    para->rescaleIncreaseFactor = increase; //default 1.05
 
 
 	RnaEnergyTable* et = new RnaEnergyTable(para);
 	et->loadCoarseGrainedEnergy();
 
-    string inputFile = cmdArgs.getValue("-in");
-    string outputFile = cmdArgs.getValue("-out");
 
-    string outEndTag = outputFile.substr(outputFile.length()-3, 3);
+    ofstream out;
+    out.open(outputFile.c_str(), ios::out);
 
-    if(outEndTag != "pdb") {
-        cout << "output file should be end with .pdb" << endl;
-        exit(0);
-    }
+    int modelNum = atoi(cmdArgs.getValue("-n").c_str());
 
-    int mp = atoi(cmdArgs.getValue("-mp").c_str());
-
+    int mp = 2;
     int startID = 0;
-    if(cmdArgs.specifiedOption("-id")) {
-        startID = atoi(cmdArgs.getValue("-id").c_str());
-    }
 
 	clock_t start = clock();
-
     shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
     size_t jid = 0;
     char xx[200];
@@ -164,11 +176,8 @@ int main(int argc, char** argv){
 
     for(int i=startID;i<startID+mp;i++) {
         shared_ptr<IntFuncTask> request(new IntFuncTask);
-        sprintf(xx, "%s-%d.pdb", outputFile.substr(0, outputFile.length()-4).c_str(), i);
-        string outFile2 = string(xx);
-
-
-        request->asynBind(runCGMC, moveLib, et, inputFile, outFile2, resultList[i-startID], time(0)+i);
+    
+        request->asynBind(runCGMC, moveLib, et, eiLib, inputFile, resultList[i-startID], modelNum, time(0)+i);
         jid++;
         thrPool->addTask(request);
     }
@@ -181,18 +190,30 @@ int main(int argc, char** argv){
     }
 
     for(int i=1;i<mp;i++){
-        resultList[0]->mergeResult(resultList[1]);
+        resultList[0]->mergeResult(resultList[i]);
     }
 
-    resultList[0]->print();
+    BasePairLib* pairLib = new BasePairLib("stat");
+	RotamerLib* rotLib = new RotamerLib(et->para);
+    AtomLib* atLib = new AtomLib();
+    NuGraph* natGraph = new NuGraph(inputFile, rotLib, atLib, pairLib);
+    resultList[0]->updateAccuracy(natGraph);
 
-    cout << "total key num: " << resultList[0]->keyMap.size() << endl;
-
+    resultList[0]->print(out);
+    cout << "total key num: " << resultList[0]->keyToEnergy.size() << endl;
     clock_t end1 = clock();
 	cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
 
+    out.close();
+
+    delete natGraph;
+    delete pairLib;
+    delete rotLib;
+    delete atLib;
     delete moveLib;
     delete et;
+    delete eiLib;
+    delete para;
 }
 
 

@@ -56,14 +56,16 @@ public:
 
 	BasePairLib(const string& libType = "xtb");
 
-	int getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int sep); //sep: sequence separation
-	int getNeighborPairFirstFiveClusterID(BaseDistanceMatrix& dm, int typeA, int typeB);
+	int getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, double ddmCutoff=1.2); //sep: sequence separation
 
+	int getNeighborPairFirstFiveClusterID(BaseDistanceMatrix& dm, int typeA, int typeB);
 	void getNeighborClusters(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters, double distanceCutoff = 1.2);
 	double getPairClusterProportion(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
 	double distanceToClusterCenter(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
 	double getEnergy(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
 	double getEnergy(int clusterID, int typeA, int typeB, int sep){
+		if(clusterID < 0)
+			return 0.0;
 		if(sep == 1)
 			return nbEnergy[typeA*4+typeB][clusterID];
 		else if(sep == 2)
@@ -71,7 +73,7 @@ public:
 		else if(sep == -1)
 			return nbEnergy[typeB*4+typeA][clusterID];
 		else
-			return 0.0;		
+			return 0.0;
 	}
 	double getPairEnergy(RNABase* baseA, RNABase* baseB); //base-base energy + base-O2' hbond + O2'-O2' hbond
 

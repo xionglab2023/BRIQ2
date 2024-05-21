@@ -53,6 +53,9 @@ public:
 
 	double wtClash;
 	double lamdaClash;
+
+	double phoRep;
+
 	string bwTag;
 	string libType;
 	string cgEneType;
@@ -75,7 +78,14 @@ public:
 
 	double clashRescale;
 	double connectRescale;
+	double rescaleIncreaseFactor;
 
+	int addSubEnergyPairtype;
+	int addSubEnergyClusterID;
+	double addSubEnergyWeight;
+
+	bool withRandomInit;
+	
 
 	ForceFieldPara();
 	ForceFieldPara(const string& paraFile);

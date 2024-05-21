@@ -11,11 +11,11 @@
 #include <stdlib.h>
 #include <iostream>
 #include "model/StructureModel.h"
-#include "predNA/BRFoldingTree.h"
+#include "predNA/NuGraph.h"
 
 using namespace NSPmodel;
 using namespace NSPforcefield;
-using namespace NSPpredna;
+using namespace NSPpredNA;
 using namespace std;
 
 int main(int argc, char** argv){
@@ -28,7 +28,11 @@ int main(int argc, char** argv){
 	string inputFile = string(argv[1]);
 	string output = string(argv[2]);
 
+	cout << "init rotLib" << endl;
 	RotamerLib* rotLib = new RotamerLib();
+	AtomLib* atLib = new AtomLib();
+
+	cout << "parse input" << endl;
 
 	NSPtools::InputParser input(inputFile);
 	string pdbFileA = input.getValue("pdbA");
@@ -38,14 +42,18 @@ int main(int argc, char** argv){
 	string fgB = input.getValue("fgB");
 
 	int seqLen = baseSeq.length();
-	BRNode** nodeList = new BRNode*[seqLen];
 
+	NuNode** nodeList = new NuNode*[seqLen];
+
+	cout << "init pdb" << endl;
 	RNAPDB pdbA(pdbFileA, "a");
 	RNAPDB pdbB(pdbFileB, "b");
 	vector<RNABase*> baseListA = pdbA.getBaseList();
 	vector<RNABase*> baseListB = pdbB.getBaseList();
 
 	cout << "parse fragment" << endl;
+	cout << fgA << endl;
+	cout << fgB << endl;
 
 	if(fgA.length() != baseSeq.length()){
 		cout << "fgA length error" << endl;
@@ -53,6 +61,7 @@ int main(int argc, char** argv){
 	if(fgB.length() != baseSeq.length()){
 		cout << "fgB length error" << endl;
 	}
+
 	int nA = 0;
 	int nB = 0;
 	int nX = 0;
@@ -159,11 +168,12 @@ int main(int argc, char** argv){
 	}
 
 	for(int i=0;i<seqLen;i++){
-		char c = fgA[i];
-		if(c == '-'){
+		char c = fgB[i];
+		if(c == 'B' || c == 'X'){
 			LocalFrame csB = csListB[i];
 			CsMove cm = csB - csListB[overlapPos];
 			LocalFrame csB2 = csListA[overlapPos] + cm;
+			cout << "pos: " << i << endl;
 			csListA[i] = csB2;
 		}
 	}
@@ -171,11 +181,8 @@ int main(int argc, char** argv){
 	cout << "generate nodes" << endl;
 	for(int i=0;i<seqLen;i++){
 		cout << "node: " << i << endl;
-		BRNode* node = new BRNode(typeList[i], i, rotLib);
-		node->baseConf->updateCoords(csListA[i]);
-
+		
 		RiboseRotamer* rot;
-
 		if(fgA[i] == 'A') {
 			if(!baseList[i]->backboneComplete())
 				rot = rotLib->riboseRotLib->getLowestEnergyRotamer(baseList[i]->baseTypeInt);
@@ -185,10 +192,8 @@ int main(int argc, char** argv){
 		else {
 			rot = rotLib->riboseRotLib->getLowestEnergyRotamer(typeList[i]);
 		}
-
-		node->riboseConf->updateLocalFrame(csListA[i]);
-		node->riboseConf->updateRotamer(rot);
-
+		BaseRotamer* baseRot = rotLib->baseRotLib->baseLib[typeList[i]];
+		NuNode* node = new NuNode(i, typeList[i], csListA[i], baseRot, rot, atLib);
 		nodeList[i] = node;
 	}
 
@@ -197,19 +202,21 @@ int main(int argc, char** argv){
 	ForceFieldPara* para = new ForceFieldPara();
 	PO3Builder* pb = new PO3Builder(para);
 	for(int i=0;i<seqLen-1;i++){
-		BRNode* nodeA = nodeList[i];
-		BRNode* nodeB = nodeList[i+1];
-		nodeA->connectToNeighbor = true;
+		NuNode* nodeA = nodeList[i];
+		NuNode* nodeB = nodeList[i+1];
 		pb->buildPhosphate(nodeA->riboseConf, nodeB->riboseConf, nodeA->phoConf);
 	}
 
 
 	bool* connectToNeighbor = new bool[seqLen];
+	bool* fixed = new bool[seqLen];
 	for(int i=0;i<seqLen;i++){
 		connectToNeighbor[i] = true;
+		fixed[i] = false;
 	}
 	connectToNeighbor[seqLen-1] = false;
-	BRTreeInfo* info = new BRTreeInfo(seqLen, typeList, connectToNeighbor, nodeList, 0.0, rotLib);
+
+	graphInfo* info = new graphInfo(seqLen, typeList, connectToNeighbor, fixed, nodeList, 0.0, atLib, 0);
 	info->printPDB(output);
 
 }

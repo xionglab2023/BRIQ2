@@ -961,6 +961,38 @@ int BasePair6DEnergyTable::load(ForceFieldPara* para) {
 	return EXIT_SUCCESS;
 }
 
+void BasePair6DEnergyTable::addSubEnergy(int pairType, int clusterID, double weight){
+	ifstream file;
+	string path = NSPdataio::datapath();
+	string augc = "AUGC";
+	int i = pairType/4;
+	int j = pairType%4;
+	if(i > j) {
+		cout << "invalid subEnergyFile: " << augc.substr(i,1) + augc.substr(j,1) << clusterID << endl;
+		exit(0);
+	}
+	string pairTypeS = augc.substr(i,1) + augc.substr(j,1);
+	char xx[20];
+	sprintf(xx, "%d", clusterID);
+	string fileName = path + "pairEne/nnb/clusterEne/"+pairTypeS+string(xx)+".move";
+	cout << "add sub energy file: " << fileName << endl;
+	file.open(fileName.c_str(), ios::in);
+	int indexA, indexB;
+	double ene, oldEne;
+	int tmpID;
+	while(file >> indexA >> indexB >> ene){
+		tmpID = (i*4+j)*2250+indexA;
+		if(this->nnbKeysEnergy[tmpID].find(indexB) != this->nnbKeysEnergy[tmpID].end()){
+			oldEne = this->nnbKeysEnergy[tmpID][indexB];
+			if(ene*weight < oldEne)
+				this->nnbKeysEnergy[tmpID][indexB] = ene * weight;
+		}
+		else {
+			this->nnbKeysEnergy[tmpID][indexB] = ene * weight;
+		}
+	}
+	file.close();
+}
 
 BasePair6DEnergyTable::~BasePair6DEnergyTable() {
 	// TODO Auto-generated destructor stub

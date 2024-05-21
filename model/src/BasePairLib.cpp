@@ -213,7 +213,7 @@ BasePairLib::BasePairLib(const string& libType){
 	file.close();
 }
 
-int BasePairLib::getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int sep){
+int BasePairLib::getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, double ddmCutoff){
 
 	if(typeA > 3)
 		typeA = typeA - 4;
@@ -275,7 +275,7 @@ int BasePairLib::getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int s
 	//return minIndex;
 	
 	
-	if(minD < 1.2)
+	if(minD < ddmCutoff)
 		return minIndex;
 	else
 		return -1;
@@ -687,8 +687,6 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 
 	return ene;
 }
-
-
 
 BasePairLib::~BasePairLib() {
 	// TODO Auto-generated destructor stub

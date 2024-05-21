@@ -103,9 +103,9 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 	RiboseRotamerCG* randRot;                     
 	CsMove randMove;
 
-	double initClashRescale = graph->et->para->clashRescale;
-	double initConnectRescale = graph->et->para->connectRescale;
-	double lamda = 1.05;
+	double initClashRescale = 0.03;
+	double initConnectRescale = 0.1;
+	double lamda = 1.07;
 
 	int len = graph->seqLen;
 	int count = 0;
@@ -200,11 +200,15 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 			connectRescale = connectRescale * lamda;
 			if(clashRescale > 1.0) clashRescale = 1.0;
 			if(connectRescale > 1.0) connectRescale = 1.0;
+			curEne = graph->totalEnergyCG(clashRescale, connectRescale);
+			graph->updateEnergyCG(clashRescale, connectRescale);
 		}
 
 
 		clashRescale = 1.0;
 		connectRescale = 1.0;
+		curEne = graph->totalEnergyCG(clashRescale, connectRescale);
+		graph->updateEnergyCG(clashRescale, connectRescale);
 
 		for(T=T1;T>T2;T=T*anneal){
 			nAc = 0;
@@ -354,6 +358,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 }
 
 void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
+
 	bool debug = false;
 
 	double T0 = 10.0;
@@ -365,8 +370,13 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 	int stepNum2 = (int)(this->totalSamp * graph->et->para->kStepNum2CG);
 	int stepNum3 = (int)(this->totalSamp * graph->et->para->kStepNum3CG);
 
-	cout << "stepNum: " << stepNum1+stepNum2+stepNum3 << endl;
-	
+	if(debug) {
+		stepNum1 = 10;
+		stepNum2 = 10;
+		stepNum3 =10;
+	}
+
+
 	double anneal = 0.95;
 
 	double curEne = graph->totalEnergyCG(1.0, 1.0);
@@ -378,9 +388,10 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 	RiboseRotamerCG* randRot;                     
 	CsMove randMove;
 
-	double initClashRescale = graph->et->para->clashRescale;
-	double initConnectRescale = graph->et->para->connectRescale;
-	double lamda = 1.05;
+	double initClashRescale = 0.03;
+	double initConnectRescale = 0.1;
+	double lamda = 1.07;
+
 
 	int len = graph->seqLen;
 	int count = 0;
@@ -391,21 +402,21 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 		double clashRescale = initClashRescale;
 		double connectRescale = initConnectRescale;
 
-		cout << "init rand weight" << endl;
-		graph->initRandWeight();
-		cout << "init mst" << endl;
-		graph->MST_kruskal(tree);
-		cout << "update node info" << endl;
-		tree->updateNodeInfoCG(clashRescale, connectRescale);
-		cout << "update edge info" << endl;
-		tree->updateEdgeInfoCG(clashRescale, connectRescale);
-		cout << "update sampling info" << endl;
-		tree->updateSamplingInfo();
-		cout << "rand init cg" << endl;
-		tree->randomInitCG(clashRescale, connectRescale);
-		cout << "print edge" << endl;
-		tree->printEdges();
+		graph->updateEnergyCG(clashRescale, connectRescale);
 		curEne = graph->totalEnergyCG(clashRescale, connectRescale);
+		
+		graph->initRandWeight();
+		graph->MST_kruskal(tree);
+		tree->updateNodeInfoCG(clashRescale, connectRescale);
+		tree->updateEdgeInfoCG(clashRescale, connectRescale);
+		tree->updateSamplingInfo();
+		tree->randomInitCG(clashRescale, connectRescale);
+		tree->printEdges();
+		
+		graph->updateEnergyCG(clashRescale, connectRescale);
+		curEne = graph->totalEnergyCG(clashRescale, connectRescale);
+		
+
 		lastEne = curEne;
 		
 		for(T=T0;T>T1;T=T*anneal){
@@ -430,10 +441,18 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 					randNode->updateRiboseRotamerCG(randRot, clashRescale, connectRescale);
 					mutE = randNode->rotMutEnergyCG();
 
+					double oldEne = curEne;
+				
+
 					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
 						randNode->acceptRotMutationCG();
 						curEne += mutE;
 						nAc++;
+
+						if(abs(curEne - graph->totalEnergyCG(clashRescale, connectRescale)) > 0.01) {
+							cout << "rotamer mut: " << randPos << " k=" << k << " oldEne: " << oldEne << " mutE: " << mutE << " totalE: " << graph->totalEnergyCG(clashRescale, connectRescale) << endl;
+							exit(0);
+						}
 					}
 					else {
 						randNode->clearRotMutationCG();					
@@ -446,19 +465,45 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 					eTot ++;
 					randPos = randPoolEdge[rand()%poolSize];
 					randEdge = tree->geList[randPos];
+
+					if(debug) {
+						cout << "edge mut: " << randEdge->indexA << "-" << randEdge->indexB << endl;
+					}
+
 					randMove = randEdge->moveSet->getRandomMove();
 
-					randEdge->updateCsMoveCG(randMove, clashRescale, connectRescale);
+					if(debug) {
+						cout << "edge mut, edge: " << randEdge->indexA << " " << randEdge->indexB << " before update cs" << endl;
+						graph->checkEnergyCG(clashRescale, connectRescale);
+						cout << "move: " << endl;
+						randMove.print();
+					}
 
+					randEdge->updateCsMoveCG(randMove, clashRescale, connectRescale);
+					
+					
 					mutE = randEdge->mutEnergyCG();
+
+					if(debug) {
+						cout << "edge mut, edge: " << randEdge->indexA << " " << randEdge->indexB << " before mutE" << endl;
+						graph->checkEnergyCG(clashRescale, connectRescale);
+						graph->printEnergyCG(clashRescale);
+					}
+
+					double oldEne = curEne;
 
 					if(mutE < 0 || rand()*exp(mutE/T) < RAND_MAX){
 						randEdge->acceptMutationCG();
 						curEne += mutE;
-						eAc++;					
+						eAc++;
 					}
 					else {
 						randEdge->clearMutationCG();
+					}
+
+					if(debug) {
+						cout << "edge mut, edge: " << randEdge->indexA << " " << randEdge->indexB << " AC/RJ" << endl;
+						graph->checkEnergyCG(clashRescale, connectRescale);
 					}
 				}
 			}
@@ -470,13 +515,20 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 
 			clashRescale = clashRescale * lamda;
 			connectRescale = connectRescale * lamda;
+
 			if(clashRescale > 1.0) clashRescale = 1.0;
 			if(connectRescale > 1.0) connectRescale = 1.0;
+
+			
+			graph->updateEnergyCG(clashRescale, connectRescale);
+			curEne = graph->totalEnergyCG(clashRescale, connectRescale);
 		}
 
 
 		clashRescale = 1.0;
 		connectRescale = 1.0;
+		curEne = graph->totalEnergyCG(clashRescale, connectRescale);
+		graph->updateEnergyCG(clashRescale, connectRescale);
 
 		for(T=T1;T>T2;T=T*anneal){
 			nAc = 0;

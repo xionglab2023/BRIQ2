@@ -59,6 +59,10 @@ public:
 	void updatePCluster(double* pList, double pContact, BasePairLib* pairLib);
 	
 	double getRandomWeight() {
+
+		if(fixed)
+			return -999.9;
+
 		if(pContact == 1.0) 
 			return weight - rand()*1.0/RAND_MAX;
 		else if(sep < 2 && rand()*1.0/RAND_MAX < pContact)
@@ -72,6 +76,7 @@ public:
 	}
 
 	void setToLibPCluster(const string& ssSepType, EdgeInformationLib* eiLib);
+	void setToLibReversePCluster(const string& ssSepType, EdgeInformationLib* eiLib);
 	void setUniqueCluster(int clusterID, BasePairLib* pairLib);
 	void setClusterList(vector<int>& clusterList, vector<double>& pClusters, BasePairLib* pairLib);
 	void setFixed(CsMove& cm){
@@ -95,6 +100,8 @@ public:
 class EdgeInformationLib{
 public:
 	map<string, EdgeInformation*> eiMap;
+	map<string, string> reverseType;
+
 	vector<string> keyList;
 	EdgeInformationLib();
 	virtual ~EdgeInformationLib();

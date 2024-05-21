@@ -81,6 +81,8 @@ public:
 	int dump(ForceFieldPara* para);
 	int load(ForceFieldPara* para);
 
+	void addSubEnergy(int pairType, int clusterID, double weight);
+
 	void updateForceFieldPara(ForceFieldPara* para){
 		this->wtNb = para->wtBp1;
 		this->wtNnb = para->wtBp2;

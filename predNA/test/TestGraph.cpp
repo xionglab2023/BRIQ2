@@ -33,23 +33,27 @@ int main(int argc, char** argv){
 
 	srand(randseed);
 
-	BasePairLib* pairLib = new BasePairLib("adj");
+	string libType = "stat";
+
+	BasePairLib* pairLib = new BasePairLib(libType);
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 
 	cout << "load moveLib" << endl;
-	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("adj", true, 1);
+	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(libType, true, 1);
 	moveLib->load();
 
 	EdgeInformationLib* eiLib = new EdgeInformationLib();
 
 	cout << "load energy table" << endl;
+	ForceFieldPara* para = new ForceFieldPara();
+	para->libType = libType;
 
-	RnaEnergyTable* et = new RnaEnergyTable();
+	RnaEnergyTable* et = new RnaEnergyTable(para);
 	
-	et->para->kStepNum1 = 300;
-	et->para->kStepNum2 = 300;
-	et->para->kStepNum3 = 300;
+	et->para->kStepNum1 = 400;
+	et->para->kStepNum2 = 100;
+	et->para->kStepNum3 = 100;
 
 	et->loadAtomicEnergy();
 
@@ -68,12 +72,10 @@ int main(int argc, char** argv){
 	tree->printEdges();
 	cout << "adde node info" << endl;
 	tree->updateNodeInfo(1.0, 1.0);
-	for(int i=0;i<graph->seqLen;i++){
-		graph->allNodes[i]->printNodeInfo();
-	}
-
+	
 	cout << "edgeInfo: " << endl;
 	tree->updateEdgeInfo(1.0, 1.0);
+	
 	for(int i=0;i<tree->geList.size();i++){
 		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
 		tree->geList[i]->printPartition();
@@ -81,8 +83,11 @@ int main(int argc, char** argv){
 
 	cout << "update sampling info" << endl;
 	tree->updateSamplingInfo();
-	tree->printNodeInfo();
+	//tree->printNodeInfo();
 
+
+	tree->printEdgeInfo();
+	
 	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();
 	gi->printPDB(output);

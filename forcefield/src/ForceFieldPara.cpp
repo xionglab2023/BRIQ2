@@ -67,12 +67,12 @@ ForceFieldPara::ForceFieldPara() {
 	this->T3 = 0.015;
 
 	this->kStepNum1 = 1280;
-	this->kStepNum2 = 1280;
-	this->kStepNum3 = 1280;
+	this->kStepNum2 = 640;
+	this->kStepNum3 = 640;
 
-	this->kStepNum1CG = 500;
-	this->kStepNum2CG = 100;
-	this->kStepNum3CG = 100;
+	this->kStepNum1CG = 200;
+	this->kStepNum2CG = 80;
+	this->kStepNum3CG = 50;
 
 	this->kNodeFreq = 1.0;
 
@@ -84,6 +84,15 @@ ForceFieldPara::ForceFieldPara() {
 
 	this->clashRescale = 1.0;
 	this->connectRescale = 1.0;
+	this->rescaleIncreaseFactor = 1.05;
+
+	this->phoRep = 1.0;
+
+	addSubEnergyPairtype = -1;
+	addSubEnergyClusterID = -1;
+	addSubEnergyWeight = 0.0;
+
+	this->withRandomInit = true;
 
 }
 
@@ -115,19 +124,21 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 		rnaRiboseRotamerShift[i] = 0.0;
 	}
 
+
 	rnaRiboseRotamerShift[0] = 1.3;   rnaRiboseRotamerShift[1] = -1.8;
 	rnaRiboseRotamerShift[4] = 1.4;   rnaRiboseRotamerShift[5] = -2.0;
 	rnaRiboseRotamerShift[8] = 2.3;   rnaRiboseRotamerShift[9] = -1.5;
 	rnaRiboseRotamerShift[12] = 2.4;  rnaRiboseRotamerShift[13] = -1.5;
 
+
 	for(int i=0;i<16;i++){
-		wtRiboseOxy[i] = 1.8;
+		wtRiboseOxy[i] = 1.5;
 	}
 
-	this->bwTag = "bw6";
-	this->libType = "xtb";
+	this->bwTag = "bw5";
+	this->libType = "xtb"; //"stat" or "xtb" or "adj"
 	this->cgEneType = "stat"; //"stat" or "xtb"
-	
+
 	this->wtBp1 = 2.0;
 	this->wtBp2 = 2.0;
 
@@ -144,6 +155,11 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	this->kStepNum1 = 1280;
 	this->kStepNum2 = 1280;
 	this->kStepNum3 = 1280;
+
+	this->kStepNum1CG = 200;
+	this->kStepNum2CG = 80;
+	this->kStepNum3CG = 50;
+
 	this->kNodeFreq = 1.0;
 
 	for(int i=0;i<16;i++){
@@ -154,6 +170,7 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 
 	this->clashRescale = 1.0;
 	this->connectRescale = 1.0;
+	this->rescaleIncreaseFactor = 1.05;
 
 }
 

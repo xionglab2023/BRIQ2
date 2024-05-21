@@ -107,6 +107,8 @@ int main(int argc, char** argv){
     string tag = cmdArgs.getValue("-tag");
     string outputFile = cmdArgs.getValue("-out");
 
+    double y = atof(cmdArgs.getValue("-x").c_str());
+
     ofstream out;
     out.open(outputFile.c_str(), ios::out);
 
@@ -125,6 +127,9 @@ int main(int argc, char** argv){
     para->kStepNum1 = 600;
     para->kStepNum2 = 600;
     para->kStepNum3 = 600;
+
+    para->libType = "stat";
+
     RnaEnergyTable* et = new RnaEnergyTable(para);
 	et->loadAtomicEnergy();
 
@@ -471,10 +476,12 @@ int main(int argc, char** argv){
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
     }
     else if(tag == "wtBB") {
-        for(double x= 0.1; x < 2.0;x = x+0.1) {
-           
-            para->wtRibose = x;
-            para->wtPho = x*0.7;
+        //for(double x= 0.1; x < 2.0;x = x+0.1) {
+
+
+        {   
+            para->wtRibose = y;
+            para->wtPho = y*0.7;
             et->updateAtomic(para);
 
             shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
@@ -498,7 +505,7 @@ int main(int argc, char** argv){
 
             double minEne = results[0]->ene;
             double minRms = results[0]->rms;
-            sprintf(xx, "%5.3f %8.4f %8.4f", x, minEne, minRms);
+            sprintf(xx, "%5.3f %8.4f %8.4f", y, minEne, minRms);
             out << string(xx) << endl;
         }
         clock_t end1 = clock();
