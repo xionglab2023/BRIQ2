@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
         }
         pdbIn = cmdArgs.getValue("-i");
         RNAPDB* rnaPdb = new RNAPDB(pdbIn);
+        rnaPdb->DNAToRNA();
         AtomLib* atl = new AtomLib();
         AssignRNASS rss(rnaPdb, atl);
         ofstream tmpInput;

@@ -82,7 +82,6 @@ public:
 		}
 	}
 
-
 	virtual ~IndividualNuPairMoveSet();
 };
 

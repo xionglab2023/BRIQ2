@@ -107,8 +107,10 @@ private:
 public:
 	string baseID;  // ID number from PDB
 	int baseSeqID;
+	
 	char baseType;  // AUGCatgc
 	int baseTypeInt;  // 0-7, and -1
+
 	string chainID;
 	bool hasAltConf;
 	LocalFrame coordSys;
@@ -275,6 +277,15 @@ public:
 	bool isStackingTo(RNABase* other, AtomLib* atLib);
 
 	int printPDBFormat(ostream& out, int startAtomID) const;
+
+	void DNAToRNA(){
+		if(this->baseTypeInt > 3 && this->baseTypeInt < 8){
+			string augc = "AUGC";
+			this->baseTypeInt = this->baseTypeInt - 4;
+			this->baseType = augc[baseTypeInt];
+		}
+	}
+
 	string print();
 	virtual ~RNABase();
 };
@@ -466,14 +477,23 @@ public:
 		return NULL;
 	}
 	vector<RNABase*>& getBaseList() {return this->baseList;}
+
 	vector<RNABase*> getValidBaseList(AtomLib* atLib) {
 		vector<RNABase*> list;
 		for(int i=0;i<baseList.size();i++){
+			baseList[i]->DNAToRNA();
 			if(baseList[i]->sidechainComplete(atLib))
 				list.push_back(baseList[i]);
 		}
 		return list;
 	}
+
+	void DNAToRNA(){
+		for(int i=0;i<baseList.size();i++){
+			baseList[i]->DNAToRNA();
+		}
+	}
+
 	void printPDBFormat(ostream& out) const;
 	virtual ~RNAPDB();
 };

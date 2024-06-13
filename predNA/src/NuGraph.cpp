@@ -3113,6 +3113,9 @@ graphInfo* NuTree::runAtomicMC(){
 	
 
 	cout << "start MC: " << endl;
+	cout << "total step num: " << stepNum1+stepNum2+stepNum3 << endl;
+
+
 	for(T=T0;T>T1;T=T*anneal){
 		nAc = 0;
 		eAc = 0;
@@ -3222,11 +3225,7 @@ graphInfo* NuTree::runAtomicMC(){
 			if(debug) {
 				printf("step %d curEne: %8.3f eTot: %d totEne: %8.3f\n", k, curEne, eTot, graph->totalEnergy(clashRescale, connectRescale));
 			}
-
-
 		}
-
-
 
 		double totEne = graph->totalEnergy(clashRescale, connectRescale);
 		graphInfo* gi = graph->getGraphInfo();
@@ -3283,6 +3282,8 @@ graphInfo* NuTree::runAtomicMC(){
 				eTot ++;
 				randPos = randPoolEdge[rand()%poolSize];
 				randEdge = geList[randPos];
+				if(randEdge->cm.clusterID < 0) continue;
+				
 				randMove = randEdge->moveSet->getRandomMoveWithFixedSubCluster(randEdge->cm);
 				randEdge->updateCsMove(randMove, clashRescale, connectRescale);
 				mutE = randEdge->mutEnergy();
@@ -3833,7 +3834,6 @@ NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, Ba
 	}
 }
 
-
 NuGraph::~NuGraph() {
 
 	delete oi;
@@ -3913,18 +3913,19 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 
 	if(cnt.length() != seqLen) {
 		cout << "invalid cnt string: " << cnt << endl;
+		cout << "cnt length: " << cnt.length() << " " << seqLen << endl;
 		exit(0);
 	}
 	for(i=0;i<seqLen-1;i++){
-		if(cnt[i] == '-'){
+		if(cnt[i] == '|'){
 			connectToDownstream[i] = false;
 		}
-		else if(cnt[i] == '+'){
+		else if(cnt[i] == '-'){
 			connectToDownstream[i] = true;
 		}
 		else {
 			cout << "invalid cnt string: " << cnt << endl;
-			cout << "cnt example: +++++-++++-" << endl;
+			cout << "cnt example: ------|-------" << endl;
 			exit(0);
 		}
 	}
@@ -4728,7 +4729,7 @@ string NuGraph::toContactMapHashKeyCG(){
 			if(this->allEdges[i*seqLen+j]->pairEneCG[0] < 0){
 				BaseDistanceMatrix dm(this->allNodes[i]->baseConfCG->cs1, allNodes[j]->baseConfCG->cs1);
 				clusterID = pairLib->getPairType(dm, allNodes[i]->baseType, allNodes[j]->baseType, sep);
-				ene = pairLib->getEnergy(clusterID, allNodes[i]->baseType, allNodes[j]->baseType, sep);
+				ene = pairLib->getEnergyWithOxy(clusterID, allNodes[i]->baseType, allNodes[j]->baseType, sep);
 				if(ene < 0)
 					wt = ene;
 			}

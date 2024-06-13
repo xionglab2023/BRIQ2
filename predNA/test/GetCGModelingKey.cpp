@@ -190,7 +190,7 @@ int main(int argc, char** argv){
     }
 
     for(int i=1;i<mp;i++){
-        resultList[0]->mergeResult(resultList[1]);
+        resultList[0]->mergeResult(resultList[i]);
     }
 
     resultList[0]->print(out);

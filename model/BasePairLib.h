@@ -63,6 +63,7 @@ public:
 	double getPairClusterProportion(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
 	double distanceToClusterCenter(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
 	double getEnergy(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
+	
 	double getEnergy(int clusterID, int typeA, int typeB, int sep){
 		if(clusterID < 0)
 			return 0.0;
@@ -75,6 +76,20 @@ public:
 		else
 			return 0.0;
 	}
+
+	double getEnergyWithOxy(int clusterID, int typeA, int typeB, int sep){
+		if(clusterID < 0)
+			return 0.0;
+		if(sep == 1)
+			return nbEnergyWithOxy[typeA*4+typeB][clusterID];
+		else if(sep == 2)
+			return nnbEnergyWithOxy[typeA*4+typeB][clusterID];
+		else if(sep == -1)
+			return nbEnergyWithOxy[typeB*4+typeA][clusterID];
+		else
+			return 0.0;
+	}
+
 	double getPairEnergy(RNABase* baseA, RNABase* baseB); //base-base energy + base-O2' hbond + O2'-O2' hbond
 
 	virtual ~BasePairLib();

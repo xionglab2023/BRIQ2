@@ -27,8 +27,7 @@ int main(int argc, char** argv){
 	string output = string(argv[3]);
 	//string paraFile = string(argv[3]);
 
-	ofstream out;
-	out.open(output, ios::out);
+
 
 
 	RNAPDB* pdb = new RNAPDB(pdbFile);
@@ -46,9 +45,10 @@ int main(int argc, char** argv){
 		double rms = bm->runMC();
 		BRTreeInfo* bi = bm->toTreeInfo();
 		bi->printPDB(output+".pdb");
-		out << "0.0 " << rms << " " << len << endl;
 	}
 	if(paraTag == "clashNb") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=1.0;p<5.0;p=p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->clashLamdaNb = p;
@@ -57,8 +57,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "clashNnb") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=1.0;p<5.0;p=p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->clashLamdaNnb = p;
@@ -67,8 +70,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "ang") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=0.01;p<0.4;p+=0.01){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaKAng = p;
@@ -77,8 +83,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "bond") {
+		ofstream out;
+		out.open(output, ios::out);	
 		for(double p=1.0;p<20;p+=1.0){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaKBond = p;
@@ -87,8 +96,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "dihed") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=-2.0;p<2.1;p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaDihedImpD1D2Shift[0] = p;
@@ -102,9 +114,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "dihed1") {
-
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=-2.0;p<2.1;p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaDihedImpD1D2Shift[0] = p;
@@ -114,8 +128,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "dihed2") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=-2.0;p<2.1;p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaDihedImpD4D5Shift[0] = p;
@@ -125,8 +142,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "dihed3") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=-2.0;p<2.1;p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaDihedD2D3D4Shift[0] = p;
@@ -136,8 +156,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "rot") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=0.1;p<2.01;p+=0.1) {
 			ForceFieldPara* para = new ForceFieldPara();
 			//para->wtRibose = p;
@@ -146,8 +169,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "rot1") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=-2.0;p<2.01;p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaRiboseRotamerShift[0] += p;
@@ -158,8 +184,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "rot2") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=-2.0;p<2.01;p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaRiboseRotamerShift[4] += p;
@@ -169,8 +198,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "rot3") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=-2.0;p<2.01;p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaRiboseRotamerShift[8] += p;
@@ -180,8 +212,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "rot4") {
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=-2.0;p<2.01;p+=0.2){
 			ForceFieldPara* para = new ForceFieldPara();
 			para->rnaRiboseRotamerShift[12] += p;
@@ -191,8 +226,11 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
 	else if(paraTag == "pho"){
+		ofstream out;
+		out.open(output, ios::out);
 		for(double p=0.1;p<1.51;p+=0.1) {
 			ForceFieldPara* para = new ForceFieldPara();
 			para->wtPho = p;
@@ -201,8 +239,8 @@ int main(int argc, char** argv){
 			out << p << " " << rms << " " << len << endl;
 			delete bm;
 		}
+		out.close();
 	}
-	out.close();
 
 
 

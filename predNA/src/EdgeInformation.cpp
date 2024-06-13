@@ -50,7 +50,7 @@ EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pai
 	
 
 	for(int i=0;i<totalClusterNum;i++){
-		double e = pairLib->getEnergy(i, typeA, typeB, sep);
+		double e = pairLib->getEnergyWithOxy(i, typeA, typeB, sep);
 		this->weight += pCluster[i]*e;
 	}
 
@@ -106,7 +106,7 @@ void EdgeInformation::updatePCluster(double* pList, double pContact, BasePairLib
 		this->pCluster[i] = pList[i]/sum;
 		if(pList[i] > 0) 
 			this->validClusterNum++;
-		double e = pairLib->getEnergy(i, typeA, typeB, sep);
+		double e = pairLib->getEnergyWithOxy(i, typeA, typeB, sep);
 		this->weight += pCluster[i]*e;
 	}
 
@@ -144,7 +144,7 @@ void EdgeInformation::setUniqueCluster(int clusterID, BasePairLib* pairLib){
 		}
 		this->pCluster[clusterID] = 1.0;
 		this->pContact = 1.0;
-		this->weight = pairLib->getEnergy(clusterID, typeA, typeB, sep);
+		this->weight = pairLib->getEnergyWithOxy(clusterID, typeA, typeB, sep);
 	}
 	else {
 		cout << "invalid clusterID: "<< clusterID <<  " typeA: " << typeA << " typeB: " << typeB << " sep: " << sep << " totNum: " << totalClusterNum << endl;
@@ -227,7 +227,7 @@ void EdgeInformation::setClusterList(vector<int>& clusterList, vector<double>& p
 		vector<double> eneList;
 		pSum = 0;
 		for(int i=0;i<clusterList.size();i++){
-			e = pairLib->getEnergy(clusterList[i], typeA, typeB, sep);
+			e = pairLib->getEnergyWithOxy(clusterList[i], typeA, typeB, sep);
 			eneList.push_back(e);
 			pSum += exp(-e);
 		}

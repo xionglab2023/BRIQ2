@@ -1,5 +1,3 @@
-
-
 add_executable(keyToHbondMove KeyToHbondCsMove.cpp)
 add_executable(keyToMove KeyToCsMove.cpp)
 add_executable(rnaScoring RNAScoring.cpp)

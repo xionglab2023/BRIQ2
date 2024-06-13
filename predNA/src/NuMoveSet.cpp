@@ -688,16 +688,14 @@ CsMove MixedNuPairCluster::getRandomMoveWithFixedSubCluster(CsMove& move){
 	if(fixedNativeCM){
 		return natCM;
 	}
-
 	int cluster = move.clusterID;
-	if(cluster < 0)
-		cluster = randPool[rand()%100000];
+	if(cluster < 0 || move.subClusterID < 0){
+		return move;
+	}
 	int subCluster = move.subClusterID;
-	
 	CsMove cm = moveLib->getMoveSet(pairType, cluster, sep)->getRandomMoveWithFixedSubCluster(moveLib->oi, subCluster);
 	cm.clusterID = cluster;
 	return cm;
-	
 }
 
 CsMove MixedNuPairCluster::getRandomMoveWithFixedSP1000Index(CsMove& move) {
