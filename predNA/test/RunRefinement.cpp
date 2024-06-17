@@ -30,6 +30,7 @@ int main(int argc, char** argv){
 	if(argc < 4) {
 		cout << "rna_refinement $input $output $mode $randseed" << endl;
 		cout << "mode: fast, normal, slow" << endl;
+		exit(0);
 	}
 
 	string inputFile = string(argv[1]);

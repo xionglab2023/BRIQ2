@@ -22,6 +22,8 @@ int main(int argc, char** argv){
 	char xx[200];
 	int n = pdb->getResList().size();
 
+	cout << "res num: " << n << endl;
+
 	ResBBRotamerLib* rotLib = new ResBBRotamerLib();
 	AtomLib* atLib = new AtomLib();
 	ResBBRotamer* rot;

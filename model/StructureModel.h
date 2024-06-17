@@ -481,7 +481,6 @@ public:
 	vector<RNABase*> getValidBaseList(AtomLib* atLib) {
 		vector<RNABase*> list;
 		for(int i=0;i<baseList.size();i++){
-			baseList[i]->DNAToRNA();
 			if(baseList[i]->sidechainComplete(atLib))
 				list.push_back(baseList[i]);
 		}

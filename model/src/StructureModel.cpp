@@ -1407,8 +1407,9 @@ void RNAPDB::readPDB(const string& pdbFile){
 
         rawResName = trimString(rawResName);
         if(!rn.isRNABase(rawResName)) continue;
+		
         resName = rn.toStandardBase(rawResName);
-
+		//cout << rawResName << " " << resName << endl;
 
         curChainID = s.substr(21,1);
         curResID = trimString(s.substr(22,5));
@@ -1443,6 +1444,7 @@ void RNAPDB::readPDB(const string& pdbFile){
         if(curResID != lastResID)
         {
         	curResidue = new RNABase(curResID, curChainID, resName[0]);
+			//cout << curResidue->getType() << endl;
         	curResidue->setResSeqID(curResSeqID);
         	curResSeqID++;
         	curChain->addBase(curResidue);
