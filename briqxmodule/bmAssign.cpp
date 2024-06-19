@@ -15,6 +15,7 @@
 #include "tools/CmdArgs.h"
 #include "tools/ThreadPool.h"
 #include <filesystem>
+#include <iterator>
 
 using namespace NSPmodel;
 using namespace NSPbm;
@@ -84,17 +85,17 @@ int main(int argc, char** argv) {
         tmpInput << "pdb " << pdbIn << endl;
         tmpInput << "seq " << rss.seq << endl;
         tmpInput << "sec " << rss.ssSeq << endl;
+        string cntStr = "-";
+        cntStr.resize(rss.seq.size(),'-');
+        int nbreak = rss.breakList.size();
+        for(int i=0; i<nbreak; i++) {
+            cntStr[rss.breakList[i]] = '|';
+        }
+        cntStr[rss.seq.size()-1] = '|';
+        tmpInput << "cnt " << cntStr << endl;
         string cstStr = ".";
         cstStr.resize(rss.seq.size(),'.');
         tmpInput << "cst " << cstStr << endl;
-        int nbreak = rss.breakList.size();
-        if(nbreak > 0) {
-            tmpInput << "break ";
-            for(int i=0; i<nbreak-1; i++) {
-                tmpInput<< rss.breakList[i] << " ";
-            }
-            tmpInput<< rss.breakList[nbreak-1] << endl;
-        }
         tmpInput.close();
         delete rnaPdb;
         RotamerLib* rtl = new RotamerLib();
@@ -105,34 +106,67 @@ int main(int argc, char** argv) {
         pNuGragh->initInfo->printPDB(
             outPath.string() + "/" + outPDBprefix.string() + "-full" + ".pdb");
         MotifAssigner* mtfa = new MotifAssigner(pNuGragh);
-        if(cmdArgs.specifiedOption("-dev")) {
-            ofstream outCSV;
-            string csvFileName = outPath.string() + "/" + outPDBprefix.string() + "-EdgeWeights" + ".csv";
-            outCSV.open(csvFileName, ios::out);
-            if(!outCSV.is_open()) {
-                throw "[Error] Fail to open file" + csvFileName;
-            }
-            mtfa->writeEdgeWeight(outCSV);
-        } else {
-            #ifdef DEBUG
-                ofstream outCSV;
-                string csvFileName = outPath.string() + "/" + outPDBprefix.string() + "-EdgeWeights" + ".csv";
-                outCSV.open(csvFileName, ios::out);
-                if(!outCSV.is_open()) {
-                    throw "[Error] Fail to open file" + csvFileName;
-                }
-                mtfa->writeEdgeWeight(outCSV);
-                mtfa->bySeed(outPath.string(), outPDBprefix.string());
-            #else
-                mtfa->bySeed();
-            #endif
+        ofstream outCSV;
+        string csvFileName = outPath.string() + "/" + outPDBprefix.string() + "-EdgeWeights" + ".csv";
+        outCSV.open(csvFileName, ios::out);
+        if(!outCSV.is_open()) {
+            throw "[Error] Fail to open file" + csvFileName;
         }
+        mtfa->writeEdgeWeight(outCSV);
+        outCSV.close();
+        
+        mtfa->bySeed(outPath.string(), outPDBprefix.string());
         int nMotif = mtfa->motifs.size();
         cout << "find " << nMotif << " motifs" << endl;
+
+        string sepFile = outPath.string() + "/" + outPDBprefix.string() + ".sep";
+        ofstream ofSep;
+        ofSep.open(sepFile, ios::out);
+        if(!ofSep.is_open()) {
+            throw "[Error] Can not open file " + sepFile;
+        }
+        ofSep << "Motif,Sep" << endl;
         for(int i=0; i<nMotif; i++) {
+            string motifName = outPDBprefix.stem().string() + "-" + to_string(i);
+            mtfa->motifs[i]->setName(motifName);
             mtfa->motifs[i]->writePDB(
                 outPath.string() + "/" + outPDBprefix.string() + "-" + to_string(i) + ".pdb");
+            ofSep << motifName<<",";
+            copy(mtfa->motifs[i]->sepVec.begin(), mtfa->motifs[i]->sepVec.end(), 
+                ostream_iterator<int>(ofSep, ","));
+            ofSep << endl;
         }
+        ofSep.close();
+
+/*  disable redundant seqFrag and IndexInFull output
+        string seqFile = outPath.string() + "/" + outPDBprefix.string() + ".seqFrag";
+        ofstream ofSeqFrag;
+        ofSeqFrag.open(seqFile, ios::out);
+        if(!ofSeqFrag.is_open()) {
+            throw "[Error] Can not open file " + seqFile;
+        }
+        mtfa->writeSeqFrag(ofSeqFrag);
+        ofSeqFrag.close();
+
+        string ndxFile = outPath.string() + "/" + outPDBprefix.string() + ".ndx";
+        ofstream ofNdx;
+        ofNdx.open(ndxFile, ios::out);
+        if(!ofNdx.is_open()) {
+            throw "[Error] Can not open file " + ndxFile;
+        }
+        mtfa->writeNodeIndexInFull(ofNdx);
+        ofNdx.close();
+*/
+
+        string bmFile = outPath.string() + "/" + outPDBprefix.string() + ".bm";
+        ofstream ofBm;
+        ofBm.open(bmFile, ios::out);
+        if(!ofBm.is_open()) {
+            throw "[Error] Can not open file " + bmFile;
+        }
+        mtfa->writeMotif(ofBm, rss.ssSeq);
+        ofBm.close();
+
         delete atl;
         delete rtl;
         delete bpl;

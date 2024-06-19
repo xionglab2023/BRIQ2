@@ -51,7 +51,7 @@ using namespace std;
  * @param [in] BMaName: Name of BMa, optional.
  * @param [in] BMbName: Name of BMb, optional.
  * @param [in] outPath: Path to write output files, optional.
- * @param [in] outfileAln: Name of output pairwise alignment file, no suffix, in a2m(fastsa) format, optional.
+ * @param [in] outfileAln: Name of output pairwise alignment file, no suffix, optional.
  * @param [in] outfilePDB: Name of output aligned BMb coordinates, no suffix, in PDB format, optional.
  * @param [in] bmf: flag of match_first, if true, use the shorter motif for idealScore evaluation.
  *      Default false, i.e. no match_first consideration
@@ -80,16 +80,16 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         BMb.printPairEneMap(cout);  
     #endif
 
-    if(BMa.getNStrand() != BMb.getNStrand()) {
-        outstr = "[Result] nStrand Unmatch: " +\
-            BMaName + ": " + to_string(BMa.getNStrand()) + ", " + \
-            BMbName + ": " + to_string(BMb.getNStrand()) + "\n";
-        cout << outstr;
-        score = -1;
-        normedSc = -1;
-        alignVec.clear();
-        return EXIT_SUCCESS;
-    }
+    // if(BMa.getNStrand() != BMb.getNStrand()) {
+    //     outstr = "[Result] nStrand Unmatch: " +\
+    //         BMaName + ": " + to_string(BMa.getNStrand()) + ", " + \
+    //         BMbName + ": " + to_string(BMb.getNStrand()) + "\n";
+    //     cout << outstr;
+    //     score = -1;
+    //     normedSc = -1;
+    //     alignVec.clear();
+    //     return EXIT_SUCCESS;
+    // }
 
     map<array<BasePair*, 2>, double> DDMMatrix{};
 
@@ -266,7 +266,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         output.open(filePath, ios::out);
         if (! output.is_open())
         {
-            throw "[Error] Fail to open file " + filePath;
+            cerr << "[Error] Fail to open file " + filePath + '\n';
         }
         if(bestAlign) {
             bestAlign->writeAlignment(output, score, normedSc, true);
@@ -280,7 +280,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         output.open(filePath, ios::out);
         if (! output.is_open())
         {
-            throw "[Error] Fail to open file " + filePath;
+            cerr << "[Error] Fail to open file " + filePath + '\n';
         }
         if(bestAlign) {
             bestAlign->writeAlignment(output, score, normedSc, false);
@@ -293,7 +293,7 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         output.open(filePath, ios::out);
         if (! output.is_open())
         {
-            throw "[Error] Fail to open file " + filePath;
+            cerr << "[Error] Fail to open file " + filePath + '\n';
         }
         BriqxModule* BMnew;
         if(bestAlign) {
@@ -308,6 +308,263 @@ int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, 
         BMnew->deepClear();
         delete BMnew;
     }
+
+    BMa.deepClear();
+    BMb.deepClear();
+    if(bestAlign) {
+        delete bestAlign;
+    } else {
+        delete bestAlignBP;
+    }
+    return EXIT_SUCCESS;
+}
+
+/**
+ * @brief Workhorse function to align and calculate alignment score for two BriqxModules, single thread
+ * overloaded to accept an mandatory osteam instead of path string for output.
+ * Useful when writing results of massive pairwise alignments to a single file.
+ * Does not support pdb output.
+ * 
+ * @param [in] BMaPDB: PDB file for BriqxModule a, required.
+ * @param [in] BMbPDB: PDB file for BriqxModule b, required.
+ * @param [in] bpl: BasePairLib object for basepair type and energy determination, required.
+ * @param [in] atl: AtomLib object for BasePair determination, required.
+ * @param [in] outAlnOnA: ostream to write alignment onA to, required.
+ * @param [in] outAlnOnB: ostream to write alignment onB to, required.
+ * @param [out] score: Score of the best alignment, required. 
+ * @param [out] alignVec: Vector of the aligned bases in the best alignment, required. 
+ * @param [out] NormedSc: Normalized Score of the best alignment, required. 
+ * @param [in] BMaSel: Select string from the PDB for BMa, optional.
+ * @param [in] BMbSel: Select string from the PDB for BMb, optional.
+ * @param [in] BMaName: Name of BMa, optional.
+ * @param [in] BMbName: Name of BMb, optional.
+ * @param [in] bmf: flag of match_first, if true, use the shorter motif for idealScore evaluation.
+ *      Default false, i.e. no match_first consideration
+ * 
+ * @return success code.
+ */
+int alignAndScore(const string& BMaPDB, const string& BMbPDB, BasePairLib& bpl, AtomLib& atl, ostream& outAlnOnA, ostream& outAlnOnB,
+    double& score, vector<array<RNABase*, 2> >& alignVec, double& normedSc,
+    const BMSelection& BMaSel = 0, const BMSelection& BMbSel = 0,
+    const string& BMaName = "BMa", const string& BMbName = "BMb",
+    bool bmf = false)
+{
+    
+    const double DDMCutoff = DDMCUTOFF;
+    const double iterStopAt = ITERSTOPAT;
+
+    string outstr = "[Info] Aligning " + BMaName + " with " + BMbName + "\n";
+    cout << outstr ;
+
+    BriqxModule BMa(BMaPDB, bpl, atl, BMaName, BMaSel);
+    BriqxModule BMb(BMbPDB, bpl, atl, BMbName, BMbSel);
+    #ifdef DEBUG
+        BMa.printPairEneMap(cout);
+        BMb.printPairEneMap(cout);  
+    #endif
+
+    // if(BMa.getNStrand() != BMb.getNStrand()) {
+    //     outstr = "[Result] nStrand Unmatch: " +\
+    //         BMaName + ": " + to_string(BMa.getNStrand()) + ", " + \
+    //         BMbName + ": " + to_string(BMb.getNStrand()) + "\n";
+    //     cout << outstr;
+    //     score = -1;
+    //     normedSc = -1;
+    //     alignVec.clear();
+    //     return EXIT_SUCCESS;
+    // }
+
+    map<array<BasePair*, 2>, double> DDMMatrix{};
+
+    BMa.calcDDMMatrix(BMb, DDMMatrix);
+
+    BMScore scer(BMa, BMb, DDMMatrix);
+    #ifdef DEBUG
+        scer.printBasePairWeight(cout);
+    #endif
+    double idealSc = scer.idealScore(bmf);
+
+    vector<pair<array<BasePair*, 2>, double> > sortedDDM{};
+
+    // scer.sortBppByScore(sortedDDM);  // 应该以DDM排序，因为需要遍历所有DDM<DDMcutoff的 BasePair 对
+    utils::sortMapByValue(DDMMatrix, sortedDDM, false);
+
+    int i = 0;
+    auto* p1 = &sortedDDM[i];
+    double bestScore = 0;
+    BMAlign<vector<array<RNABase*,2> > >* bestAlign = nullptr;
+    BMAlign<vector<array<BasePair*,2> > >* bestAlignBP = nullptr;
+    // while(DDMMatrix.at(p1->first) <= DDMCutoff) {
+    while(p1->second <= DDMCutoff) {
+        #ifdef DEBUG
+            outstr = "[DEBUG][Info] Evaluating initial alignment by pair " + to_string(i) + ": " + \
+                (p1->first)[0]->print() + " To " + (p1->first)[1]->print() + "\n";
+            cout << outstr;
+            int itCount = 0;
+        #endif //DEBUG
+        auto* iniAlign = new BMAlign<vector<array<BasePair*,2> > >(BMa, BMb, vector<array<BasePair*,2> >{p1->first});
+        // #ifdef DEBUG
+            // ofstream debugOut;
+            // debugOut.open("iniTransformed.pdb", ios::out);
+            // auto BMnew = BriqxModule(BMb, iniAlign->getRotTrans(), iniAlign->getAcog(), iniAlign->getBcog(),
+            //      bpl, atl, "", true);
+            // BMnew.printPDBFormat(debugOut);
+            // debugOut.close();
+            // BMnew.deepClear();
+        // #endif //DEBUG
+        if(iniAlign->getAlignVec().size() == 0) {
+            #ifdef DEBUG
+                cout << "[DEBUG][Info] Stop coz initial alignment get empty alignVec" <<endl;
+            #endif //DEBUG
+            break;
+        }
+        BMAlign<vector<array<RNABase*,2> > >* curAlign = nullptr, *lastAlign = nullptr, *nextAlign = nullptr;
+        double curSc = 0, lastSc;
+        double nextSc = scer.score(iniAlign->getAlignVec());
+        if(curSc-nextSc < iterStopAt) {
+            #ifdef DEBUG
+                itCount++;
+                cout << "[DEBUG][Info] IniBPP: " << i << ", Iteration " << itCount << endl;
+            #endif // DEBUG
+            lastSc = curSc;
+            curSc = nextSc;
+            nextAlign = new BMAlign<vector<array<RNABase*,2> > >(BMa, BMb, iniAlign->getAlignVec());
+            nextSc = scer.score(nextAlign->getAlignVec());
+            #ifdef DEBUG
+                outstr = "[DEBUG][Info] New Score: " + to_string(nextSc) + "\n";
+                cout << outstr;
+            #endif
+        }
+        while(curSc-nextSc < iterStopAt) {
+            #ifdef DEBUG
+                itCount++;
+                cout << "[DEBUG][Info] IniBPP: " << i << ", Iteration " << itCount << endl;
+            #endif // DEBUG
+            lastSc = curSc;
+            curSc = nextSc;
+            lastAlign = curAlign;
+            curAlign = nextAlign;
+            nextAlign = new BMAlign<vector<array<RNABase*,2> > >(BMa, BMb, curAlign->getAlignVec());
+            nextSc = scer.score(nextAlign->getAlignVec());
+            #ifdef DEBUG
+                outstr = "[DEBUG][Info] New Score: " + to_string(nextSc) + "\n";
+                cout << outstr;
+            #endif
+            if(lastAlign) delete lastAlign;
+        }
+        if(nextAlign) delete nextAlign;
+        #ifdef DEBUG
+            cout << "[DEBUG][Info] Final alignment starting from BPP " << i << ": " << (p1->first)[0]->print() << " To " <<
+                    (p1->first)[1]->print() << endl;
+            double nSc = curSc/idealSc;
+            string outAlnPath = outPath + "/" + BMb.getBMname() + "_to_" + BMa.getBMname() +\
+                "_by_" + (p1->first)[0]->print() + '-' + (p1->first)[1]->print() + ".aln";
+            ofstream dbg_output;
+            dbg_output.open(outAlnPath, ios::out);
+            if (! dbg_output.is_open())
+            {
+                throw "[Error] Fail to open file " + outAlnPath;
+            }
+            if(curAlign) {
+                curAlign->writeAlignment(dbg_output, curSc, nSc, true);
+            } else {
+                iniAlign->writeAlignment(dbg_output, curSc, nSc, true);
+            }
+            dbg_output.close();
+
+            // Writing intermediate aligned conformation
+            string outPDBPath = outPath + "/" + BMb.getBMname() + "_to_" + BMa.getBMname() +\
+                "_by_" + (p1->first)[0]->print() + '-' + (p1->first)[1]->print() + ".pdb";
+            cout<<"[DEBUG][Info] Write transformed "<<BMb.getBMname()<<" to " << outPDBPath <<endl;
+            dbg_output.open(outPDBPath, ios::out);
+            if (! dbg_output.is_open())
+            {
+                throw "[Error] Fail to open file " + outPDBPath;
+            }
+            BriqxModule* BMdbg;
+            if(curAlign) {
+                BMdbg = new BriqxModule(BMb, curAlign->getRotTrans(), curAlign->getAcog(), curAlign->getBcog(),
+                bpl, atl, "", true);
+            } else {
+                BMdbg = new BriqxModule(BMb, iniAlign->getRotTrans(), iniAlign->getAcog(), iniAlign->getBcog(),
+                bpl, atl, "", true);
+            }
+            BMdbg->printPDBFormat(dbg_output);
+            dbg_output.close();
+            BMdbg->deepClear();
+            delete BMdbg;
+        #endif
+        if(curSc > bestScore) {
+            bestScore = curSc;
+            #ifdef DEBUG
+                outstr = "[DEBUG][Info] Refreshing, best score now from iniBPP " + to_string(i) + " with value " +\
+                    to_string(bestScore) + "\n";
+                cout << outstr;
+            #endif //DEBUG
+            if(bestAlign) delete bestAlign;
+            if(bestAlignBP) delete bestAlignBP;
+            if(curAlign) {
+                delete iniAlign;
+                bestAlign = curAlign;
+                bestAlignBP = nullptr;
+            } else {
+                bestAlignBP = iniAlign;
+                bestAlign = nullptr;
+            }
+        } else {
+            delete iniAlign;
+            delete curAlign;
+        }
+
+        try {   
+            p1 = &sortedDDM.at(++i);
+        } catch(out_of_range) {
+            break;
+        }
+    }
+    
+    if(bestScore == 0) {
+        cout << "[Result] NoAlignment: " << BMaName << "-" << BMbName << endl;
+        score = -2;
+        normedSc = -2;
+        alignVec.clear();
+        return EXIT_SUCCESS;
+    }
+    score = bestScore;
+    alignVec = bestAlign? bestAlign->getAlignVec(): bestAlignBP->getAlignVec();
+    normedSc = score/idealSc;
+ 
+    cout<<"[Result] "<< BMaName <<"-"<<BMbName<<" Base-Base alignment completed" <<endl;
+    cout<<"[Result] Alignment score:" << to_string(score) << endl;
+    cout<<"[Result] Normed score:" << to_string(normedSc) << endl;
+
+    if(bestAlign) {
+        bestAlign->writeAlignment(outAlnOnA, score, normedSc, true);
+        bestAlign->writeAlignment(outAlnOnB, score, normedSc, false);
+    } else {
+        bestAlignBP->writeAlignment(outAlnOnA, score, normedSc, true);
+        bestAlignBP->writeAlignment(outAlnOnB, score, normedSc, false);
+    }
+
+    // cout<<"[Info] Write transformed "<<BMb.getBMname()<<" to " <<outPath<<"/"<<outfilePDB<<endl;
+    // filePath = outPath + "/" + outfilePDB;
+    // output.open(filePath, ios::out);
+    // if (! output.is_open())
+    // {
+    //     cerr << "[Error] Fail to open file " + filePath + '\n';
+    // }
+    // BriqxModule* BMnew;
+    // if(bestAlign) {
+    //     BMnew =  new BriqxModule(BMb, bestAlign->getRotTrans(), bestAlign->getAcog(), bestAlign->getBcog(),
+    //     bpl, atl, "", true);
+    // } else {
+    //     BMnew = new BriqxModule(BMb, bestAlignBP->getRotTrans(), bestAlignBP->getAcog(), bestAlignBP->getBcog(),
+    //     bpl, atl, "", true);
+    // }
+    // BMnew->printPDBFormat(output);
+    // output.close();
+    // BMnew->deepClear();
+    // delete BMnew;
 
     BMa.deepClear();
     BMb.deepClear();
@@ -372,16 +629,17 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
     BriqxModule BMa(BMaPDB, *bpl, *atl, BMaName, *BMaSel);
     BriqxModule BMb(BMbPDB, *bpl, *atl, BMbName, *BMbSel);
 
-    if(BMa.getNStrand() != BMb.getNStrand()) {
-        outstr = "[Result][" + to_string(jid) + "] nStrand Unmatch: " +\
-            BMaName + ": " + to_string(BMa.getNStrand()) + ", " + \
-            BMbName + ": " + to_string(BMb.getNStrand()) + "\n";
-        cout << outstr;
-        array<string,2> alnKey{BMaName, BMbName};
-        scoreMap->at(alnKey) = -1;
-        normedScMap->at(alnKey) = -1;
-        return EXIT_SUCCESS;
-    }
+    // Comment out nStrand match checking 
+    // if(BMa.getNStrand() != BMb.getNStrand()) {
+    //     outstr = "[Result][" + to_string(jid) + "] nStrand Unmatch: " +\
+    //         BMaName + ": " + to_string(BMa.getNStrand()) + ", " + \
+    //         BMbName + ": " + to_string(BMb.getNStrand()) + "\n";
+    //     cout << outstr;
+    //     array<string,2> alnKey{BMaName, BMbName};
+    //     scoreMap->at(alnKey) = -1;
+    //     normedScMap->at(alnKey) = -1;
+    //     return EXIT_SUCCESS;
+    // }
 
     map<array<BasePair*, 2>, double> DDMMatrix{};
 
@@ -523,7 +781,7 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
             output.open(filePath, ios::out);
             if (! output.is_open())
             {
-                throw "[Error][" + to_string(jid) + "] Fail to open file " + filePath;
+                cerr << "[Error][" + to_string(jid) + "] Fail to open file " + filePath + '\n';
             }
             if(bestAlign) {
                 bestAlign->writeAlignment(output, score, normedSc, true);
@@ -544,7 +802,7 @@ int alignAndScoreMT(string BMaPDB, string BMbPDB, shared_ptr<BasePairLib> bpl, s
             output.open(filePath, ios::out);
             if (! output.is_open())
             {
-                throw "[Error][" + to_string(jid) + "] Fail to open file " + filePath;
+                cerr << "[Error][" + to_string(jid) + "] Fail to open file " + filePath + '\n';
             }
             BriqxModule* BMnew;
             if(bestAlign) {
@@ -579,6 +837,7 @@ void printHelp() {
             " -os outScoreFileName" << endl;
     cout << "bmalign -a PDBA -f PDBList -n NumThreads -o outPath -op outPDBFileName -oa outAlignmentFileName"<<
             " -os outScoreFileName" << endl;
+    cout << "bmalign -pl pairlistfile -o outPath -oa outAlignmentFileName -os outScoreFileName" << endl;
 }
 
 /**
@@ -590,9 +849,13 @@ void printHelp() {
  * @param -b: Path to module B PDB file 
  * @param -o: Output path
  * @param -op: filename (no path included) of output PDB file recording aligned module B.
- *             default: alignedB.pdb without -f, "//"(suppressed) when -f is specified.
+ *             default: 
+ *                  alignedB.pdb without -f,
+ *                  "//"(suppressed) when -f or -pl is specified.
  * @param -oa: filename (no path included) of output alignment files (based on module A and module B, respectively).
- *             default: align.aln without -f, "//"(suppressed) when -f is specified.
+ *             default: 
+ *                  align.aln without -f,
+ *                  "//"(suppressed) when -f or -pl is specified.
  * @param -f: Read input PDB list from given file.
  * @param -os: filename (path included) to write overall scores in csv format, suffixes labeling nStrand and ".csv" will
  * be appended. Default is path from -o with filename "overallScores".
@@ -603,6 +866,8 @@ void printHelp() {
  * This is an option without arguments.
  * @param Options not implemented:
  * @param -d: Read input PDB from given directory.
+ * @param -pl: Read input PDB pair list from given file. PDB pair list file each line contains a pair of PDB path for
+ * alignment.
  * @param -selA: Apply base-based selections from input PDB of module A. 
  * @param -selB: Apply base-based selections from input PDB of module B. 
  * 
@@ -652,6 +917,9 @@ int main(int argc, char** argv) {
         if(cmdArgs.specifiedOption("-d")) {
             cout<<"[Warning][Main] OptionIgnored: Option -d is ignored at the presence of -a,-b,-f"<<endl;
         }
+        if(cmdArgs.specifiedOption("-pl")) {
+            cout<<"[Warning][Main] OptionIgnored: Option -pl is ignored at the presence of -a,-b,-f"<<endl;
+        }
         if(cmdArgs.specifiedOption("-b")) {
             pdbB = cmdArgs.getValue("-b");
             BasePairLib* bpl = new BasePairLib();
@@ -683,7 +951,8 @@ int main(int argc, char** argv) {
             input.open(listFile, ios::in);
             if (! input.is_open())
             {
-                throw "[Error][Main] fail to open file " + listFile;
+                cerr << "[Error][Main] fail to open file " + listFile + '\n';
+                return EXIT_FAILURE;
             }
             string s;
             map<int,vector<string> > strandNum2MotifMap;
@@ -714,7 +983,8 @@ int main(int argc, char** argv) {
                     output.open(filePath, ios::out);
                      if (! output.is_open())
                      {
-                         throw "[Error] Fail to open file " + filePath;
+                        cerr << "[Error] Fail to open file " + filePath + '\n';
+                        return EXIT_FAILURE;
                      }
                      int lns = iter.second.size();
                      for(int i=0; i<lns; i++) {
@@ -762,7 +1032,8 @@ int main(int argc, char** argv) {
             scout.open(scOutFile, ios::out);
             if (! scout.is_open())
             {
-                throw "[Error][Main] Fail to open file " + scOutFile;
+                cerr << "[Error][Main] Fail to open file " + scOutFile + '\n';
+                return EXIT_FAILURE;
             }
             scout << "MotifA,MotifB,score,normedScore" <<endl;
             for(int j=0;j<lv;j++) {
@@ -773,7 +1044,8 @@ int main(int argc, char** argv) {
             scout.close();
             return EXIT_SUCCESS;
         } else {
-            throw invalid_argument("pdbB or filelist must be specified when pdbA present");
+            cerr << "[Error]Main: pdbB or filelist must be specified when pdbA present" << endl;
+            return EXIT_FAILURE;
         }
     }
     if(cmdArgs.specifiedOption("-f")) {
@@ -798,7 +1070,8 @@ int main(int argc, char** argv) {
         input.open(listFile, ios::in);
         if (! input.is_open())
         {
-            throw "[Error][Main] fail to open file " + listFile;
+            cerr << "[Error][Main] fail to open file " + listFile << endl;
+            return EXIT_FAILURE;
         }
         string s;
         map<int,vector<string> > strandNum2MotifMap;
@@ -828,7 +1101,8 @@ int main(int argc, char** argv) {
                 output.open(filePath, ios::out);
                  if (! output.is_open())
                  {
-                     throw "[Error] Fail to open file " + filePath;
+                    cerr << "[Error] Fail to open file " + filePath << endl;
+                    return EXIT_FAILURE;
                  }
                  int lns = iter.second.size();
                  for(int i=0; i<lns; i++) {
@@ -883,7 +1157,8 @@ int main(int argc, char** argv) {
             scout.open(scOutFile, ios::out);
             if (! scout.is_open())
             {
-                throw "[Error][Main] Fail to open file " + scOutFile;
+                cerr << "[Error][Main] Fail to open file " + scOutFile << endl;
+                return EXIT_FAILURE;
             }
             scout << "MotifA,MotifB,score,normedScore" <<endl;
             for(int i=0;i<lv;i++) {
@@ -896,6 +1171,93 @@ int main(int argc, char** argv) {
             }
             scout.close();
         }
+        return EXIT_SUCCESS;
+    }
+    if(cmdArgs.specifiedOption("-pl")) {
+        cerr << "option -pl is not fully implementated" << endl;
+        return EXIT_FAILURE;
+        listFile = cmdArgs.getValue("-pl");  // read PDB file names from listfile
+        if(cmdArgs.specifiedOption("-d")) {
+            cerr<<"[Warning][Main] OptionIgnored: Option -d is ignored at the presence of -f"<<endl;
+        }
+        if(cmdArgs.specifiedOption("-op")) {
+            cerr<<"[Warning][Main] OptionIgnored: Option -op is ignored in batch pair-list alignment" << endl;
+        }
+        if(cmdArgs.specifiedOption("-n")) {
+            cerr<<"[Warning][Main] OptionIgnored: Option -n is ignored in batch pair-list alignment" << endl;
+        }
+
+        //batch processing
+        ifstream input;
+        input.open(listFile, ios::in);
+        if (! input.is_open())
+        {
+            cerr << "[Error][Main] fail to open file " + listFile << endl;
+            return EXIT_FAILURE;
+        }
+        string s;
+        vector<array<string, 2>> pathList, pairList;
+        shared_ptr<BasePairLib> pbpl(new BasePairLib);
+        shared_ptr<AtomLib> patl(new AtomLib);
+        while(getline(input,s)) {
+            vector<string> spt;
+            splitString(s, " ", &spt);
+            if(spt.size() < 2) {
+                cerr << "[Warning][Main] Incomplete Pair: " << s << endl;
+                continue;
+            }
+            pathList.emplace_back(array<string,2>{spt[0], spt[1]});
+            filesystem::path path1{spt[0]}, path2{spt[1]};
+            pairList.emplace_back(array<string,2>{path1.stem(), path2.stem()});
+        }
+        input.close();
+
+        filesystem::path pthAln(outfileAln);
+        auto pAStem = pthAln.stem();
+        auto pAExt = pthAln.extension();
+        string filePath = outPath.string()+ "/" + pAStem.string() + "_onA." + pAExt.string();
+        cout << "[Info][Main] Write alignment on motifA to " << filePath << endl;
+        ofstream outA, outB;
+        outA.open(filePath, ios::out);
+        if (! outA.is_open())
+        {
+            cerr << "[Error][Main] Fail to open file " + filePath <<endl;
+            return EXIT_FAILURE;
+        }
+        filePath = outPath.string() + "/" + pAStem.string() + "_onB." + pAExt.string();
+        cout << "[Info][Main] Write alignment on motifB to " << filePath << endl;
+        outB.open(filePath, ios::out);
+        if (! outB.is_open())
+        {
+            cerr << "[Error][Main] Fail to open file " + filePath <<endl;
+            return EXIT_FAILURE;
+        }
+
+        int lp = pairList.size();
+        vector<double> scoreVec, normedScVec;
+        scoreVec.resize(lp);
+        normedScVec.resize(lp);
+        for(int i=0; i<lp; i++) {
+            alignAndScore(pathList[i][0], pathList[i][1], *pbpl, *patl, outA, outB, scoreVec[i], alignVec, normedScVec[i], 0, 0, 
+                pairList[i][0], pairList[i][1], bmf);
+        }
+        outA.close();
+        outB.close();
+
+        cout<<"[Info][Main] PairList aligment complete, writing scores."<<endl;
+        ofstream scout;
+        string scOutFile = outfileSc.string();
+        scout.open(scOutFile, ios::out);
+        if (! scout.is_open())
+        {
+            cerr << "[Error][Main] Fail to open file " + scOutFile << endl;
+            return EXIT_FAILURE;
+        }
+        scout << "MotifA,MotifB,score,normedScore" <<endl;
+        for(int i=0;i<lp;i++) {
+            scout << pairList[i][0]<<","<<pairList[i][1]<<","<<scoreVec[i] <<","<<normedScVec[i]<<endl;
+        }
+        scout.close();
         return EXIT_SUCCESS;
     }
     return EXIT_SUCCESS;

@@ -80,6 +80,14 @@ public:
 		return opts;
 	}
 
+	vector<string> listOptionTags() {
+		vector<string> tags;
+		for(int i=0;i<options.size();i++) {
+			tags.emplace_back(options[i].optionTag);
+		}
+		return tags;
+	}
+
 	void printOptions() {
 		for(int i=0;i<options.size();i++) {
 			cout << options[i].optionTag << " " << options[i].optionValue << endl;
