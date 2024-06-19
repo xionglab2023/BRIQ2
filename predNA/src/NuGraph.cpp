@@ -3968,8 +3968,12 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 		exit(1);
 	}
 
+	string augc = "AUGCatgc";
+	string pdbSeq = "";
 	for(i=0;i<seqLen;i++){
 		this->seq[i] = baseList[i]->baseTypeInt;
+		pdbSeq = pdbSeq + augc.substr(seq[i], 1);
+
 		this->wcPairPosID[i] = -1;
 
 		RiboseRotamer* rot = new RiboseRotamer();
@@ -3989,6 +3993,14 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 		this->initRiboseRotList.push_back(rot);
 		this->initBaseRotCGList.push_back(baseRotCG);
 		this->initRiboseRotCGList.push_back(riboRotCG);
+	}
+
+	//check pdb sequence
+	if(baseSeq != pdbSeq) {
+		cout << "pdb sequence is inconsistent with input sequence: " << endl;
+		cout << pdbSeq << endl;
+		cout << baseSeq << endl;
+		exit(0);
 	}
 
 
@@ -4090,7 +4102,6 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	 * init NuEdges
 	 */
 
-	string augc = "AUGC";
 
 	vector<int> h3List;
 	vector<int> h5List;
