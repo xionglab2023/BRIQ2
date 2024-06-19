@@ -7,7 +7,7 @@
 
 #ifndef PREDNA_NUGRAPH_H_
 #define PREDNA_NUGRAPH_H_
-#define DEBUG
+// #define DEBUG
 
 #include <vector>
 #include <string>
