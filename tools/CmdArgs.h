@@ -34,11 +34,19 @@ private:
 public:
 	CmdArgs(int argc, char** args){
 		for(int i=1;i<argc;i++){
-			if(args[i][0] == '-'){
+			if(i == argc-1 && args[i][0] == '-') {
 				string tag = string(args[i]);
 				string value = "";
-				if(i+1<argc)
-					value = string(args[i+1]);
+				options.push_back(CmdOption(tag, value));
+			}
+			else if(args[i][0] == '-' && args[i+1][0] == '-'){
+				string tag = string(args[i]);
+				string value = "";
+				options.push_back(CmdOption(tag, value));
+			}
+			else if(args[i][0] == '-'){
+				string tag = string(args[i]);
+				string value = string(args[i+1]);
 				options.push_back(CmdOption(tag, value));
 			}
 		}

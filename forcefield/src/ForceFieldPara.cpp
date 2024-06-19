@@ -86,7 +86,7 @@ ForceFieldPara::ForceFieldPara() {
 	this->connectRescale = 1.0;
 	this->rescaleIncreaseFactor = 1.05;
 
-	this->phoRep = 1.0;
+	this->phoRep = 2.0;
 
 	addSubEnergyPairtype = -1;
 	addSubEnergyClusterID = -1;
@@ -171,6 +171,14 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	this->clashRescale = 1.0;
 	this->connectRescale = 1.0;
 	this->rescaleIncreaseFactor = 1.05;
+
+	this->phoRep = 2.0;
+
+	addSubEnergyPairtype = -1;
+	addSubEnergyClusterID = -1;
+	addSubEnergyWeight = 0.0;
+
+	this->withRandomInit = true;
 
 }
 
