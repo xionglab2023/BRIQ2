@@ -3903,8 +3903,6 @@ void graphInfo::printDetailEnergy(const string& outputFile, BasePairLib* bpLib, 
 			e2 = nuRibosePhoEnergy(nodeA->riboseConf, nodeB->phoConf, sep, et, 1.0);
 			if(abs(e1-e2) > 0.001){
 				cout << "ribose pho error" << endl;
-				out << "ribose pho error" << endl;
-				cout << i << " " << j << " " << e1 << " " << e2 << endl;
 			}
 
 			e1 = nuRibosePhoEnergyPrintDetail(nodeB->riboseConf, nodeA->phoConf, sepR, et, atLib, out);
