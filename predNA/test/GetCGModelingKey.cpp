@@ -130,7 +130,7 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inp
 }
 
 void printHelp(){
-    cout << "testGraphCG -in $INPUTFILE -out $OUTPUTFILE -mp 64" << endl;
+    cout << "cgModeling -in $INPUTFILE -out $OUTPUTFILE -mp 2 -n 10" << endl;
 }
 
 int main(int argc, char** argv){

@@ -252,6 +252,7 @@ public:
 	int seqLen;
 	int* seq;
 	bool* connectToDownstream;
+	int* sepTable;
 	bool* fixed;
 	NuNode** nodes;
 	double ene;
@@ -271,6 +272,9 @@ public:
 	double rmsdCG(graphInfo* other);
 	void printPDB(const string& outputFile);
 	void printAlignedPDB(graphInfo* alignTarget, const string& outputFile);
+	
+	void printDetailEnergy(const string& outputFile, BasePairLib* bpLib, AtomLib* atLib, RnaEnergyTable* et);
+
 	void setNbEnergy(double e){
 		this->nbEne = e;
 	}
@@ -297,6 +301,11 @@ public:
 	vector<RiboseRotamer*> initRiboseRotList;
 	vector<BaseRotamerCG*> initBaseRotCGList;
 	vector<RiboseRotamerCG*> initRiboseRotCGList;
+
+
+	//vector<LigandRotamer*> ligRotList;
+	//LigandNode** allLigands; 
+
 
 	NuNode** allNodes; //L nodes
 	NuEdge** allEdges; //L*L edges

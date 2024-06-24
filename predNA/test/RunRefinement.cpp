@@ -69,6 +69,7 @@ int main(int argc, char** argv){
 		et->para->kStepNum1 = 50;
 		et->para->kStepNum2 = 30;
 		et->para->kStepNum3 = 30;
+		et->para->withRandomInit = false;
 	}
 	else if(mode == "normal") {
    		et->para->T0 = 1.0;
@@ -82,6 +83,7 @@ int main(int argc, char** argv){
 		et->para->kStepNum1 = 200;
 		et->para->kStepNum2 = 100;
 		et->para->kStepNum3 = 100;
+		et->para->withRandomInit = false;
 	}
 	else if(mode == "slow") {
    		et->para->T0 = 5.0;
@@ -95,9 +97,10 @@ int main(int argc, char** argv){
 		et->para->kStepNum1 = 600;
 		et->para->kStepNum2 = 300;
 		et->para->kStepNum3 = 300;
+		et->para->withRandomInit = true;
 	}
 
-	et->para->withRandomInit = false;
+
 
 	et->loadAtomicEnergy();
 
@@ -144,7 +147,6 @@ int main(int argc, char** argv){
 	delete et;
 	delete tree;
 	delete graph;
-
 
 	clock_t end1 = clock();
 	cout << "time1: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
