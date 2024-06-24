@@ -21,13 +21,19 @@ using namespace NSPforcefield;
 using namespace NSPpredNA;
 using namespace std;
 
+void printHelp(){
+	cout << "key2pdb -in $INPUT -out $OUTPUTPDB -ene $OUTENEFILE -seed $RANDSEED"
+}
+
 
 int main(int argc, char** argv){
-
-
 	clock_t start = clock();
-
     CmdArgs cmdArgs{argc, argv};
+
+	if(argc == 1 || cmdArgs.specifiedOption("-h")){
+		printHelp();
+	} 
+
     string inputFile = cmdArgs.getValue("-in");
     string output = cmdArgs.getValue("-out");
     string eneout = cmdArgs.getValue("-ene");
