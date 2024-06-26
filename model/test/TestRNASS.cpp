@@ -1,5 +1,6 @@
 
 #include "model/AssignRNASS.h"
+#include "model/AssignRNASasa.h"
 #include "model/StructureModel.h"
 #include "model/AtomLib.h"
 
@@ -21,17 +22,15 @@ int main(int argc, char** argv){
         string sec = as->ssSeq;
         cout << seq << endl;
         cout << sec << endl;
+
+        BaseSasaPoints* bsp = new BaseSasaPoints();
+        AssignRNASasa* sasa = new AssignRNASasa(baseList, bsp);
+        sasa->printExposeNum();
+
     }
  
-    {
-        RNAPDB* pdb = new RNAPDB(pdbFile);
-        pdb->DNAToRNA();
-        AssignRNASS* as = new AssignRNASS(pdb, atLib);
-    
-        string seq = as->seq;
-        string sec = as->ssSeq;
-        cout << seq << endl;
-        cout << sec << endl;
-    }
+
+
+
 
 }

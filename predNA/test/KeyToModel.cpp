@@ -22,7 +22,7 @@ using namespace NSPpredNA;
 using namespace std;
 
 void printHelp(){
-	cout << "key2pdb -in $INPUT -out $OUTPUTPDB -ene $OUTENEFILE -seed $RANDSEED"
+	cout << "key2pdb -in $INPUT -out $OUTPUTPDB -ene $OUTENEFILE -seed $RANDSEED" << endl;
 }
 
 

@@ -1491,39 +1491,58 @@ void RNAPDB::readCIF(const string& cifFile){
     ResName rn;
 
     vector<string> spt;
+	map<string, int> atomSiteMap;
 
+	int atomSiteIndex = 0;
 	while(getline(input,s))
     {
 		//cout << s << endl;
         len = s.length();
-        if(len < 6) continue;
-        string prefix = s.substr(0,6);
-        if(prefix == "MODEL ")
-        {
-            if(models > 0)
-                break;
-            else
-                models = 1;
-        }
-        if(len < 54) continue;
-        if(prefix != "ATOM  " && prefix != "HETATM") continue;
+        if(len < 5) continue;
+        string prefix = s.substr(0,5);
+		if(prefix == "loop_"){
+			atomSiteMap.clear();
+			atomSiteIndex = 0;
+			/*
+			atomSiteMap["label_comp_id"] = 5;
+			atomSiteMap["label_asym_id"] = 6;
+			atomSiteMap["pdbx_PDB_ins_code"] = 9;
+			atomSiteMap["auth_seq_id"] = 16; //resID
+			atomSiteMap["auth_comp_id"] = 17; //resName
+			atomSiteMap["auth_asym_id"] = 18; //chainID
+			atomSiteMap["pdbx_PDB_model_num"] = 20;
+			*/
+		}
+		else if(prefix == "_atom"){
+			atomSiteMap[s.substr(11, s.length()-12)] = atomSiteIndex;
+			atomSiteIndex++;
+		}
+
+		
+
+        if(prefix != "ATOM " && prefix != "HETAT") continue;
 
         Atom* a = new Atom(s, 1);
         splitString(s, " ", &spt);
-        if(spt.size() < 19) continue;
+	
+        if(spt.size() < atomSiteMap.size()) continue;
+		if(atomSiteMap.find("pdbx_PDB_model_num") != atomSiteMap.end()) {
+			int modelID = atoi(spt[atomSiteMap["pdbx_PDB_model_num"]].c_str());
+			if(modelID  > 1 ) 
+				continue;
+		}
 
-        rawResName = spt[5];
+        rawResName = spt[atomSiteMap["label_comp_id"]];
         if(rawResName == "HOH") continue;
 
         rawResName = trimString(rawResName);
         if(!rn.isRNABase(rawResName)) continue;
         resName = rn.toStandardBase(rawResName);
 
+        curChainID = spt[atomSiteMap["auth_asym_id"]];
 
-        curChainID = spt[18];
-
-        curResID = spt[16];
-        altLoc = spt[9][0];
+        curResID = spt[atomSiteMap["auth_seq_id"]];
+        altLoc = spt[atomSiteMap["pdbx_PDB_ins_code"]][0];
 
         if(altLoc == '?')
         	altLoc = ' ';

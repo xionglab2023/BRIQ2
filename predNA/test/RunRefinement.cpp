@@ -28,7 +28,7 @@ int main(int argc, char** argv){
 	clock_t start = clock();
 
 	if(argc < 4) {
-		cout << "rna_refinement $input $output $mode $randseed" << endl;
+		cout << "rna_refinement $input $output $mode $eneFile $randseed" << endl;
 		cout << "mode: fast, normal, slow" << endl;
 		exit(0);
 	}
@@ -36,7 +36,8 @@ int main(int argc, char** argv){
 	string inputFile = string(argv[1]);
 	string output = string(argv[2]);
 	string mode = string(argv[3]);
-	int randseed = atoi(argv[4]);
+	string eneFile = string(argv[4]);
+	int randseed = atoi(argv[5]);
 
 	srand(randseed);
 
@@ -138,8 +139,9 @@ int main(int argc, char** argv){
 	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();
 	gi->printPDB(output);
+	gi->printDetailEnergy(eneFile, pairLib, atLib, et);
+	
 	delete gi;
-
 	delete pairLib;
 	delete rotLib;
 	delete atLib;
