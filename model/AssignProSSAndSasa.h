@@ -28,8 +28,8 @@ public:
 
 class BackboneHBond{
 public:
-	char donerChainID;
-	char acceptorChainID;
+	string donerChainID;
+	string acceptorChainID;
 	string donerResID;
 	string acceptorResID;
 	int seqSeparation;

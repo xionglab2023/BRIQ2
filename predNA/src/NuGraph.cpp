@@ -1049,8 +1049,6 @@ NuEdge::NuEdge(NuNode* nodeA, NuNode* nodeB, NuGraph* graph){
 	this->ei = new EdgeInformation(sep, typeA, typeB, graph->pairLib);
 	this->moveSet = NULL;
 
-//	this->moveSet = new MixedNuPairCluster(sep, typeA*4+typeB, graph->moveLib);
-//	this->moveSet->updateEdgeInformation(this->ei);
 
 	this->weight = this->ei->weight;
 
@@ -4324,6 +4322,7 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 
 			this->allEdges[i*seqLen+j]->graph = this;
 			this->allEdges[i*seqLen+j]->weight = 0.0;
+
 			sprintf(xs, "%c%c", augc[this->allNodes[i]->baseType], augc[this->allNodes[j]->baseType]);
 			string pairType = string(xs);
 

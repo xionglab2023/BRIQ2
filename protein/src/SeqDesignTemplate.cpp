@@ -903,7 +903,7 @@ void SeqDesignTemplate::printPDB(const string& outFile){
 	int atomID = 1;
 	char s[100];
 	for(int i=0;i<this->nodeList.size();i++){
-		char chainID = this->resList[i]->chainID;
+		string chainID = this->resList[i]->chainID;
 		string resID = this->resList[i]->resID;
 		char c = resID[resID.length()-1];
 		vector<string> scNames;
@@ -915,7 +915,7 @@ void SeqDesignTemplate::printPDB(const string& outFile){
 				string type = name.substr(0,1);
 				string tri = rn->intToTri(nodeList[i]->conf->aaType);
 				XYZ coord = nodeList[i]->conf->bbConf->coords[j+1];
-				sprintf(s,"ATOM%7d  %-4s%3s %c%4s    %8.3f%8.3f%8.3f  1.00  0.00          %2s",atomID,name.c_str(),tri.c_str(),chainID,resID.c_str(),coord[0],coord[1],coord[2],type.c_str());
+				sprintf(s,"ATOM%7d  %-4s%3s %c%4s    %8.3f%8.3f%8.3f  1.00  0.00          %2s",atomID,name.c_str(),tri.c_str(),chainID[0],resID.c_str(),coord[0],coord[1],coord[2],type.c_str());
 				out << s << endl;
 				atomID++;
 			}
@@ -924,7 +924,7 @@ void SeqDesignTemplate::printPDB(const string& outFile){
 				string type = name.substr(0,1);
 				string tri = rn->intToTri(nodeList[i]->conf->aaType);
 				XYZ coord = nodeList[i]->conf->scConf->coords[j];
-				sprintf(s,"ATOM%7d  %-4s%3s %c%4s    %8.3f%8.3f%8.3f  1.00  0.00          %2s",atomID,name.c_str(),tri.c_str(),chainID,resID.c_str(),coord[0],coord[1],coord[2],type.c_str());
+				sprintf(s,"ATOM%7d  %-4s%3s %c%4s    %8.3f%8.3f%8.3f  1.00  0.00          %2s",atomID,name.c_str(),tri.c_str(),chainID[0],resID.c_str(),coord[0],coord[1],coord[2],type.c_str());
 				out << s << endl;
 				atomID++;
 			}
@@ -935,7 +935,7 @@ void SeqDesignTemplate::printPDB(const string& outFile){
 				string type = name.substr(0,1);
 				string tri = rn->intToTri(nodeList[i]->conf->aaType);
 				XYZ coord = nodeList[i]->conf->bbConf->coords[j+1];
-	            sprintf(s,"ATOM%7d  %-4s%3s %c%5s   %8.3f%8.3f%8.3f  1.00  0.00          %2s",atomID,name.c_str(),tri.c_str(),chainID,resID.c_str(),coord[0],coord[1],coord[2],type.c_str());
+	            sprintf(s,"ATOM%7d  %-4s%3s %c%5s   %8.3f%8.3f%8.3f  1.00  0.00          %2s",atomID,name.c_str(),tri.c_str(),chainID[0],resID.c_str(),coord[0],coord[1],coord[2],type.c_str());
 				out << s << endl;
 				atomID++;
 			}
@@ -944,7 +944,7 @@ void SeqDesignTemplate::printPDB(const string& outFile){
 				string type = name.substr(0,1);
 				string tri = rn->intToTri(nodeList[i]->conf->aaType);
 				XYZ coord = nodeList[i]->conf->scConf->coords[j];
-				sprintf(s,"ATOM%7d  %-4s%3s %c%5s   %8.3f%8.3f%8.3f  1.00  0.00          %2s",atomID,name.c_str(),tri.c_str(),chainID,resID.c_str(),coord[0],coord[1],coord[2],type.c_str());
+				sprintf(s,"ATOM%7d  %-4s%3s %c%5s   %8.3f%8.3f%8.3f  1.00  0.00          %2s",atomID,name.c_str(),tri.c_str(),chainID[0],resID.c_str(),coord[0],coord[1],coord[2],type.c_str());
 				out << s << endl;
 				atomID++;
 			}

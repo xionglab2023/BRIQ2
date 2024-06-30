@@ -66,14 +66,14 @@ public:
 	int resSeqID;
 	string triName;
 	int intName;
-	char chainID;
+	string chainID;
 	int atomNum;
 	bool hasLocalFrame;
 	bool hasAltConf;
 	LocalFrame coordSys;
 	char altLoc;
 	Residue();
-	Residue(string resID, char chainID, string triName);
+	Residue(string resID, string chainID, string triName);
 
 	void addAtom(Atom* a);
 	void setResSeqID(int id);
@@ -89,7 +89,7 @@ public:
 	bool sidechainComplete(AtomLib* atomLib) const;
 	XYZ getCbCoord();
 	LocalFrame& getCoordSystem();
-	char getChainID() const;
+	string getChainID() const;
 	int getResSeqID() const;
 	string getResID() const;
 	string getType() const;
@@ -277,6 +277,7 @@ public:
 	bool isStackingTo(RNABase* other, AtomLib* atLib);
 
 	int printPDBFormat(ostream& out, int startAtomID) const;
+	int printCIFFormat(ostream& out, int startAtomID) const;
 
 	void DNAToRNA(){
 		if(this->baseTypeInt > 3 && this->baseTypeInt < 8){
@@ -335,20 +336,20 @@ public:
 class ProteinChain{
 private:
 	string pdbID;
-	char chainID;
+	string chainID;
 	int chainLen;
 	vector<Residue*> resList;
 	map<string,Residue*> resMap;
 
 public:
 	ProteinChain();
-	ProteinChain(string pdbID, char chainID);
-	ProteinChain(char chainID);
+	ProteinChain(string pdbID, string chainID);
+	ProteinChain(string chainID);
 
 	void setPDBID(string pdbID);
-	void setChainID(char c);
+	void setChainID(string c);
 	string getPDBID() const;
-	char getChainID() const;
+	string getChainID() const;
 	int getChainLength() const;
 	vector<Residue*>& getResList();
 	Residue* getResidue(const string& resID);
@@ -412,6 +413,7 @@ public:
 		return string(s);
 	}
 	int printPDBFormat(ostream& out, int startAtomID) const;
+	int printCIFFormat(ostream& out, int startAtomID) const;
 
 };
 
@@ -423,10 +425,13 @@ private:
 public:
 	PDB();
 	PDB(const string& pdbFile, const string& pdbID);
+	void readPDB(const string& pdbFile);
+	void readCIF(const string& cifFile);
+
 	PDB& operator=(const PDB& other);
 	vector<ProteinChain*>& getChains();
 	ProteinChain* getFirstChain();
-	ProteinChain* getChain(char c);
+	ProteinChain* getChain(string& c);
 	string getFirstSeq();
 	vector<Residue*>& getResList();
 	vector<Residue*> getValidResList(){
@@ -439,9 +444,7 @@ public:
 		return list;
 	}
 	void printPDBFormat(ofstream& out) const;
-	void printPDBFormatNoHydrogen(ofstream& out) const;
-	string getPDBID()
-	{
+	string getPDBID(){
 		return this->pdbID;
 	}
 	virtual ~PDB();
@@ -494,6 +497,7 @@ public:
 	}
 
 	void printPDBFormat(ostream& out) const;
+	void printCIFFormat(ostream& out) const;
 	virtual ~RNAPDB();
 };
 

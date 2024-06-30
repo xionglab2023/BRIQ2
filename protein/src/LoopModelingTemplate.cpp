@@ -35,13 +35,13 @@ LoopModelingTemplate::LoopModelingTemplate(int len, vector<string>& lines, ResBB
 void LoopModelingTemplate::printInit(const string& output, AtomLib* atLib){
 	ResName rn;
 
-	ProteinChain* pc1 = new ProteinChain('A');
+	ProteinChain* pc1 = new ProteinChain("A");
 	vector<Residue*> targetResList;
 	char xx[200];
 
 	for(int k=0;k<loopLength;k++){
 		sprintf(xx, "%d", (k+1));
-		Residue* resTarget1 = new Residue(string(xx), 'A', rn.intToTri(targetNodes[k]->aaType));
+		Residue* resTarget1 = new Residue(string(xx), "A", rn.intToTri(targetNodes[k]->aaType));
 
 		resTarget1->addAtom(new Atom("N", targetNodes[k]->conf->bbConf->coords[1]));
 		resTarget1->addAtom(new Atom("CA", targetNodes[k]->conf->bbConf->coords[2]));
@@ -57,13 +57,13 @@ void LoopModelingTemplate::printInit(const string& output, AtomLib* atLib){
 		targetResList.push_back(resTarget1);
 	}
 
-	ProteinChain* pc2 = new ProteinChain('B');
+	ProteinChain* pc2 = new ProteinChain("B");
 	vector<Residue*> nbResList;
 
 	for(int i=0;i<neighborNodes.size();i++){
 		sprintf(xx, "%d", (i+1));
 		string resid = string(xx);
-		Residue* res = new Residue(resid, 'B', rn.intToTri(neighborNodes[i]->aaType));
+		Residue* res = new Residue(resid, "B", rn.intToTri(neighborNodes[i]->aaType));
 
 		res->addAtom(new Atom("N", neighborNodes[i]->conf->bbConf->coords[1]));
 		res->addAtom(new Atom("CA", neighborNodes[i]->conf->bbConf->coords[2]));

@@ -57,6 +57,8 @@ Atom::Atom(const string& line, int fileType){
 		if(this->name[0] == '"')
 			this->name = name.substr(1,this->name.length()-2);
 
+		//cout << name << " " << name.length() << endl;
+		
 		if(this->name == "OXT" || this->name == "OXT1")
 			this->name = "O";
 		this->alt = spt[9][0];
@@ -194,7 +196,7 @@ Residue::Residue() {
 	this->atomNum = 0;
 	this->triName = "UNK";
 	this->intName = 20;
-	this->chainID = '-';
+	this->chainID = "-";
 	this->hasLocalFrame = false;
 	this->coordSys;
 	this->altLoc = ' ';
@@ -202,7 +204,7 @@ Residue::Residue() {
 
 }
 
-Residue::Residue(string resID, char chainID, string triName)
+Residue::Residue(string resID, string chainID, string triName)
 {
 	ResName rn;
 	this->resID = resID;
@@ -349,7 +351,7 @@ LocalFrame& Residue::getCoordSystem()
 	return this->coordSys;
 }
 
-char Residue::getChainID() const
+string Residue::getChainID() const
 {
 	return this->chainID;
 }
@@ -709,6 +711,59 @@ int RNABase::printPDBFormat(ostream& out, int startAtomID) const{
     return atomID;
 }
 
+int RNABase::printCIFFormat(ostream& out, int startAtomID) const{
+    char c = this->baseID.at(baseID.length()-1);
+    char s[100];
+    vector<Atom*>::const_iterator it;
+    int atomID = startAtomID;
+	char insCode;
+    if(c >= '0' && c <= '9')
+    {
+		 insCode = '.';
+    }
+	else
+    {
+		 insCode = c;
+	}
+    for(it=atomList.begin();it!=atomList.end();it++)
+	{
+        	(*it)->guessAtomType();
+            XYZ& coord = (*it)->getCoord();
+			string baseTypeString;
+			if(baseType == 'A')
+				baseTypeString = "A";
+			else if(baseType == 'U')
+				baseTypeString = "U";
+			else if(baseType == 'G')
+				baseTypeString = "G";
+			else if(baseType == 'C')
+				baseTypeString = "C";
+			else if(baseType == 'a')
+				baseTypeString = "DA";				
+			else if(baseType == 't')
+				baseTypeString = "DT";
+			else if(baseType == 'g')
+				baseTypeString = "DG";
+			else if(baseType == 'c')
+				baseTypeString = "DC";
+
+			string atomName = (*it)->getName();
+			cout << atomName << " " << atomName.length() << endl;
+			
+			if(atomName[atomName.length()-1] == '\'')
+			{
+				atomName = "\"" + atomName + "\"";
+				cout << atomName << endl;
+			}	
+
+			sprintf(s, "ATOM   %-7d %s %-5s %c %s  %s  1 %-4s ? %8.3f %8.3f %8.3f %4.2f %6.2f ? %s %s %s %-5s 1", atomID, (*it)->type.c_str(), atomName.c_str(), insCode, baseTypeString.c_str(), chainID.c_str(), baseID.c_str(),coord[0],coord[1],coord[2], 1.00, 0.00, baseID.c_str(), baseTypeString.c_str(), chainID.c_str(), atomName.c_str());
+            out << s << endl;
+            atomID++;
+    }
+
+    return atomID;
+}
+
 string RNABase::print() {
 	string ret = chainID + "_" + baseType + baseID;
 	return ret;
@@ -1039,13 +1094,13 @@ ProteinChain::ProteinChain() {
 	this->chainLen = 0;
 }
 
-ProteinChain::ProteinChain(char chainID) {
+ProteinChain::ProteinChain(string chainID) {
 	this->pdbID = "xxxx";
 	this->chainID = chainID;
 	this->chainLen = 0;
 }
 
-ProteinChain::ProteinChain(string pdbID, char chainID){
+ProteinChain::ProteinChain(string pdbID, string chainID){
 	this->pdbID = pdbID;
 	this->chainID = chainID;
 	this->chainLen = 0;
@@ -1055,7 +1110,7 @@ void ProteinChain::setPDBID(string pdbID){
 	this->pdbID = pdbID;
 }
 
-void ProteinChain::setChainID(char c){
+void ProteinChain::setChainID(string c){
 	this->chainID = c;
 }
 
@@ -1063,7 +1118,7 @@ string ProteinChain::getPDBID() const{
 	return this->pdbID;
 }
 
-char ProteinChain::getChainID() const{
+string ProteinChain::getChainID() const{
 	return this->chainID;
 }
 
@@ -1112,7 +1167,6 @@ int ProteinChain::printPDBFormatNoHydrogen(ofstream& out, int startAtomID) const
 
 	return 0;
 }
-
 
 ProteinChain::~ProteinChain() {
 }
@@ -1168,6 +1222,37 @@ int RNAChain::printPDBFormat(ostream& out, int startAtomID) const{
 	return startAtomID;
 }
 
+int RNAChain::printCIFFormat(ostream& out, int startAtomID) const{
+
+	out << "loop_" << endl;
+	out << "_atom_site.group_PDB" << endl;
+	out << "_atom_site.id" << endl;
+	out << "_atom_site.type_symbol" << endl;
+	out << "_atom_site.label_atom_id" << endl;
+	out << "_atom_site.label_alt_id" << endl;
+	out << "_atom_site.label_comp_id" << endl;
+	out << "_atom_site.label_asym_id" << endl;
+	out << "_atom_site.label_entity_id" << endl;
+	out << "_atom_site.label_seq_id" << endl;
+	out << "_atom_site.pdbx_PDB_ins_code" << endl;
+	out << "_atom_site.Cartn_x" << endl;
+	out << "_atom_site.Cartn_y" << endl;
+	out << "_atom_site.Cartn_z" << endl;
+	out << "_atom_site.occupancy" << endl;
+	out << "_atom_site.B_iso_or_equiv" << endl;
+	out << "_atom_site.pdbx_formal_charge" << endl;
+	out << "_atom_site.auth_seq_id" << endl;
+	out << "_atom_site.auth_comp_id" << endl;
+	out << "_atom_site.auth_asym_id" << endl;
+	out << "_atom_site.auth_atom_id" << endl;
+	out << "_atom_site.pdbx_PDB_model_num" << endl;
+
+	for(int i=0;i<baseList.size();i++) {
+		startAtomID = baseList[i]->printCIFFormat(out, startAtomID);
+	}
+	return startAtomID;
+}
+
 PDB::PDB() {
 	this->pdbID = "pdbx";
 }
@@ -1175,6 +1260,10 @@ PDB::PDB() {
 PDB::PDB(const string& pdbFile, const string& pdbID)
 {
 	this->pdbID = pdbID;
+
+}
+
+void PDB::readPDB(const string& pdbFile){
 	ifstream input;
 	input.open(pdbFile.c_str(),ios::in);
 
@@ -1186,10 +1275,10 @@ PDB::PDB(const string& pdbFile, const string& pdbID)
     string s;
     int models = 0;
     int len;
-    char lastChainID = '@';
+    string lastChainID = "@";
     string lastResID = "XXX";
 
-    char curChainID;
+    string curChainID;
     string curResID;
     char altLoc;
     string resName;
@@ -1218,9 +1307,9 @@ PDB::PDB(const string& pdbFile, const string& pdbID)
         if(!rn.isStandardAminoAcid(resName) && resName != "MSE") continue;
 
 
-        curChainID = s.at(21);
+        curChainID = s[21];
         curResID = trimString(s.substr(22,5));
-        altLoc = s.at(16);
+        altLoc = s[16];
 
 
         Atom* a = new Atom(s);
@@ -1256,6 +1345,131 @@ PDB::PDB(const string& pdbFile, const string& pdbID)
     input.close();
 }
 
+void PDB::readCIF(const string& cifFile){
+	ifstream input;
+	input.open(cifFile.c_str(),ios::in);
+
+	if (! input.is_open())
+    {
+        cout << "fail to open file " << cifFile << endl;
+        exit (1);
+    }
+
+    string s;
+    int models = 0;
+    int len;
+    string lastChainID = "@";
+    string lastResID = "XXX";
+
+    string curChainID;
+    string curResID;
+    int curResSeqID = 0;
+    string insCode;
+	string altCode;
+    string rawResName;
+    string resName;
+
+    ProteinChain* curChain;
+    Residue* curResidue;
+    ResName rn;
+
+    vector<string> spt;
+	map<string, int> atomSiteMap;
+
+	int atomSiteIndex = 0;
+	while(getline(input,s))
+    {
+		//cout << s << endl;
+        len = s.length();
+        if(len < 5) continue;
+        string prefix = s.substr(0,5);
+		if(prefix == "loop_"){
+			atomSiteMap.clear();
+			atomSiteIndex = 0;
+			/*
+			atomSiteMap["label_alt_id"] = 4;
+			atomSiteMap["label_comp_id"] = 5;
+			atomSiteMap["label_asym_id"] = 6;
+			atomSiteMap["pdbx_PDB_ins_code"] = 9;
+			atomSiteMap["auth_seq_id"] = 16; //resID
+			atomSiteMap["auth_comp_id"] = 17; //resName
+			atomSiteMap["auth_asym_id"] = 18; //chainID
+			atomSiteMap["pdbx_PDB_model_num"] = 20;
+			*/
+		}
+		else if(prefix == "_atom"){
+			atomSiteMap[s.substr(11, s.length()-12)] = atomSiteIndex;
+			atomSiteIndex++;
+		}
+
+		
+
+        if(prefix != "ATOM " && prefix != "HETAT") continue;
+
+        Atom* a = new Atom(s, 1);
+        splitString(s, " ", &spt);
+	
+        if(spt.size() < atomSiteMap.size()) continue;
+		if(atomSiteMap.find("pdbx_PDB_model_num") != atomSiteMap.end()) {
+			int modelID = atoi(spt[atomSiteMap["pdbx_PDB_model_num"]].c_str());
+			if(modelID  > 1 ) 
+				continue;
+		}
+
+        rawResName = spt[atomSiteMap["label_comp_id"]];
+        if(rawResName == "HOH") continue;
+
+        rawResName = trimString(rawResName);
+
+		if(!rn.isAminoAcid(rawResName)) continue;
+		resName = rawResName;
+
+        curChainID = spt[atomSiteMap["auth_asym_id"]];
+        insCode = spt[atomSiteMap["pdbx_PDB_ins_code"]];
+        if(insCode == "?")
+        	insCode = "";
+		
+		curResID = spt[atomSiteMap["auth_seq_id"]]+insCode;
+
+		altCode = spt[atomSiteMap["label_alt_id"]];
+
+        if(a->type == "H") continue;
+        if(curChainID != lastChainID)
+        {
+             if(getChain(curChainID) == NULL)
+             {
+                  curChain = new ProteinChain(curChainID);
+                  this->chains.push_back(curChain);
+             }
+             else
+            	  curChain = getChain(curChainID);
+
+             lastChainID = curChainID;
+             lastResID = "XXX";
+        }
+
+        if(curResID != lastResID)
+        {
+        	curResidue = new Residue(curResID, curChainID, resName);
+        	curResidue->setResSeqID(curResSeqID);
+        	curResSeqID++;
+        	curChain->addResidue(curResidue);
+            residues.push_back(curResidue);
+            lastResID = curResID;
+        }
+
+        if(altCode != "." && altCode != "A" && altCode != "1") {
+        	curResidue->hasAltConf = true;
+        	continue;
+        }
+
+        curResidue->addAtom(a);
+        curResidue->setAltLoc(altCode[0]);
+    }
+
+    input.close();
+}
+
 PDB& PDB::operator=(const PDB& other){
 	cout << "operator '=' is inhibited in class PDB" << endl;
 	abort();
@@ -1274,7 +1488,7 @@ ProteinChain* PDB::getFirstChain()
     return NULL;
 }
 
-ProteinChain* PDB::getChain(char c)
+ProteinChain* PDB::getChain(string& c)
 {
     for(unsigned int i=0;i<this->chains.size();i++)
     {
@@ -1482,7 +1696,8 @@ void RNAPDB::readCIF(const string& cifFile){
     string curChainID;
     string curResID;
     int curResSeqID = 0;
-    char altLoc;
+    string insCode;
+	string altCode;
     string rawResName;
     string resName;
 
@@ -1504,6 +1719,7 @@ void RNAPDB::readCIF(const string& cifFile){
 			atomSiteMap.clear();
 			atomSiteIndex = 0;
 			/*
+			atomSiteMap["label_alt_id"] = 4;
 			atomSiteMap["label_comp_id"] = 5;
 			atomSiteMap["label_asym_id"] = 6;
 			atomSiteMap["pdbx_PDB_ins_code"] = 9;
@@ -1539,13 +1755,16 @@ void RNAPDB::readCIF(const string& cifFile){
         if(!rn.isRNABase(rawResName)) continue;
         resName = rn.toStandardBase(rawResName);
 
-        curChainID = spt[atomSiteMap["auth_asym_id"]];
+        curChainID = spt[atomSiteMap["label_asym_id"]];
 
-        curResID = spt[atomSiteMap["auth_seq_id"]];
-        altLoc = spt[atomSiteMap["pdbx_PDB_ins_code"]][0];
+      
+        insCode = spt[atomSiteMap["pdbx_PDB_ins_code"]];
 
-        if(altLoc == '?')
-        	altLoc = ' ';
+        if(insCode == "?")
+        	insCode = "";
+		
+		curResID = spt[atomSiteMap["label_seq_id"]]+insCode;
+		altCode = spt[atomSiteMap["label_alt_id"]];
 
         if(rawResName == "4SU" && a->name == "S4"){
         	a->name = "O4";
@@ -1580,18 +1799,19 @@ void RNAPDB::readCIF(const string& cifFile){
             baseList.push_back(curResidue);
             lastResID = curResID;
         }
-        if(altLoc != ' ' && altLoc != 'A' && altLoc != '1') {
+
+
+        if(altCode != "." && altCode != "A" && altCode != "1") {
         	curResidue->hasAltConf = true;
         	continue;
         }
 
         curResidue->addAtom(a);
-        curResidue->setAltLoc(altLoc);
+        curResidue->setAltLoc(altCode[0]);
     }
 
     input.close();
 }
-
 
 void RNAPDB::printPDBFormat(ostream& out) const{
     int startID = 1;
@@ -1603,6 +1823,15 @@ void RNAPDB::printPDBFormat(ostream& out) const{
             RNABase* res = pc->getBaseList().at(j);
             startID = res->printPDBFormat(out,startID);
         }
+    }
+}
+
+void RNAPDB::printCIFFormat(ostream& out) const{
+    int startID = 1;
+    for(unsigned int i=0;i<this->chains.size();i++)
+    {
+    	RNAChain* pc = this->chains.at(i);
+		startID = pc->printCIFFormat(out, startID);
     }
 }
 

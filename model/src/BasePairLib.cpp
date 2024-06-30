@@ -231,6 +231,8 @@ int BasePairLib::getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int s
 		return -1;
 	}
 
+	if(dm.dm[0] > 15.0) return -1;
+
 	double minD = 999.9;
 	int minIndex = -1;
 	int pairType = typeA*4+typeB;

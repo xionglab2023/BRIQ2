@@ -227,9 +227,9 @@ void SingleSidechainModelingTemplate::printNativeEnergy(EnergyCalculator* ec){
 void SingleSidechainModelingTemplate::printInit(const string& output, AtomLib* atLib){
 	ResName rn;
 
-	ProteinChain* pc1 = new ProteinChain('A');
+	ProteinChain* pc1 = new ProteinChain("A");
 
-	Residue* resTarget1 = new Residue("0", 'A', rn.intToTri(targetNode->aaType));
+	Residue* resTarget1 = new Residue("0", "A", rn.intToTri(targetNode->aaType));
 	resTarget1->addAtom(new Atom("N", targetNode->conf->bbConf->coords[1]));
 	resTarget1->addAtom(new Atom("CA", targetNode->conf->bbConf->coords[2]));
 	resTarget1->addAtom(new Atom("C", targetNode->conf->bbConf->coords[3]));
@@ -249,7 +249,7 @@ void SingleSidechainModelingTemplate::printInit(const string& output, AtomLib* a
 	for(int i=0;i<neighborNodes.size();i++){
 		sprintf(xx, "%d", (i+1));
 		string resid = string(xx);
-		Residue* res = new Residue(resid, 'A', rn.intToTri(neighborNodes[i]->aaType));
+		Residue* res = new Residue(resid, "A", rn.intToTri(neighborNodes[i]->aaType));
 		res->addAtom(new Atom("N", neighborNodes[i]->conf->bbConf->coords[1]));
 		res->addAtom(new Atom("CA", neighborNodes[i]->conf->bbConf->coords[2]));
 		res->addAtom(new Atom("C", neighborNodes[i]->conf->bbConf->coords[3]));
@@ -292,10 +292,10 @@ void SingleSidechainModelingTemplate::printInit(const string& output, AtomLib* a
 void SingleSidechainModelingTemplate::printPDB(const string& rawState, const string& finalState, AtomLib* atLib){
 	ResName rn;
 
-	ProteinChain* pc1 = new ProteinChain('A');
-	ProteinChain* pc2 = new ProteinChain('A');
+	ProteinChain* pc1 = new ProteinChain("A");
+	ProteinChain* pc2 = new ProteinChain("A");
 
-	Residue* resTarget1 = new Residue("0", 'A', rn.intToTri(targetNode->aaType));
+	Residue* resTarget1 = new Residue("0", "A", rn.intToTri(targetNode->aaType));
 	resTarget1->addAtom(new Atom("N", targetNode->conf->bbConf->coords[1]));
 	resTarget1->addAtom(new Atom("CA", targetNode->conf->bbConf->coords[2]));
 	resTarget1->addAtom(new Atom("C", targetNode->conf->bbConf->coords[3]));
@@ -308,7 +308,7 @@ void SingleSidechainModelingTemplate::printPDB(const string& rawState, const str
 	}
 	pc1->addResidue(resTarget1);
 
-	Residue* resTarget2 = new Residue("0", 'A', rn.intToTri(targetNode->aaType));
+	Residue* resTarget2 = new Residue("0", "A", rn.intToTri(targetNode->aaType));
 	resTarget2->addAtom(new Atom("N", targetNode->conf->bbConf->coords[1]));
 	resTarget2->addAtom(new Atom("CA", targetNode->conf->bbConf->coords[2]));
 	resTarget2->addAtom(new Atom("C", targetNode->conf->bbConf->coords[3]));
@@ -325,7 +325,7 @@ void SingleSidechainModelingTemplate::printPDB(const string& rawState, const str
 	for(int i=0;i<neighborNodes.size();i++){
 		sprintf(xx, "%d", (i+1));
 		string resid = string(xx);
-		Residue* res = new Residue(resid, 'A', rn.intToTri(neighborNodes[i]->aaType));
+		Residue* res = new Residue(resid, "A", rn.intToTri(neighborNodes[i]->aaType));
 		res->addAtom(new Atom("N", neighborNodes[i]->conf->bbConf->coords[1]));
 		res->addAtom(new Atom("CA", neighborNodes[i]->conf->bbConf->coords[2]));
 		res->addAtom(new Atom("C", neighborNodes[i]->conf->bbConf->coords[3]));
