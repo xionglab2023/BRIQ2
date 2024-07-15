@@ -578,7 +578,6 @@ int main(int argc, char** argv){
         clock_t end1 = clock();
 	    cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;        
     }
-
     else if(tag == "test") {
         int stepNum = testSamplingStepNum(moveLib, eiLib, et, inputFile);
         out << stepNum << endl;

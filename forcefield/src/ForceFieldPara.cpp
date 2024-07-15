@@ -66,9 +66,9 @@ ForceFieldPara::ForceFieldPara() {
 	this->T2 = 0.15;
 	this->T3 = 0.015;
 
-	this->kStepNum1 = 1280;
-	this->kStepNum2 = 640;
-	this->kStepNum3 = 640;
+	this->kStepNum1 = 500;
+	this->kStepNum2 = 200;
+	this->kStepNum3 = 100;
 
 	this->kStepNum1CG = 200;
 	this->kStepNum2CG = 80;

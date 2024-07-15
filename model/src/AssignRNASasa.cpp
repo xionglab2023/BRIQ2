@@ -107,6 +107,25 @@ AssignRNASasa::AssignRNASasa(vector<RNABase*>& baseList, BaseSasaPoints* bs) {
 	}
 }
 
+AssignRNASasa::AssignRNASasa(BaseSasaPoints* bs, vector<NuNode*>& nodes){
+	this->bs = bs;
+	this->len = nodes.size();
+	this->expNum = new int[len];
+	this->types = new int[len];
+	this->radii = 3.2;
+
+	RNABaseLib baseLib;
+	this->localCoords.push_back(baseLib.getPolarAtomCoords(0));
+	this->localCoords.push_back(baseLib.getPolarAtomCoords(1));
+	this->localCoords.push_back(baseLib.getPolarAtomCoords(2));
+	this->localCoords.push_back(baseLib.getPolarAtomCoords(3));
+
+	for(int i=0;i<len;i++){
+		this->expNum[i] = exposeNum(nodes[i], nodes);
+		this->types[i] = nodes[i]->baseConf->rot->baseType;
+	}
+}
+
 int AssignRNASasa::exposeNum(vector<XYZ>& terns, int type){
 	bool buried[this->bs->pointNum];
 	for(int i=0;i<bs->pointNum;i++){
@@ -170,6 +189,41 @@ int AssignRNASasa::exposeNum(RNABase* base, vector<RNABase*>& baseList){
 	}
 
 	//cout << base->baseSeqID << " " << terns.size() << endl;
+	return exposeNum(terns, type);
+}
+
+int AssignRNASasa::exposeNum(NuNode* node, vector<NuNode*>& nodeList){
+	vector<XYZ> terns;
+	int type = node->baseConf->rot->baseType;
+	LocalFrame cs = node->baseConf->cs1;
+
+	vector<XYZ> baseAtoms;
+	for(int i=0;i<this->localCoords[type].size();i++){
+		baseAtoms.push_back(cs.local2globalcrd(this->localCoords[type][i]));
+	}
+	int na = baseAtoms.size();
+	double RR = 4*radii*radii;
+	int i,j,k;
+
+	for(i=0;i<nodeList.size();i++){
+		NuNode* node = nodeList[i];
+		LocalFrame cs2 = node->baseConf->cs1;
+		double od = cs.origin_.distance(cs2.origin_);
+		if(od < 0.1 || od > 17.0) continue;
+
+		for(j=0;j<node->baseConf->rot->atomNum;j++){
+			terns.push_back(cs.local2globalcrd(node->baseConf->coords[j]));
+		}
+
+		for(j=0;j<node->riboseConf->rot->atomNum;j++){
+			terns.push_back(cs.local2globalcrd(node->riboseConf->coords[j]));
+		}
+
+		for(j=0;j<4;j++){
+			terns.push_back(cs.local2globalcrd(node->phoConf->coords[j]));
+		}
+	}
+
 	return exposeNum(terns, type);
 }
 

@@ -8,7 +8,12 @@ add_executable(testRotLib TestRotLib.cpp)
 add_executable(testStacking TestStacking.cpp)
 add_executable(extractValidRNAPDB ExtractValidRNAPDB.cpp)
 add_executable(testRNASS TestRNASS.cpp)
+add_executable(testLigand TestLigandLib.cpp)
+add_executable(rnaSASA CalculateRNASASA.cpp)
 
+target_link_libraries (rnaSASA briqx)
+target_link_libraries (testLigand briqx)
+target_link_libraries (testLigand briqx)
 target_link_libraries (testRNASS briqx)
 target_link_libraries (testStacking briqx)
 target_link_libraries (testRotLib briqx)
@@ -18,5 +23,5 @@ target_link_libraries (testBaseLib briqx)
 target_link_libraries (testBasePairLib briqx)
 target_link_libraries (extractValidRNAPDB briqx)
 
-install(TARGETS testStacking testBaseLib testBasePairLib extractValidRNAPDB testRNASS
+install(TARGETS testStacking testBaseLib testBasePairLib extractValidRNAPDB testRNASS testLigand rnaSASA
     RUNTIME DESTINATION bin)

@@ -70,8 +70,8 @@ public:
 	void runCoarseGrainedMC(map<string, double>& results, int roundNum);
     void runCoarseGrainedMC(map<string, double>& results, const string& outFile);
 
-};
 
+};
 
 
 }

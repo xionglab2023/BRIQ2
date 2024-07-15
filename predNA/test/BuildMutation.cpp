@@ -23,7 +23,7 @@ using namespace std;
 int main(int argc, char** argv){
 
 	if(argc !=  4 || argv[1] == "-h"){
-		cout << "Usage: briq_buildMutation $PDBFILE $SEQUENCE $OUTPDBFILE" << endl;
+		cout << "Usage: rna_buildMutation $PDBFILE $SEQUENCE $OUTPDBFILE" << endl;
 		exit(0);
 	}
 

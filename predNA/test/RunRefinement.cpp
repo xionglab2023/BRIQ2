@@ -64,12 +64,12 @@ int main(int argc, char** argv){
    		et->para->T0 = 0.4;
     	et->para->T1 = 0.2;
     	et->para->T2 = 0.1;
-   		et->para->T3 = 0.02;
+   		et->para->T3 = 0.05;
     	et->para->clashRescale = 0.5;
     	et->para->connectRescale = 0.8;
-		et->para->kStepNum1 = 50;
-		et->para->kStepNum2 = 30;
-		et->para->kStepNum3 = 30;
+		et->para->kStepNum1 = 30;
+		et->para->kStepNum2 = 20;
+		et->para->kStepNum3 = 20;
 		et->para->withRandomInit = false;
 	}
 	else if(mode == "normal") {
@@ -132,9 +132,7 @@ int main(int argc, char** argv){
 	cout << "update sampling info" << endl;
 	tree->updateSamplingInfo();
 	//tree->printNodeInfo();
-
-
-	tree->printEdgeInfo();
+	//tree->printEdgeInfo();
 	
 	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();

@@ -1,11 +1,12 @@
 /*
  * NuGraph.cpp
  *
- *  Created on: 2023��11��15��
+ *  Created on: 2023
  *      Author: nuc
  */
 
 #include <predNA/NuGraph.h>
+#include "model/AssignRNASasa.h"
 
 namespace NSPpredNA {
 
@@ -3181,10 +3182,6 @@ graphInfo* NuTree::runAtomicMC(){
 				if(debug) {
 					cout << "edge mut: edge: " << geList[randPos]->indexA << " " << geList[randPos]->indexB << endl;
 				}
-
-				if(randPos == 0) {
-					cout << "debug " << randPos << endl;
-				}
 				
 				randEdge = geList[randPos];
 				//cout << randEdge->indexA << " " << randEdge->indexB << endl;
@@ -3367,13 +3364,10 @@ graphInfo* NuTree::runAtomicMC(){
 		printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
 	}
 	
-	double totEne = graph->totalEnergy( clashRescale, connectRescale);
 	graphInfo* gi = graph->getGraphInfo();
 	double rms = gi->rmsd(this->graph->initInfo);
 	gi->setRMS(rms);
-		
 	return gi;
-
 }
 
 void NuTree::runCoarseGrainedMC(const string& output){
@@ -3699,6 +3693,7 @@ void graphInfo::printPDB(const string& outputFile){
 	char ss[20];
 	int seqID = 0;
 	int atomNum = 0;
+
 	for(int i=0;i<this->seqLen;i++) {
 		seqID++;
 		sprintf(ss, "%d", seqID);
@@ -3920,7 +3915,6 @@ void graphInfo::printDetailEnergy(const string& outputFile, BasePairLib* bpLib, 
 				cout << "pho pho error" << endl;
 			}
 			//printf("edge: %2d %2d sep: %2d BB %7.3f BR %7.3f BP %7.3f RB %7.3f RR %7.3f RP %7.3f PB %7.3f PR %7.3f PP %7.3f\n", i, j,sep, BB, BR, BP, RB, RR, RP, PB, PR, PP);
-
 		}
 	}
 
@@ -4019,13 +4013,10 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	vector<string> templatesType = input.getMultiValues("tempType");
 	*/
 
-	cout << "oi" << endl;
 	this->oi = new OrientationIndex();
 
-	cout << "base seq" << endl;
 	seqLen = baseSeq.length();
 
-	cout << "seqLen " << seqLen << endl;
 
 	this->seq = new int[seqLen];
 	this->wcPairPosID = new int[seqLen];
@@ -4036,7 +4027,6 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	this->allEdges = new NuEdge*[seqLen*seqLen];
 	this->fixed = new bool[seqLen];
 
-	cout << "read break" << endl;
 
 	/*
 	 * read chain break points
@@ -4449,6 +4439,7 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	/*
 	 * init from contact key:
 	 */
+	cout << "init from key" << endl;
 	if(contactKey.length() > 0){
 		int n = contactKey.length()/6;
 		int a,b,c,d,e,f, sep;
@@ -4561,7 +4552,7 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 			this->geList.push_back(allEdges[i*seqLen+j]);
 		}
 	}
-	//cout << "finish init" << endl;
+	cout << "finish init" << endl;
 }
 
 void NuGraph::initPho(){
@@ -4783,6 +4774,14 @@ void NuGraph::initRandWeight(){
 		for(int j=i+1;j<seqLen;j++){
 			allEdges[i*seqLen+j]->weightRand = allEdges[i*seqLen+j]->ei->getRandomWeight();
 			allEdges[j*seqLen+i]->weightRand = allEdges[i*seqLen+j]->weightRand;
+		}
+	}
+}
+
+void NuGraph::initNearestNativeEdge(){
+	for(int i=0;i<seqLen;i++){
+		for(int j=i+1;j<seqLen;j++){
+			allEdges[i*seqLen+j]->initNearNativeMoveSet();
 		}
 	}
 }
@@ -5364,8 +5363,45 @@ void NuGraph::cgToAllAtom(){
 	}
 }
 
+double NuGraph::getTotalEnergyForModelSelection(){
+	double ene = 0.0;
+	int i,j,k, sep, sepR;
+	for(i=0;i<seqLen;i++){
+		ene += allNodes[i]->phoConf->ene * 0.7;
+	}
+
+	for(i=0;i<seqLen;i++){
+		for(j=i+1;j<seqLen;j++){
+			sep = sepTable[i*seqLen+j];
+			sepR = sepTable[j*seqLen+i];
+			ene += nuBaseBaseEnergyForSelection(allNodes[i]->baseConf, allNodes[j]->baseConf, sep, et);
+			ene += nuBaseRiboseEnergyForSelection(allNodes[i]->baseConf, allNodes[j]->riboseConf, sep, et);
+			ene += nuBaseRiboseEnergyForSelection(allNodes[j]->baseConf, allNodes[i]->riboseConf, sepR, et);
+			ene += nuBasePhoEnergyForSelection(allNodes[i]->baseConf, allNodes[j]->phoConf, sep, et);
+			ene += nuBasePhoEnergyForSelection(allNodes[j]->baseConf, allNodes[i]->phoConf, sepR, et);
+			ene += nuRiboseRiboseEnergyForSelection(allNodes[i]->riboseConf, allNodes[j]->riboseConf, sep, et);
+			ene += nuRibosePhoEnergyForSelection(allNodes[i]->riboseConf, allNodes[j]->phoConf, sep, et);
+			ene += nuRibosePhoEnergyForSelection(allNodes[j]->riboseConf, allNodes[i]->phoConf, sepR, et);
+			ene += nuPhoPhoEnergyForSelection(allNodes[i]->phoConf, allNodes[j]->phoConf, sep, et);
+		}
+	}
+
+	BaseSasaPoints* bs = new BaseSasaPoints();
+	vector<NuNode*> nodes;
+	for(i=0;i<seqLen;i++){
+		nodes.push_back(allNodes[i]);
+	}
+	AssignRNASasa* as = new AssignRNASasa(bs, nodes);
+	for(i=0;i<this->seqLen;i++){
+		int expNum = as->getExposeNum(i);
+		ene += -0.12*sqrt(1.0*expNum);
+	}
+
+	return ene;	
+}
+
 graphInfo* NuGraph::getGraphInfo(){
-	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, totalEnergy(1.0, 1.0), atLib, 0);
+	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, getTotalEnergyForModelSelection(), atLib, 0);
 	return gi;
 }
 

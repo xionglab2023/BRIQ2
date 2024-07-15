@@ -16,7 +16,6 @@ using namespace std;
 using namespace NSPtools;
 using namespace NSPthread;
 
-
 int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
 
     srand(randSeed);

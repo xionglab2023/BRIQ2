@@ -18,7 +18,6 @@
 
 namespace NSPmodel {
 
-
 using namespace NSPgeometry;
 
 class BaseRotamer{

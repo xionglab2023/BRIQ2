@@ -31,6 +31,7 @@
 #include "tools/StringTool.h"
 #include "NuEnergyCalculator.h"
 
+
 namespace NSPpredNA {
 
 class NuNode;
@@ -39,6 +40,7 @@ class EdgeInformation;
 class NuTree;
 class NuGraph;
 class graphInfo;
+
 
 using namespace std;
 using namespace NSPmodel;
@@ -272,9 +274,7 @@ public:
 	double rmsdCG(graphInfo* other);
 	void printPDB(const string& outputFile);
 	void printAlignedPDB(graphInfo* alignTarget, const string& outputFile);
-	
 	void printDetailEnergy(const string& outputFile, BasePairLib* bpLib, AtomLib* atLib, RnaEnergyTable* et);
-
 	void setNbEnergy(double e){
 		this->nbEne = e;
 	}
@@ -302,10 +302,8 @@ public:
 	vector<BaseRotamerCG*> initBaseRotCGList;
 	vector<RiboseRotamerCG*> initRiboseRotCGList;
 
-
 	//vector<LigandRotamer*> ligRotList;
 	//LigandNode** allLigands; 
-
 
 	NuNode** allNodes; //L nodes
 	NuEdge** allEdges; //L*L edges
@@ -332,6 +330,7 @@ public:
 	void initForMST(const string& inputFile);
 	void initForSingleResiduePrediction(const string& inputFile, int pos);
 	void initRandWeight();
+	void initNearestNativeEdge();
 	void MST_kruskal(NuTree* output);
 	void printAllEdge();
 	void updateEnergy(double clashRescale, double connectRescale);
@@ -357,6 +356,8 @@ public:
 	void printEnergy();
 	void printEnergyCG(double clashRescale);
 	void cgToAllAtom();
+
+	double getTotalEnergyForModelSelection();
 
 	graphInfo* getGraphInfo();
 	graphInfo* getGraphInfoCG();
