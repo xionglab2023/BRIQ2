@@ -21,7 +21,7 @@ using namespace std;
 using namespace NSPtools;
 using namespace NSPthread;
 
-int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
+int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep){
 
     srand(randSeed);
 
@@ -61,8 +61,13 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
     return 0;
 }
 
-int runPredict(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
+int runPredict(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep){
     srand(randSeed);
+
+	et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
+	et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
+	et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
+	
 	BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
@@ -141,9 +146,14 @@ public:
     }
 };
 
-int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib* eiLib, const string& inputFile, cgResult* result, int modelNum, int randSeed){
+int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib* eiLib, const string& inputFile, cgResult* result, int modelNum, int randSeed, double kStep){
 
  	srand(randSeed);
+
+	et->para->kStepNum1CG = (int)(et->para->kStepNum1CG*kStep);
+	et->para->kStepNum2CG = (int)(et->para->kStepNum2CG*kStep);
+	et->para->kStepNum3CG = (int)(et->para->kStepNum3CG*kStep);
+
     BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib(et->para);
     AtomLib* atLib = new AtomLib();
@@ -175,7 +185,7 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib
     return 0;
 }
 
-int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
+int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep){
     srand(randSeed);
 
    	et->para->T0 = 10.0;
@@ -188,6 +198,11 @@ int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, 
 	et->para->kStepNum2 = 100;
 	et->para->kStepNum3 = 100;
 	et->para->withRandomInit = false;
+
+	et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
+	et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
+	et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
+	
 
 	BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib();
@@ -229,6 +244,10 @@ int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, 
 	et->para->kStepNum2 = 100;
 	et->para->kStepNum3 = 100;
 	et->para->withRandomInit = false;
+
+	et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
+	et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
+	et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
 
 	cout << "run MC2" << endl;
 	graphInfo* gi = tree->runAtomicMC();
@@ -279,6 +298,11 @@ int main(int argc, char** argv){
 		seed = time(0);
 	}
 
+	double kStep = 1.0;
+	if(cmdArgs.specifiedOption("-kStep")){
+		kStep = atof(cmdArgs.getValue("-kStep").c_str());
+	}
+
 	string libType = "stat";
 
 	BasePairLib* pairLib = new BasePairLib(libType);
@@ -303,15 +327,15 @@ int main(int argc, char** argv){
 
 	if(task == "refinement"){
 		et->loadAtomicEnergy();
-		runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed);
+		runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep);
 	}
 	else if(task == "predict" && key.length() == 0) {
 		et->loadAtomicEnergy();
-		runPredict(moveLib, eiLib, et, inputFile, outputFile, seed);
+		runPredict(moveLib, eiLib, et, inputFile, outputFile, seed, kStep);
 	}
 	else if(task == "predict"){
 		et->loadAtomicEnergy();
-		cgKeyToAllAtomPDB(moveLib, eiLib, et, inputFile, outputFile, seed);
+		cgKeyToAllAtomPDB(moveLib, eiLib, et, inputFile, outputFile, seed, kStep);
 	}
 	else if(task == "cgModeling"){
 		
@@ -344,7 +368,7 @@ int main(int argc, char** argv){
     	for(int i=startID;i<startID+mp;i++) {
         	shared_ptr<IntFuncTask> request(new IntFuncTask);
 
-        	request->asynBind(runCGMC, moveLib, et, eiLib, inputFile,  resultList[i-startID],modelNum, time(0)+i);
+        	request->asynBind(runCGMC, moveLib, et, eiLib, inputFile,  resultList[i-startID],modelNum, time(0)+i, kStep);
        		jid++;
         	thrPool->addTask(request);
     	}

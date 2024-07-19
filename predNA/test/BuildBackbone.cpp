@@ -19,20 +19,7 @@ using namespace NSPforcefield;
 using namespace NSPpredna;
 using namespace std;
 
-int main(int argc, char** argv){
-
-	string pdbFile = string(argv[1]);
-	//string paraFile = string(argv[2]);
-	string paraTag  = string(argv[2]);
-	string output = string(argv[3]);
-	//string paraFile = string(argv[3]);
-
-
-
-
-	RNAPDB* pdb = new RNAPDB(pdbFile);
-	int len = pdb->getBaseList().size();
-
+void test(const string& paraTag, const string& pdbFile, const string& output){
 	if(paraTag == "init") {
 		ForceFieldPara* para = new ForceFieldPara();
 		BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
@@ -241,7 +228,33 @@ int main(int argc, char** argv){
 		}
 		out.close();
 	}
+}
 
+
+int main(int argc, char** argv){
+
+	string pdbFile = string(argv[1]);
+	string output = string(argv[2]);
+
+
+	//string paraFile = string(argv[2]);
+	//string paraTag  = string(argv[2]);
+	//string output = string(argv[3]);
+	//string paraFile = string(argv[3]);
+
+
+
+
+	RNAPDB* pdb = new RNAPDB(pdbFile);
+	int len = pdb->getBaseList().size();
+	ForceFieldPara* para = new ForceFieldPara();
+	BackboneModelingTemplate* bm = new BackboneModelingTemplate(pdbFile, para);
+	double rms = bm->runMC();
+	BRTreeInfo* bi = bm->toTreeInfo();
+	bi->printPDB(output);
+	delete pdb;
+	delete para;
+	delete bm;
 
 
 

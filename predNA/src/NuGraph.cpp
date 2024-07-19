@@ -3706,6 +3706,7 @@ void graphInfo::printPDB(const string& outputFile){
 	}
 
 	for(int i=0;i<this->seqLen-1;i++){
+		if(!connectToDownstream[i]) continue;
 		vector<Atom*> aList = nodes[i]->toPhoAtomList(atLib);
 		RNABase* base = rc.getBaseList()[i+1];
 		for(int j=0;j<aList.size();j++)
@@ -4596,6 +4597,12 @@ void NuGraph::initForMC(const string& inputFile){
 	string key = input.getValue("key");
 	vector<string> ctList = input.getMultiValues("ct");
 
+	if(cst.length() == 0){
+		for(int i=0;i<baseSeq.length();i++){
+			cst = cst + "0";
+		}
+	}
+
 	if(csn.length() == 0){
 		for(int i=0;i<baseSeq.length();i++){
 			csn = csn + "0";
@@ -4603,6 +4610,12 @@ void NuGraph::initForMC(const string& inputFile){
 	}
 
 	string cnt = input.getValue("cnt");
+	if(cnt.length() == 0){
+		for(int i=0;i<baseSeq.length();i++){
+			cnt = cnt + "-";
+		}
+	}
+
 	init(task, pdbFile, baseSeq, baseSec, csn, cst, cnt, key, ctList);
 	
 	initPho();
@@ -4627,21 +4640,27 @@ void NuGraph::initForCGMC(const string& inputFile){
 	string cst = input.getValue("cst");
 	string csn = input.getValue("csn");
 	string key = input.getValue("key");
+	vector<string> ctList = input.getMultiValues("ct");
+	
+	if(cst.length() == 0){
+		for(int i=0;i<baseSeq.length();i++){
+			cst = cst + "0";
+		}
+	}
+
 	if(csn.length() == 0){
 		for(int i=0;i<baseSeq.length();i++){
 			csn = csn + "0";
 		}
 	}
-	
-	string cnt = input.getValue("cnt");
-	vector<string> ctList = input.getMultiValues("ct");
 
-	cout << task << endl;
-	cout << pdbFile << endl;
-	cout << baseSeq << endl;
-	cout << baseSec << endl;
-	cout << cst << endl;
-	cout << csn << endl;
+	string cnt = input.getValue("cnt");
+	if(cnt.length() == 0){
+		for(int i=0;i<baseSeq.length();i++){
+			cnt = cnt + "-";
+		}
+	}
+
 
 	init(task, pdbFile, baseSeq, baseSec, csn, cst, cnt, key, ctList);
 	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 1);	

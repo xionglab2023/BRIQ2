@@ -70,6 +70,16 @@ int main(int argc, char** argv){
         printf("%4.2f %8.4f\n", len, e);
     }
 	
-
+		AtomLib* atl = new AtomLib();
+		RotamerLib* rtl = new RotamerLib();
+        BasePairLib* bpl = new BasePairLib();
+        RnaEnergyTable* et = new RnaEnergyTable();
+        et->loadEnergyWithout6D();
+		string inputFile = "/public/home/pengx/tmp/inputC";
+		string outFile = "/public/home/pengx/tmp/init.pdb";
+        NuGraph* pNuGragh = new NuGraph(inputFile, rtl, atl, bpl, et, 1);
+		cout << "print pdb" << endl;
+        pNuGragh->initInfo->printPDB(
+            outFile);
 
 }
