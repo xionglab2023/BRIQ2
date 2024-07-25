@@ -145,6 +145,235 @@ void NuNode::updateEnergy(double clashRescale, double connectRescale){
 	this->eneTmp = this->ene;
 }
 
+int NuNode::hbondNumTo(NuNode* other, AtomLib* atLib){
+	int hbNum  = 0;
+	if(this->baseConf->cs1.origin_.squaredDistance(other->baseConf->cs1.origin_) > 225)
+		return 0;
+	//base - base
+	for(int i=0;i<this->baseConf->rot->polarAtomNum;i++){
+		int uniqueA = this->baseConf->rot->polarAtomUniqueID[i];
+		XYZ coordA = this->baseConf->coords[this->baseConf->rot->polarAtomIndex[i]];
+		
+		for(int j=0;j<other->baseConf->rot->polarAtomNum;j++){
+			int uniqueB = other->baseConf->rot->polarAtomUniqueID[j];
+			XYZ coordB = other->baseConf->coords[other->baseConf->rot->polarAtomIndex[j]];		
+			double d = coordA.distance(coordB);
+			if(d < 2.0 || d > 3.4) continue;
+			int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+			int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+			int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+			int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+			if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+				hbNum++;
+		}
+	}
+	//base - ribose
+	for(int i=0;i<this->baseConf->rot->polarAtomNum;i++){
+		int uniqueA = this->baseConf->rot->polarAtomUniqueID[i];
+		XYZ coordA = this->baseConf->coords[this->baseConf->rot->polarAtomIndex[i]];
+		int uniqueB = 177; //O2'
+		XYZ coordB = other->riboseConf->o2Polar.origin_;
+		double d = coordA.distance(coordB);
+		if(d < 2.0 || d > 3.4) continue;
+		int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+		int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+		int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+		int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+		if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+			hbNum++;
+	}
+	//base - pho
+	for(int i=0;i<this->baseConf->rot->polarAtomNum;i++){
+		int uniqueA = this->baseConf->rot->polarAtomUniqueID[i];
+		XYZ coordA = this->baseConf->coords[this->baseConf->rot->polarAtomIndex[i]];
+		int uniqueB = 168; //OP1
+		{
+			XYZ coordB = other->phoConf->op1Polar.origin_;
+			double d = coordA.distance(coordB);
+			if(d> 2.0 && d < 3.4){
+				int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+				int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+				int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+				int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+				if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+					hbNum++;
+			}
+		}
+
+		{
+			XYZ coordB = other->phoConf->op2Polar.origin_;
+			double d = coordA.distance(coordB);
+			if(d> 2.0 && d < 3.4){
+				int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+				int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+				int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+				int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+				if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+					hbNum++;
+			}
+		}
+
+	}
+	//ribose - base 
+	for(int i=0;i<other->baseConf->rot->polarAtomNum;i++){
+		int uniqueA = other->baseConf->rot->polarAtomUniqueID[i];
+		XYZ coordA = other->baseConf->coords[other->baseConf->rot->polarAtomIndex[i]];
+		int uniqueB = 177; //O2'
+		XYZ coordB = this->riboseConf->o2Polar.origin_;
+		double d = coordA.distance(coordB);
+		if(d < 2.0 || d > 3.4) continue;
+		int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+		int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+		int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+		int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+		if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+			hbNum++;
+	}
+
+	//ribose - ribose
+	{
+		int uniqueA = 177;
+		int uniqueB = 177;
+		XYZ coordA = this->riboseConf->o2Polar.origin_;
+		XYZ coordB = other->riboseConf->o2Polar.origin_;
+		double d = coordA.distance(coordB);
+		if(d> 2.0 && d < 3.4){
+			int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+			int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+			int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+			int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+			if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+				hbNum++;
+		}
+	}
+
+	//ribose - pho
+	{
+		int uniqueA = 177;
+		int uniqueB = 168;
+		{
+			XYZ coordA = this->riboseConf->o2Polar.origin_;
+			XYZ coordB = other->phoConf->op1Polar.origin_;
+			double d = coordA.distance(coordB);
+			if(d> 2.0 && d < 3.4){
+				int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+				int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+				int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+				int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+				if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+					hbNum++;
+			}
+		}
+
+		{
+			XYZ coordA = this->riboseConf->o2Polar.origin_;
+			XYZ coordB = other->phoConf->op2Polar.origin_;
+			double d = coordA.distance(coordB);
+			if(d> 2.0 && d < 3.4){
+				int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+				int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+				int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+				int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+				if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+					hbNum++;
+			}
+		}
+
+	}
+	//pho - base
+	
+	for(int i=0;i<other->baseConf->rot->polarAtomNum;i++){
+			int uniqueA = other->baseConf->rot->polarAtomUniqueID[i];
+			XYZ coordA = other->baseConf->coords[other->baseConf->rot->polarAtomIndex[i]];
+			int uniqueB = 168; //OP1
+			{
+				XYZ coordB = this->phoConf->op1Polar.origin_;
+				double d = coordA.distance(coordB);
+				if(d> 2.0 && d < 3.4){
+					int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+					int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+					int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+					int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+					if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+						hbNum++;
+				}
+			}
+
+			{
+				XYZ coordB = this->phoConf->op2Polar.origin_;
+				double d = coordA.distance(coordB);
+				if(d> 2.0 && d < 3.4){
+					int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+					int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+					int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+					int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+					if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+						hbNum++;
+				}
+			}
+
+	}
+	
+	//pho - ribose 
+	{
+		int uniqueA = 177;
+		int uniqueB = 168;
+		{
+			XYZ coordA = other->riboseConf->o2Polar.origin_;
+			XYZ coordB = this->phoConf->op1Polar.origin_;
+				double d = coordA.distance(coordB);
+				if(d> 2.0 && d < 3.4){
+					int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+					int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+					int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+					int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+					if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+						hbNum++;
+				}
+		}
+
+		{
+			XYZ coordA = other->riboseConf->o2Polar.origin_;
+			XYZ coordB = this->phoConf->op2Polar.origin_;
+				double d = coordA.distance(coordB);
+				if(d> 2.0 && d < 3.4){
+					int donorIndexA = atLib->uniqueIDToDonorID[uniqueA];
+					int acceptorIndexA = atLib->uniqueIDToAcceptorID[uniqueA];
+
+					int donorIndexB = atLib->uniqueIDToDonorID[uniqueB];
+					int acceptorIndexB = atLib->uniqueIDToAcceptorID[uniqueB];
+
+					if(donorIndexA >= 0 && acceptorIndexB >=0 || donorIndexB >=0 && acceptorIndexA >=0 )
+						hbNum++;
+				}
+		}
+
+	}
+	return hbNum;
+}
+
 void NuNode::updateEnergyCG(double clashRescale, double connectRescale){
 	this->eneCG = riboseConfCG->rot->energy;
 

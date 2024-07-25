@@ -117,7 +117,7 @@ public:
 	void clearCoordMoveCG();
 	double rotMutEnergyCG();
 	bool checkEnergyCG(double clashRescale, double connectRescale);
-
+	int hbondNumTo(NuNode* other, AtomLib* atLib);
 
 	vector<Atom*> toAtomList(AtomLib* atLib);
 	vector<Atom*> toPhoAtomList(AtomLib* atLib);
