@@ -91,6 +91,10 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inp
 
     cout << "init CGMC" << endl;
 	graph->initForCGMC(inputFile);
+
+    graphInfo* gi = graph->getGraphInfoCG();
+    
+
     cout << "init rand weight" << endl;
 	graph->initRandWeight();
     //cout << "print edge: " << endl;
@@ -154,6 +158,25 @@ int main(int argc, char** argv){
 
     string inputFile = cmdArgs.getValue("-in");
     string outputFile = cmdArgs.getValue("-out");
+
+
+    BasePairLib* pairLib = new BasePairLib("stat");
+	RotamerLib* rotLib = new RotamerLib();
+	AtomLib* atLib = new AtomLib();
+    EdgeInformationLib* eiLib = new EdgeInformationLib();
+
+
+    cout << "init graph" << endl;
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
+
+    cout << "init CGMC" << endl;
+	graph->initForCGMC(inputFile);
+
+    graphInfo* gi = graph->getGraphInfoCG();
+    gi->printPDB(outputFile);
+
+
+/*
     int modleNum = atoi(cmdArgs.getValue("-n").c_str());
     int mp = atoi(cmdArgs.getValue("-mp").c_str());
 
@@ -200,6 +223,7 @@ int main(int argc, char** argv){
     clock_t end1 = clock();
 	cout << "mp: " << mp <<" " << "time: " << (float)(end1-start)/CLOCKS_PER_SEC << "s" << endl;
 
+*/
     delete moveLib;
     delete et;
 }
