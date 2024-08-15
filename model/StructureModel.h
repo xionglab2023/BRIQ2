@@ -251,9 +251,11 @@ public:
 	bool connectToNeighbor(RNABase* other) {
 		Atom* a = getAtom("O3'");
 		Atom* b = other->getAtom("P");
-		if(a == NULL || b == NULL)
+		Atom* c = other->getAtom("O5'");
+		Atom* d = other->getAtom("C5'");
+		if(a == NULL || b == NULL || c == NULL || d == NULL)
 			return false;
-		else if(a->distance(*b) < 2.0)
+		else if(a->distance(*b) < 1.7 && c->distance(*d) < 1.7)
 			return true;
 		else
 			return false;
