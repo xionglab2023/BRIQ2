@@ -67,10 +67,9 @@ public:
 	double totalSamp;
 
     NuSampling(NuGraph* graph, NuTree* tree);
+
 	void runCoarseGrainedMC(map<string, double>& results, int roundNum);
-    void runCoarseGrainedMC(map<string, double>& results, const string& outFile);
-
-
+    void runCoarseGrainedMC(const string& outFile, int roundNum);
 };
 
 

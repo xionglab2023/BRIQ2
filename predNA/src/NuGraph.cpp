@@ -1354,12 +1354,6 @@ void NuEdge::initMoveSet(BaseDistanceMatrix& dm, double distanceCutoff){
 
 	pairLib->getNeighborClusters(dm, nodeA->baseType, nodeB->baseType, sep, neighborClusters, distanceToClusterCenters, distanceCutoff);
 
-	/*
-	cout << "bpLib type: " << pairLib->libType << endl;
-	cout << "eiLib type: " << this->ei->pairLibType << endl;
-	cout << "moveLib type: " << this->moveSet->moveLib->libType << endl;
-	*/
-
 	if(neighborClusters.size() > 0) {
 		double pSum = 0;
 		for(int i=0;i<distanceToClusterCenters.size();i++) {
@@ -2992,6 +2986,7 @@ void NuTree::printNodeInfo(){
 }
 
 void NuTree::updateEdgeInfo(double clashRescale, double connectRescale){
+	cout << "geListSize: " << geList.size() << endl;
 	vector<NuEdge*> tmpGeList;
 	int i,j;
 
@@ -3033,6 +3028,7 @@ void NuTree::updateEdgeInfo(double clashRescale, double connectRescale){
 		e->moveSet->updateEdgeInformation(e->ei);
 
 	}
+
 }
 
 void NuTree::updateEdgeInfoCG(double clashRescale, double connectRescale){
@@ -3267,7 +3263,7 @@ void NuTree::printEdgeInfo(const string& output){
 }
 
 void NuTree::printEdgeInfo(){
-	
+	cout << "print edge info: " << endl;
 	for(int i=0;i<geList.size();i++){
 		NuEdge* e = geList[i];
 		printf("%-3d %-3d %7.3f %8.3f %s\n", e->indexA, e->indexB, e->weight, e->samplingFreq, e->ei->ssSepKey.c_str());
@@ -3279,6 +3275,7 @@ graphInfo* NuTree::runAtomicMC(){
 
 	double clashRescale = 1.0;
 	double connectRescale = 1.0;
+
 	bool debug = false;
 
 	XYZ n1n2Move;
@@ -3457,9 +3454,11 @@ graphInfo* NuTree::runAtomicMC(){
 				printf("step %d curEne: %8.3f eTot: %d totEne: %8.3f\n", k, curEne, eTot, graph->totalEnergy(clashRescale, connectRescale));
 			}
 		}
-
+		
 		double totEne = graph->totalEnergy(clashRescale, connectRescale);
+		
 		graphInfo* gi = graph->getGraphInfo();
+		
 		double rms = gi->rmsd(this->graph->initInfo);
 		delete gi;
 		printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
@@ -3771,7 +3770,6 @@ void NuTree::runCoarseGrainedMC(const string& output){
 }
 
 graphInfo::graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** nodes, double ene, AtomLib* atLib, int mode){
-
 	this->seqLen = seqLen;
 	this->seq = new int[seqLen];
 	this->connectToDownstream = new bool[seqLen];
@@ -3785,6 +3783,7 @@ graphInfo::graphInfo(int seqLen, int* seq, bool* con, bool* fixed, NuNode** node
 		this->connectToDownstream[i] = con[i];
 		this->fixed[i] = fixed[i];
 	}
+
 
 	for(int i=0;i<seqLen;i++){
 		NuNode* n = nodes[i];
@@ -3852,10 +3851,10 @@ double graphInfo::rmsd(graphInfo* other){
 			delete aList[k];
 		}
 	}
-
 	for(unsigned int i=0;i<this->seqLen;i++) {
 
 		vector<Atom*> aList = other->nodes[i]->toAtomList(this->atLib);
+
 		for(int j=0;j<aList.size();j++)
 			tList2.push_back(aList[j]->coord);
 		for(int k=0;k<aList.size();k++){
@@ -3942,14 +3941,129 @@ void graphInfo::printPDB(const string& outputFile){
 			base->addAtom(aList[j]);
 	}
 
+	vector<RNABase*> baseList = rc.getBaseList();
+
 	ofstream of;
 	of.open(outputFile, ios::out);
 	rc.printPDBFormat(of, 1);
+
+	string augc = "AUGCatgc";
+	of << "seq: ";
+	for(int i=0;i<this->seqLen;i++){
+		of << augc[this->nodes[i]->baseType];
+	}
+	of << endl;
+
+	of << "cnt: ";
+	for(int i=0;i<this->seqLen;i++){
+		if(connectToDownstream[i])
+			of << "-";
+		else 
+			of << "|";
+	}
+	of << endl;
+
 	of << "ene: " << this->ene << endl;
 	of << "rms: " << this->rms << endl;
 	of.close();
 
+
+	for(int i=0;i<baseList.size();i++){
+		vector<Atom*>* aList = baseList[i]->getAtomList();
+		for(int j=0;j<aList->size();j++)	{
+			delete aList->at(j);
+		}
+	}
+}
+
+void graphInfo::printPDBWithPairMtx(const string& outputFile, BasePairLib* bpLib){
+	RNAChain rc;
+	string s = "AUGC";
+	char ss[20];
+	int seqID = 0;
+	int atomNum = 0;
+
+	for(int i=0;i<this->seqLen;i++) {
+		seqID++;
+		sprintf(ss, "%d", seqID);
+		RNABase* base = new RNABase(string(ss), "A", s[seq[i]]);
+		vector<Atom*> aList = nodes[i]->toAtomList(atLib);
+		for(int j=0;j<aList.size();j++)
+			base->addAtom(aList[j]);
+		rc.addBase(base);
+		atomNum += aList.size();
+	}
+
+	for(int i=0;i<this->seqLen-1;i++){
+		if(!connectToDownstream[i]) continue;
+		vector<Atom*> aList = nodes[i]->toPhoAtomList(atLib);
+		RNABase* base = rc.getBaseList()[i+1];
+		for(int j=0;j<aList.size();j++)
+			base->addAtom(aList[j]);
+	}
+
 	vector<RNABase*> baseList = rc.getBaseList();
+
+	ofstream of;
+	of.open(outputFile, ios::out);
+	rc.printPDBFormat(of, 1);
+
+	string augc = "AUGCatgc";
+	of << "seq: ";
+	for(int i=0;i<this->seqLen;i++){
+		of << augc[this->nodes[i]->baseType];
+	}
+	of << endl;
+
+	of << "cnt: ";
+	for(int i=0;i<this->seqLen;i++){
+		if(connectToDownstream[i])
+			of << "-";
+		else 
+			of << "|";
+	}
+	of << endl;
+
+	of << "mtx: " << this->seqLen << endl;
+
+	int clusterIDList[this->seqLen][this->seqLen];
+	for(int i=0;i<this->seqLen;i++){
+		for(int j=0;j<this->seqLen;j++){
+			clusterIDList[i][j] = -1;
+		}
+	}
+	for(int i=0;i<this->seqLen;i++){
+		for(int j=i+1;j<this->seqLen;j++){
+			if(i==j) continue;
+			if(!baseList[i]->contactTo(baseList[j], 5.0)) continue;
+			int clusterID = -1;
+			BaseDistanceMatrix dm(*baseList[i], *baseList[j]);
+			if(j==i+1 && connectToDownstream[i]){
+				clusterID = bpLib->getPairType(dm, this->nodes[i]->baseType, this->nodes[j]->baseType, 1);
+			}
+			else {
+				clusterID = bpLib->getPairType(dm, this->nodes[i]->baseType, this->nodes[j]->baseType, 2);
+			}
+			
+			
+			clusterIDList[i][j] = clusterID;
+			clusterIDList[j][i] = clusterID;
+		}
+	}
+
+	for(int i=0;i<this->seqLen;i++){
+		for(int j=0;j<this->seqLen;j++){
+			sprintf(ss, "%-3d ", clusterIDList[i][j]);
+			of << string(ss);
+		}
+		of << endl;
+	}
+
+	of << "ene: " << this->ene << endl;
+	of << "rms: " << this->rms << endl;
+	of.close();
+
+
 	for(int i=0;i<baseList.size();i++){
 		vector<Atom*>* aList = baseList[i]->getAtomList();
 		for(int j=0;j<aList->size();j++)	{
@@ -4191,6 +4305,249 @@ NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, Ba
 		default:
 			cerr << "Unknown initMode " << initMode << endl;
 	}
+}
+
+NuGraph::NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et){
+	this->pairLib = pairLib;
+	this->rotLib = rotLib;
+	this->atLib = atLib;
+	this->moveLib = moveLib;
+	this->et = et;
+	this->eiLib = eiLib;
+	AssignRNASS* ar = new AssignRNASS(pdb, atLib);
+
+
+	string task = "refinement";
+	vector<RNABase*> baseList = pdb->getBaseList();
+	string baseSeq = ar->seq;
+	string baseSec = ar->ssSeq;
+	delete ar;
+	int i,j,k;
+	vector<string> spt;
+	this->oi = new OrientationIndex();
+
+	seqLen = baseSeq.length();
+	if(baseList.size() != seqLen){
+		cout << "invalid pdb" << endl;
+		exit(0);
+	}
+
+	this->seq = new int[seqLen];
+	this->wcPairPosID = new int[seqLen];
+	this->stemIndex = new int[seqLen];
+	this->connectToDownstream = new bool[seqLen];
+	this->sepTable = new int[seqLen*seqLen];
+	this->allNodes = new NuNode*[seqLen];
+	this->allEdges = new NuEdge*[seqLen*seqLen];
+	this->fixed = new bool[seqLen];
+
+
+	/*
+	 * read chain break points
+	 */
+	for(i=0;i<seqLen;i++){
+		connectToDownstream[i] = true;
+	}
+	connectToDownstream[seqLen-1] = false;
+
+
+	for(i=0;i<seqLen-1;i++){
+		if(baseList[i]->connectToNeighbor(baseList[i+1]))
+			connectToDownstream[i] = true;
+		else {
+			connectToDownstream[i] = false;
+		}
+	}
+
+	for(i=0;i<seqLen;i++){
+		for(j=0;j<seqLen;j++){
+			int ij = i*seqLen+j;
+			if(i==j) sepTable[ij] = 0;
+			else if(j == i+1 && connectToDownstream[i]) sepTable[ij] = 1;
+			else if(j == i-1 && connectToDownstream[j]) sepTable[ij] = -1;
+			else sepTable[ij] = 2;
+		}
+	}
+
+	/*
+	 * init NuNodes
+	 */
+
+	if(baseList.size() != baseSeq.length()) {
+		cout << "pdb size: " << baseList.size() << " not equal to sequence length: " << baseSeq.length() << endl;
+		exit(0);
+	}
+	else if(baseSeq.length() != baseSec.length()) {
+		cout << "seq length not equal to sec length" << endl;
+		exit(0);
+	}
+
+	string augc = "AUGCatgc";
+	string pdbSeq = "";
+	for(i=0;i<seqLen;i++){
+		if(baseList[i]->baseTypeInt < 0 || baseList[i]->baseTypeInt > 3){
+			cout << "invalid base type: " << baseList[i]->baseType << endl;
+			exit(0);
+		}
+		this->seq[i] = baseList[i]->baseTypeInt;
+		pdbSeq = pdbSeq + augc.substr(seq[i], 1);
+
+		this->wcPairPosID[i] = -1;
+
+		RiboseRotamer* rot = new RiboseRotamer();
+
+		if(!baseList[i]->backboneComplete()){
+			rot->copyValueFrom(rotLib->riboseRotLib->getLowestEnergyRotamer(baseList[i]->baseTypeInt));
+		}
+		else {
+			rot->copyValueFrom(rotLib->riboseRotLib->getNearestRotamer(baseList[i]));
+		}
+
+		BaseRotamer* baseRot = new BaseRotamer(seq[i], atLib);
+		BaseRotamerCG* baseRotCG = new BaseRotamerCG(seq[i], atLib);
+		RiboseRotamerCG* riboRotCG = new RiboseRotamerCG(rot);
+
+		this->initBaseRotList.push_back(baseRot);
+		this->initRiboseRotList.push_back(rot);
+		this->initBaseRotCGList.push_back(baseRotCG);
+		this->initRiboseRotCGList.push_back(riboRotCG);
+	}
+
+	//check pdb sequence
+	if(baseSeq != pdbSeq) {
+		cout << "pdb sequence is inconsistent with input sequence: " << endl;
+		cout << pdbSeq << endl;
+		cout << baseSeq << endl;
+		exit(0);
+	}
+
+
+	for(i=0;i<seqLen;i++){
+		LocalFrame cs1 = baseList[i]->getCoordSystem();
+		this->allNodes[i] = new NuNode(i, baseList[i]->baseTypeInt, cs1, initBaseRotList[i], initBaseRotCGList[i], initRiboseRotList[i], initRiboseRotCGList[i], atLib);
+
+		if(i==0 && connectToDownstream[i] == false){
+			this->allNodes[i]->samplingFreq = 0;
+		}
+		else if(i==seqLen-1 && connectToDownstream[i-1] == false){
+			this->allNodes[i]->samplingFreq = 0;
+		}
+		else if(i>0 && i<seqLen-1 && connectToDownstream[i-1] == false && connectToDownstream[i] == false){
+			this->allNodes[i]->samplingFreq = 0;
+		}
+		this->allNodes[i]->connectToNeighbor = connectToDownstream[i];
+		this->allNodes[i]->graph = this;
+	}
+
+
+	/*
+	 * parse secondary structure information
+	 */
+	cout << "parse secondary structure " << endl;
+
+	char ss[seqLen];
+	for(int i=0;i<seqLen;i++){
+		ss[i] = baseSec[i];
+	}
+
+	map<char,char> brackets;
+	brackets[')'] = '(';
+	brackets[']'] = '[';
+	brackets['}'] = '{';
+	brackets['>'] = '<';
+	brackets['a'] = 'A';
+	brackets['b'] = 'B';
+	brackets['c'] = 'C';
+	brackets['d'] = 'D';
+	brackets['e'] = 'E';
+	brackets['f'] = 'F';
+	brackets['g'] = 'G';
+	brackets['h'] = 'H';
+	brackets['i'] = 'I';
+	brackets['j'] = 'J';
+	map<char,char>::iterator it;
+
+	for(i=0;i<seqLen;i++) {
+		char c = ss[i];
+		it = brackets.find(c);
+		if(it == brackets.end()) continue;
+		int preIndex = -1;
+		for(j=i-1;j>=0;j--) {
+			if(ss[j] == it->second) {
+				preIndex = j;
+				break;
+			}
+		}
+		if(preIndex < 0) {
+			cout << "invalid ssSeq: " << baseSec << endl;
+			exit(1);
+		}
+		ss[i] = '.';
+		ss[preIndex] = '.';
+		wcPairPosID[i] = preIndex;
+		wcPairPosID[preIndex] = i;
+	}
+
+	int currentStemID = 1;
+	int curStemLen = 0;
+	for(int i=0;i<seqLen;i++){
+		this->stemIndex[i] = 0;
+	}
+	for(int i=0;i<seqLen-1;i++) {
+		if(wcPairPosID[i] < 0 ) continue;
+		if(wcPairPosID[i] > i && wcPairPosID[i+1] == wcPairPosID[i]-1 && connectToDownstream[i] && connectToDownstream[wcPairPosID[i+1]]) {
+			stemIndex[i] = currentStemID;
+			stemIndex[i+1] = currentStemID;
+			stemIndex[wcPairPosID[i]] = currentStemID;
+			stemIndex[wcPairPosID[i+1]] = currentStemID;
+			curStemLen ++;
+		}
+		else if(curStemLen > 0) {
+			curStemLen = 0;
+			currentStemID++;
+		}
+	}
+
+	cout << "stems: " << endl;
+	for(i=0;i<seqLen;i++){
+		cout << stemIndex[i];
+	}
+	cout << endl;
+
+
+	cout << "init edges" << endl;
+	/*
+	 * init NuEdges for refinement
+	 */
+
+	char xs[200];
+	for(i=0;i<seqLen;i++){
+		for(j=0;j<seqLen;j++){
+			this->allEdges[i*seqLen+j] = new NuEdge(allNodes[i], allNodes[j], this);
+
+			this->allEdges[i*seqLen+j]->graph = this;
+			this->allEdges[i*seqLen+j]->weight = 0.0;
+
+			sprintf(xs, "%c%c", augc[this->allNodes[i]->baseType], augc[this->allNodes[j]->baseType]);
+			string pairType = string(xs);
+
+			if(i==j) continue;
+
+			string ssSepType = "UNK";
+			int sep = this->allEdges[i*seqLen+j]->sep;
+			int pairID1 = this->wcPairPosID[i];
+			int pairID2 = this->wcPairPosID[j];
+			this->allEdges[i*seqLen+j]->initNearNativeMoveSet();
+		}
+	}
+	for(i=0;i<seqLen;i++){
+		for(j=i+1;j<seqLen;j++){
+			this->geList.push_back(allEdges[i*seqLen+j]);
+		}
+	}
+	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 0);	
+
+
 }
 
 NuGraph::~NuGraph() {
@@ -4785,6 +5142,8 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	cout << "finish init" << endl;
 }
 
+
+
 void NuGraph::initPho(){
 	for(int i=0;i<seqLen;i++){
 		if(connectToDownstream[i]){
@@ -5020,6 +5379,7 @@ void NuGraph::initRandWeight(){
 
 	for(int i=0;i<seqLen;i++){
 		for(int j=i+1;j<seqLen;j++){
+			//cout << "edge: " << i << " " << j << " : " << allEdges[i*seqLen+j]->ei->getRandomWeight() << endl;
 			allEdges[i*seqLen+j]->weightRand = allEdges[i*seqLen+j]->ei->getRandomWeight();
 			allEdges[j*seqLen+i]->weightRand = allEdges[i*seqLen+j]->weightRand;
 		}
@@ -5540,7 +5900,7 @@ void NuGraph::printEnergy(){
 		printf("node: %2d ene: %7.3f eneTmp: %7.3f\n", i, allNodes[i]->ene, allNodes[i]->eneTmp);
 	}
 	for(int i=0;i<seqLen;i++){
-		for(int j=0;j<seqLen;j++){
+		for(int j=i+1;j<seqLen;j++){
 			NuEdge* eg = this->allEdges[i*seqLen+j];
 			printf("edge: %2d %2d sep: %2d BB %7.3f BR %7.3f BP %7.3f RB %7.3f RR %7.3f RP %7.3f PB %7.3f PR %7.3f PP %7.3f\n", i, j, eg->sep, eg->pairEne[0], eg->pairEne[1], eg->pairEne[2],eg->pairEne[3],eg->pairEne[4],eg->pairEne[5],eg->pairEne[6],eg->pairEne[7],eg->pairEne[8]);
 			//printf("eTmp: %2d %2d sep: %2d BB %7.3f BR %7.3f BP %7.3f RB %7.3f RR %7.3f RP %7.3f PB %7.3f PR %7.3f PP %7.3f\n", i, j, eg->sep, eg->pairEneTmp[0], eg->pairEneTmp[1], eg->pairEneTmp[2],eg->pairEneTmp[3],eg->pairEneTmp[4],eg->pairEneTmp[5],eg->pairEneTmp[6],eg->pairEneTmp[7],eg->pairEneTmp[8]);

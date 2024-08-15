@@ -275,7 +275,17 @@ BriqxModule::BriqxModule(const string& pdbFile, BasePairLib& bpl, AtomLib& atl,
     
     for(int i=0;i<lb;i++) {
         for( int j=i+1;j<lb;j++) {
-            if(baseList[i]->contactTo(baseList[j])) {
+            if(j==i+1 && baseList[i]->connectToNeighbor(baseList[j])){
+                auto* pbp = new BasePair(baseList[i], baseList[j], &atl);
+                if(pbp->type.compare("Incomplete") != 0){
+                    this->basePairList.emplace_back(pbp);
+                } else {
+                    string outstr = "[Warn]Incomplete basepair in BriqxMotif " + name + "\n";
+                    cout << outstr;
+                    delete pbp;
+                }
+            }
+            else if(baseList[i]->contactTo(baseList[j])) {
                 auto* pbp = new BasePair(baseList[i], baseList[j], &atl);
                 if(pbp->type.compare("Incomplete") != 0){
                     this->basePairList.emplace_back(pbp);

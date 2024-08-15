@@ -450,6 +450,10 @@ void BasePairLib::getNeighborClusters(BaseDistanceMatrix& dm, int typeA, int typ
 				distanceToClusterCenters.push_back(d);
 			}	
 		}
+		if(neighborClusters.size() == 0 && minD < 1.5){
+			neighborClusters.push_back(minIndex);
+			distanceToClusterCenters.push_back(minD);
+		}
 	}
 
 }
@@ -602,7 +606,14 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	if(baseB->connectToNeighbor(baseA))
 		sep = -1;
 
+
 	double ene = 0.0;
+
+	
+	if(sep < 2) {
+		ene = -1.5;	
+	}
+
 	LocalFrame csA = baseA->getCoordSystem();
 	LocalFrame csB = baseB->getCoordSystem();
 

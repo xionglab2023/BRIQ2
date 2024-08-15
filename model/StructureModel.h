@@ -272,6 +272,19 @@ public:
 		return false;
 	}
 
+	bool contactTo(RNABase* other, double cutoff){
+		for(int i=0;i<this->sidechainAtoms.size();i++){
+			Atom* a = this->sidechainAtoms[i];
+			for(int j=0;j<other->sidechainAtoms.size();j++){
+				Atom* b = other->sidechainAtoms[j];
+				double d = a->coord.distance(b->coord);
+				if(d < cutoff)
+					return true;
+			}
+		}
+		return false;
+	}
+
 	ConvexPolygon getBaseConvexPolygon(LocalFrame& cs, AtomLib* atLib);
 
 	bool isStackingTo(RNABase* other, AtomLib* atLib);

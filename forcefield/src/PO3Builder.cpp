@@ -300,10 +300,17 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
+
+		
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -428,10 +435,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		
 
@@ -548,10 +559,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 		
 
 		u = (xang3-ang3)*para->rnaKAng;
@@ -684,10 +699,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u < 0)
-					e += -u;
-				else
+				if(u < -1)
+					e += (-2*u-1);
+				else if(u > 1)
+					e += 2*u-1;
+				else if(u <= 1)
 					e += u;
+				else 
+					e += -u;
 
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
@@ -814,10 +833,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u < 0)
-					e += -u;
-				else
+				if(u < -1)
+					e += (-2*u-1);
+				else if(u > 1)
+					e += 2*u-1;
+				else if(u <= 1)
 					e += u;
+				else 
+					e += -u;
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -963,10 +986,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -1056,10 +1083,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -1156,10 +1187,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
 			e += u*u;
@@ -1255,10 +1290,15 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 				if(xdihed5 < 0) xdihed5 += 360;
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u < 0)
-					e += -u;
-				else
+				if(u < -1)
+					e += (-2*u-1);
+				else if(u > 1)
+					e += 2*u-1;
+				else if(u <= 1)
 					e += u;
+				else 
+					e += -u;
+
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -1352,10 +1392,15 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 				if(xdihed5 < 0) xdihed5 += 360;
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u < 0)
-					e += -u;
-				else
+				if(u < -1)
+					e += (-2*u-1);
+				else if(u > 1)
+					e += 2*u-1;
+				else if(u <= 1)
 					e += u;
+				else 
+					e += -u;
+
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -1498,10 +1543,14 @@ double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* ri
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -1550,10 +1599,14 @@ double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* ri
 		e = 0;
 
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -1612,10 +1665,14 @@ double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* ri
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)

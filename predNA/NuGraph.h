@@ -24,6 +24,7 @@
 #include "model/RiboseRotamer.h"
 #include "model/PhosphateRotamer.h"
 #include "model/BasePairLib.h"
+#include "model/AssignRNASS.h"
 #include "geometry/RMSD.h"
 #include "predNA/NuMoveSet.h"
 #include "predNA/EdgeInformation.h"
@@ -273,6 +274,7 @@ public:
 	double rmsd(graphInfo* other, int pos);
 	double rmsdCG(graphInfo* other);
 	void printPDB(const string& outputFile);
+	void printPDBWithPairMtx(const string& outputFile, BasePairLib* bpLib);
 	void printAlignedPDB(graphInfo* alignTarget, const string& outputFile);
 	void printDetailEnergy(const string& outputFile, BasePairLib* bpLib, AtomLib* atLib, RnaEnergyTable* et);
 	void setNbEnergy(double e){
@@ -321,6 +323,7 @@ public:
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int InitMode);
+	NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et);
 
 	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& csn, const string& cst, const string& cnt, const string& contactKey, vector<string>& ctList);
 	void initPho();

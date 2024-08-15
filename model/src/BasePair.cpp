@@ -58,6 +58,11 @@ BasePair::BasePair(RNABase* baseA, RNABase* baseB, AtomLib* atLib) {
 	if(hbNum>0) this->isHbondPair = true;
 	else this->isHbondPair = false;
 
+	if(baseA->connectToNeighbor(baseB) || baseB->connectToNeighbor(baseA))
+		this->isNeighborPair = true;
+	else
+		this->isNeighborPair = false;
+
 }
 
 bool BasePair::isWCPair(){

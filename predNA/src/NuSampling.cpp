@@ -78,7 +78,7 @@ NuSampling::NuSampling(NuGraph* graph, NuTree* tree){
     }
 }
 
-void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& outFile){
+void NuSampling::runCoarseGrainedMC(const string& outFile, int modelNum){
 	bool debug = false;
 
 	double T0 = 10.0;
@@ -109,8 +109,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 
 	int len = graph->seqLen;
 	int count = 0;
-	int roundNum = 10;
-	map<string, double>::iterator it;
+	int roundNum = modelNum;
 	char xx[200];
 	for(int round=0;round<roundNum;round++) {
 		double clashRescale = initClashRescale;
@@ -334,27 +333,13 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, const string& o
 			printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
 		}
 
-		cout << "to cg model" << endl;
 		graph->cgToAllAtom();
-		graphInfo* gi = graph->getGraphInfo(0.0);
-		gi->printPDB(outFile_round);
+		graphInfo* gi = graph->getGraphInfo(graph->totalEnergyCG(1.0, 1.0));
+		gi->printPDBWithPairMtx(outFile_round, graph->pairLib);
 		delete gi;
 
-		string key = graph->toContactMapHashKeyCG();
-		cout << key << endl;
-		graph->keyToContactMatrix(key);
-
-		it = results.find(key);
-		if(it != results.end()){
-			if(curEne < results[key])
-				results[key] = curEne;
-		}
-		else {
-			results[key] = curEne;
-		}
 	}
 
-	cout << "mc result key num: " << results.size() << endl;
 }
 
 void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
@@ -524,7 +509,6 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 			curEne = graph->totalEnergyCG(clashRescale, connectRescale);
 		}
 
-
 		clashRescale = 1.0;
 		connectRescale = 1.0;
 		curEne = graph->totalEnergyCG(clashRescale, connectRescale);
@@ -546,7 +530,6 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 					 */
 					nTot ++;
 					randPos = randPoolNode[rand()%poolSize];
-
 					randNode = graph->allNodes[randPos];
 					randRot = graph->rotLib->riboseRotLib->getRandomRotamerCG(randNode->baseType);
 					randNode->updateRiboseRotamerCG(randRot, clashRescale, connectRescale);
@@ -566,14 +549,9 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 					 * edge mut
 					 */
 					eTot ++;
-					//cout << "rand pos" << endl;
 					randPos = randPoolEdge[rand()%poolSize];
-					//cout << "rand edge" << endl;
 					randEdge = tree->geList[randPos];
-					//if(randEdge->cm.clusterID < 0)
-					//   cout << "rand move: " << randEdge->nodeA->baseType << " " << randEdge->nodeB->baseType << " " << randEdge->sep << " " << randEdge->cm.clusterID  << endl;
 					randMove = randEdge->moveSet->getRandomMoveWithFixedSubCluster(randEdge->cm);
-					//cout << "update edge" << endl;
 					randEdge->updateCsMoveCG(randMove, clashRescale, connectRescale);
 
 					mutE = randEdge->mutEnergyCG();
@@ -672,5 +650,7 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 
 	cout << "mc result key num: " << results.size() << endl;
 }
+
+
 
 }
