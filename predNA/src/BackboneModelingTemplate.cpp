@@ -11,15 +11,15 @@ BackboneModelingTemplate::BackboneModelingTemplate(const string& inputPDB, Force
 
 	cout << "init backbone modeling template: " << endl;
 	RNAPDB pdb(inputPDB, "xxxx");
-	vector<RNABase*> baseList0 = pdb.getBaseList();
-	vector<RNABase*> baseList;
-	for(int i=0;i<baseList0.size();i++){
-		if(baseList0[i]->backboneComplete())
-			baseList.push_back(baseList0[i]);
-	}
+	vector<RNABase*> baseList = pdb.getBaseList();
+	
 
 	for(int i=0;i<baseList.size();i++){
 		baseList[i]->baseSeqID = i;
+	}
+
+	for(int i=0;i<baseList.size();i++){
+		mutNodeList.push_back(i);
 	}
 
 	this->seqLen = baseList.size();
@@ -128,6 +128,138 @@ BackboneModelingTemplate::BackboneModelingTemplate(const string& inputPDB, Force
 
 }
 
+BackboneModelingTemplate::BackboneModelingTemplate(RNAPDB* pdb, const string& cnt, const string& csn, ForceFieldPara* para){
+	vector<RNABase*> baseList = pdb->getBaseList();
+	
+	for(int i=0;i<baseList.size();i++){
+		baseList[i]->baseSeqID = i;
+	}
+
+	if(baseList.size() != cnt.length()){
+		cout << "base list: " << baseList.size() << endl;
+		cout << "cnt length: " << cnt.length() << endl;
+		exit(0);
+	}
+
+	this->seqLen = baseList.size();
+	this->nodes = new BRNode*[seqLen];
+	this->seq = new int[seqLen];
+	this->connectToDownstream = new bool[seqLen];
+
+
+
+
+	this->para = para;
+
+	this->et = new RnaEnergyTableSimple(para);
+	this->rotLib = new RotamerLib(para);
+	this->pb = new PO3Builder(para);
+
+	for(int i=0;i<seqLen;i++){
+		this->seq[i] = baseList[i]->baseTypeInt;
+		RiboseRotamer* rot;
+		if(!baseList[i]->backboneComplete())
+			rot = rotLib->riboseRotLib->getLowestEnergyRotamer(baseList[i]->baseTypeInt);
+		else
+			rot = new RiboseRotamer(baseList[i]);
+
+		this->nodes[i] = new BRNode(baseList[i], rotLib);
+		nodes[i]->riboseConf->updateRotamer(rot);
+		nodes[i]->riboseConfTmp->updateRotamer(rot);
+	}
+
+
+
+
+	this->sepTable = new int[seqLen*seqLen];
+	this->allBaseRiboseE = new double[seqLen*seqLen];
+	this->tmpBaseRiboseE = new double[seqLen*seqLen];
+	this->allBasePhoE = new double[seqLen*seqLen];
+	this->tmpBasePhoE = new double[seqLen*seqLen];
+	this->allRiboseRiboseE = new double[seqLen*seqLen];
+	this->tmpRiboseRiboseE = new double[seqLen*seqLen];
+	this->allRibosePhoE = new double[seqLen*seqLen];
+	this->tmpRibosePhoE = new double[seqLen*seqLen];
+	this->allPhoPhoE = new double[seqLen*seqLen];
+	this->tmpPhoPhoE = new double[seqLen*seqLen];
+	this->allRotE = new double[seqLen];
+	this->tmpRotE = new double[seqLen];
+	this->allRcE = new double[seqLen];
+	this->tmpRcE = new double[seqLen];
+
+	for(int i=0;i<baseList.size();i++){
+		if(cnt[i] == '-') {
+			connectToDownstream[i] = true;
+			nodes[i]->connectToNeighbor = true;
+		}
+		else {
+			connectToDownstream[i] = false;
+			nodes[i]->connectToNeighbor = false;
+		}
+	}
+
+	bool* selectNodeList = new bool[baseList.size()];
+	for(int i=0;i<baseList.size();i++){
+		selectNodeList[i] = false;
+	}
+	for(int i=0;i<baseList.size()-1;i++){
+		if(csn[i] != 'F'){
+			for(int j=i-2;j<i+3;j++){
+				if(j >=0 && j < seqLen){
+					selectNodeList[i] = true;
+				}
+			}
+		}
+	}
+	for(int i=0;i<seqLen;i++){
+		if(selectNodeList[i])
+			mutNodeList.push_back(i);
+	}
+
+	cout << "backbone modeling node num: " << mutNodeList.size() << endl;
+
+	vector<RiboseRotamer*> rotList;
+	for(int i=0;i<seqLen;i++){
+		RiboseRotamer* rot = nodes[i]->riboseConf->rot;
+		rotList.push_back(rot);
+		LocalFrame cs = nodes[i]->baseConf->cs1;
+
+
+		if(i>0 && i < seqLen-1 && connectToDownstream[i-1] && connectToDownstream[i]) {
+			for(int j=0;j<rot->atomNum;j++){
+				this->initBackboneAtomList.push_back(nodes[i]->riboseConf->coords[j]);
+			}
+			this->initBackboneAtomList.push_back(baseList[i+1]->getAtom("P")->coord);
+			this->initBackboneAtomList.push_back(baseList[i+1]->getAtom("O5'")->coord);
+		}
+
+	}
+
+	for(int i=0;i<seqLen;i++){
+		for(int j=0;j<seqLen;j++){
+			int ij = i*seqLen+j;
+			if(i==j) sepTable[ij] = 0;
+			else if(j == i+1 && connectToDownstream[i]) sepTable[ij] = 1;
+			else if(j == i-1 && connectToDownstream[j]) sepTable[ij] = -1;
+			else if(j == i+2 && connectToDownstream[i] && connectToDownstream[i+1]) sepTable[ij] = 2;
+			else if(j == i-2 && connectToDownstream[j] && connectToDownstream[j+1]) sepTable[ij] = -2;
+			else sepTable[ij] = 3;
+		}
+	}
+
+	for(int i=0;i<seqLen;i++){
+		nodes[i]->updateChildInfo(nodes, seqLen);
+
+	}
+
+	for(int i=0;i<seqLen;i++){
+
+		buildPho(i, false);
+		acceptTmpRotamer(nodes[i], false);
+	}
+
+	updateEnergy();
+}
 
 double BackboneModelingTemplate::buildPho(int seqID, bool verbose) {
 	if(seqID < 0) return 0;
@@ -359,123 +491,6 @@ double BackboneModelingTemplate::mutEnergy(BRNode* node, bool verbose){
 	return mutE;
 }
 
-
-
-/*
-void BackboneModelingTemplate::printPhoEnergy(){
-	for(int i=0;i<seqLen-1;i++){
-
-		BRNode* nodeA = nodes[i];
-		BRNode* nodeB = nodes[i+1];
-		LocalFrame cs = nodeA->cs2;
-
-		double len1 = 1.605;
-		double len2 = 1.592;
-		double len3 = 1.422;
-		double ang1 = 120.1;
-		double ang2 = 103.5;
-		double ang3 = 120.7;
-		double ang4 = 111.1;
-
-		XYZ c2,o2,c3,o3,p,op1,op2,o5,c5,c4,o4;
-		c2 = nodeA->riboAtomCoords[1];
-		o2 = nodeA->riboAtomCoords[5];
-		c3 = nodeA->riboAtomCoords[2];
-		o3 = nodeA->riboAtomCoords[6];
-		p = nodeA->pho.tList[0];
-		o5 = nodeA->pho.tList[1];
-		op1 = nodeA->pho.tList[2];
-		op2 = nodeA->pho.tList[3];
-		c5 = nodeB->riboAtomCoords[7];
-		c4 = nodeB->riboAtomCoords[3];
-		o4 = nodeB->riboAtomCoords[4];
-
-		double xd3, xang3, xang4, xdihed3, xdihed4, xdihed5, xdihed1, xdihed2;
-		xd3 = o5.distance(c5);
-		xang3 = angleX(p, o5, c5);
-		xang4 = angleX(o5, c5, c4);
-		xdihed1 = dihedral(c2,c3,o3,p);
-		xdihed2 = dihedral(c3,o3,p, o5);
-		xdihed3 = dihedral(o3, p, o5, c5);
-		xdihed4 = dihedral(p, o5, c5, c4);
-		xdihed5 = dihedral(o5, c5, c4, o4);
-		if(xdihed1 < 0) xdihed1 += 360;
-		if(xdihed2 < 0) xdihed2 += 360;
-		if(xdihed3 < 0) xdihed3 += 360;
-		if(xdihed4 < 0) xdihed4 += 360;
-		if(xdihed5 < 0) xdihed5 += 360;
-		int x1 = (int)xdihed1;
-		int x2 = (int)xdihed2;
-		int x3 = (int)xdihed3;
-		int x4 = (int)xdihed4;
-		int x5 = (int)xdihed5;
-		double e = calPhoEnergy(xd3, xang3, xang4, x1, x2, x3, x4, x5, p, o5, op1, op2, i);
-		printf("%4.2f %5.1f %5.1f %6.2f %6.2f %6.2f %6.2f %6.2f ", xd3, xang3, xang4, xdihed1, xdihed2, xdihed3, xdihed4, xdihed5);
-
-		printf("%8.3f %8.3f\n", e, this->nodes[i]->pho.e);
-	}
-	cout << endl;
-}
-*/
-
-/*
-void BackboneModelingTemplate::printPhoTmpEnergy(){
-	for(int i=0;i<seqLen-1;i++){
-
-		BRNode* nodeA = nodes[i];
-		BRNode* nodeB = nodes[i+1];
-		LocalFrame cs = nodeA->cs2;
-
-		double len1 = 1.605;
-		double len2 = 1.592;
-		double len3 = 1.422;
-		double ang1 = 120.1;
-		double ang2 = 103.5;
-		double ang3 = 120.7;
-		double ang4 = 111.1;
-
-		XYZ c2,o2,c3,o3,p,op1,op2,o5,c5,c4,o4;
-		c2 = nodeA->riboAtomCoordsTmp[1];
-		o2 = nodeA->riboAtomCoordsTmp[5];
-		c3 = nodeA->riboAtomCoordsTmp[2];
-		o3 = nodeA->riboAtomCoordsTmp[6];
-		p = nodeA->phoTmp.tList[0];
-		o5 = nodeA->phoTmp.tList[1];
-		op1 = nodeA->phoTmp.tList[2];
-		op2 = nodeA->phoTmp.tList[3];
-		c5 = nodeB->riboAtomCoordsTmp[7];
-		c4 = nodeB->riboAtomCoordsTmp[3];
-		o4 = nodeB->riboAtomCoordsTmp[4];
-
-		double xd3, xang3, xang4, xdihed3, xdihed4, xdihed5, xdihed1, xdihed2;
-		xd3 = o5.distance(c5);
-		xang3 = angleX(p, o5, c5);
-		xang4 = angleX(o5, c5, c4);
-		xdihed1 = dihedral(c2,c3,o3,p);
-		xdihed2 = dihedral(c3,o3,p, o5);
-		xdihed3 = dihedral(o3, p, o5, c5);
-		xdihed4 = dihedral(p, o5, c5, c4);
-		xdihed5 = dihedral(o5, c5, c4, o4);
-		if(xdihed1 < 0) xdihed1 += 360;
-		if(xdihed2 < 0) xdihed2 += 360;
-		if(xdihed3 < 0) xdihed3 += 360;
-		if(xdihed4 < 0) xdihed4 += 360;
-		if(xdihed5 < 0) xdihed5 += 360;
-		int x1 = (int)xdihed1;
-		int x2 = (int)xdihed2;
-		int x3 = (int)xdihed3;
-		int x4 = (int)xdihed4;
-		int x5 = (int)xdihed5;
-
-		double e = calPhoEnergy(xd3, xang3, xang4, x1, x2, x3, x4, x5, p, o5, op1, op2, i);
-		printf("%4.2f %5.1f %5.1f %6.2f %6.2f %6.2f %6.2f %6.2f ", xd3, xang3, xang4, xdihed1, xdihed2, xdihed3, xdihed4, xdihed5);
-
-		printf("%8.3f %8.3f\n", e, this->nodes[i]->phoTmp.e);
-	}
-	cout << endl;
-}
-*/
-
 BRTreeInfo* BackboneModelingTemplate::toTreeInfo(){
 	vector<BRNode*> flexNodes;
 	for(int i=0;i<seqLen;i++){
@@ -593,7 +608,6 @@ void BackboneModelingTemplate::printEnergyDetail(){
 	printf("total energy: %9.3f\n",  e);
 	cout << endl;
 }
-
 
 
 double BackboneModelingTemplate::fragMC(){
@@ -774,7 +788,6 @@ void BackboneModelingTemplate::debug(){
 	}
 }
 
-
 double BackboneModelingTemplate::runMC(){
 
 	int stepNum = 1000*seqLen;
@@ -785,6 +798,8 @@ double BackboneModelingTemplate::runMC(){
 	BRNode* node;
 	RiboseRotamer* rotMut;
 
+	int mutNodeNum = this->mutNodeList.size();
+
 	double minEne = 9999999999.9;
 	double minERMS = 99.9;
 
@@ -792,8 +807,8 @@ double BackboneModelingTemplate::runMC(){
 		for(double T=10.0;T>0.01;T=T*0.9){
 			int acNum = 0;
 			for(int k=0;k<stepNum;k++){
-				randIndex = rand()%seqLen;
-				node = nodes[randIndex];
+				randIndex = rand()%mutNodeNum;
+				node = nodes[mutNodeList[randIndex]];
 				randType = rand()%2;
 				rotMut = rotLib->riboseRotLib->getRandomRotamer(node->baseType);
 				updateTmpRotamer(node, rotMut, false);
@@ -815,8 +830,8 @@ double BackboneModelingTemplate::runMC(){
 			printf("R: %d T=%8.5f accept=%5d addEne: %9.3f totEne: %9.3f minEne: %9.3f rms: %5.3f\n", n, T, acNum, curEne, totE,minEne, rms());
 		}
 
-		for(int i=0;i<seqLen;i++){
-			node = nodes[i];
+		for(int i=0;i<mutNodeNum;i++){
+			node = nodes[mutNodeList[i]];
 			for(int j=0;j<1500;j++){
 			//	int type1 = node->riboseConf->rot->rotTypeLv1;
 				rotMut = rotLib->riboseRotLib->rotLib[node->baseType][j];
@@ -836,8 +851,8 @@ double BackboneModelingTemplate::runMC(){
 			}
 		}
 
-		for(int i=0;i<seqLen;i++){
-			node = nodes[i];
+		for(int i=0;i<mutNodeNum;i++){
+			node = nodes[mutNodeList[i]];
 			for(int j=0;j<1500;j++){
 			//	int type1 = node->riboseConf->rot->rotTypeLv1;
 				rotMut = rotLib->riboseRotLib->rotLib[node->baseType][j];
@@ -1031,7 +1046,6 @@ void BackboneModelingTemplate::checkTotalEnergyTmp(){
 			cout << "DIFF connect: " << i << " " << tmpRcE[i] << " " << e << endl;
 	}
 }
-
 
 BackboneModelingTemplate::~BackboneModelingTemplate() {
 	for(int i=0;i<seqLen;i++){

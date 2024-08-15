@@ -191,9 +191,27 @@ void BRTreeInfo::printPDB(const string& outputFile) {
 			base->addAtom(aList[j]);
 	}
 
+
+
 	ofstream of;
 	of.open(outputFile, ios::out);
 	rc.printPDBFormat(of, 1);
+
+	string augc = "AUGCatgc";
+	of << "seq: ";
+	for(int i=0;i<this->seqLen;i++){
+		of << augc[this->nodes[i]->baseType];
+	}
+	of << endl;
+
+	of << "cnt: ";
+	for(int i=0;i<this->seqLen;i++){
+		if(connectToDownstream[i])
+			of << "-";
+		else 
+			of << "|";
+	}
+	of << endl;
 	of << "ene: " << this->ene << endl;
 	of.close();
 

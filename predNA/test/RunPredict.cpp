@@ -364,7 +364,6 @@ int main(int argc, char** argv){
 		kStep = atof(cmdArgs.getValue("-kStep").c_str());
 	}
 
-
 	string libType = "stat";
 
 	BasePairLib* pairLib = new BasePairLib(libType);

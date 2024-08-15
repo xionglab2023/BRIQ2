@@ -5254,6 +5254,8 @@ void NuGraph::initForCGMC(const string& inputFile){
 	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 1);	
 }
 
+
+
 void NuGraph::initForMST(const string& inputFile){
 	NSPtools::InputParser input(inputFile);
 	input.printOptions();
