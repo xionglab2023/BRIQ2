@@ -57,6 +57,16 @@ AssignRNASS::AssignRNASS(RNAPDB* pdb, AtomLib* atLib) {
 			LocalFrame csB = baseB->getCoordSystem();
 			if(j==i+1 && baseA->connectToNeighbor(baseB))
 				this->connectWithNeighbor[i] = true;
+			else if(j == i+1){
+						Atom* a = baseA->getAtom("O3'");
+						Atom* b = baseB->getAtom("P");
+						Atom* c = baseB->getAtom("O5'");
+						Atom* d = baseB->getAtom("C5'");
+						if(a == NULL || b == NULL || c == NULL || d == NULL)
+							cout << "invalid atom " << endl;
+						else 
+						    cout << "dist1: " << a->distance(*b) << " dist2: " << c->distance(*d) << endl;
+			}
 			BasePair bp(baseA, baseB, atLib);
 			if(bp.isWCPair()){
 				if(pairIndex[i] == -1 && pairIndex[j] == -1){

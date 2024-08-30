@@ -206,7 +206,7 @@ BackboneModelingTemplate::BackboneModelingTemplate(RNAPDB* pdb, const string& cn
 		if(csn[i] != 'F'){
 			for(int j=i-2;j<i+3;j++){
 				if(j >=0 && j < seqLen){
-					selectNodeList[i] = true;
+					selectNodeList[j] = true;
 				}
 			}
 		}
@@ -217,6 +217,9 @@ BackboneModelingTemplate::BackboneModelingTemplate(RNAPDB* pdb, const string& cn
 	}
 
 	cout << "backbone modeling node num: " << mutNodeList.size() << endl;
+	for(int i=0;i<mutNodeList.size();i++){
+		cout << mutNodeList[i] << endl;
+	}
 
 	vector<RiboseRotamer*> rotList;
 	for(int i=0;i<seqLen;i++){

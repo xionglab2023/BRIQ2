@@ -80,13 +80,14 @@ int main(int argc, char** argv){
         exit(0);
     }
     else {
-        char* csnList = new char[len];
+        char* csnList = new char[len+1];
         for(int i=0;i<len;i++){
             if(tagList[i])
                 csnList[i] = '0';
             else 
                 csnList[i] = 'F';
         }
+        csnList[len] = '\0';
         string csn = string(csnList);
         cout << "cnt: " << cnt << endl;
         cout << "csn: " << csn << endl;
