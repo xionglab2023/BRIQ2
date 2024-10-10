@@ -65,9 +65,7 @@ public:
 
 		if(pContact == 1.0) 
 			return weight - rand()*1.0/RAND_MAX;
-		else if(sep < 2 && rand()*1.0/RAND_MAX < pContact)
-			return weight - rand()*1.0/RAND_MAX;
-		else if(sep == 2 && rand()*1.0/RAND_MAX < pContact*0.5)
+		else if(rand()*1.0/RAND_MAX < pContact)
 			return weight - rand()*1.0/RAND_MAX;
 		else if(sep < 2)
 			return 0.0;

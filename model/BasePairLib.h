@@ -60,6 +60,7 @@ public:
 
 	int getNeighborPairFirstFiveClusterID(BaseDistanceMatrix& dm, int typeA, int typeB);
 	void getNeighborClusters(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters, double distanceCutoff = 1.2);
+	void getNearestCluster(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters);
 	double getPairClusterProportion(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
 	double distanceToClusterCenter(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
 	double getEnergy(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
@@ -73,6 +74,22 @@ public:
 			return nnbEnergy[typeA*4+typeB][clusterID];
 		else if(sep == -1)
 			return nbEnergy[typeB*4+typeA][clusterID];
+		else
+			return 0.0;
+	}
+
+	double getDMDistance(int clusterID1, int clusterID2, int typeA, int typeB, int sep){
+		if(clusterID1 < 0 && clusterID2 < 0)
+			return 0.0;
+		else if(clusterID1 < 0 || clusterID2 < 0)
+			return 3.0;
+
+		if(sep == 1)
+			return nbDMClusterCenters[typeA*4+typeB][clusterID1].distanceTo(nbDMClusterCenters[typeA*4+typeB][clusterID2]);
+		else if(sep == 2)
+			return nnbDMClusterCenters[typeA*4+typeB][clusterID1].distanceTo(nnbDMClusterCenters[typeA*4+typeB][clusterID2]);
+		else if(sep == -1)
+			return nbDMClusterCenters[typeB*4+typeA][clusterID1].distanceTo(nbDMClusterCenters[typeB*4+typeA][clusterID2]);
 		else
 			return 0.0;
 	}

@@ -90,7 +90,11 @@ void NuSampling::runCoarseGrainedMC(const string& outFile, int modelNum){
 	int stepNum2 = (int)(this->totalSamp * graph->et->para->kStepNum2CG);
 	int stepNum3 = (int)(this->totalSamp * graph->et->para->kStepNum3CG);
 
+	
 	cout << "stepNum: " << stepNum1+stepNum2+stepNum3 << endl;
+
+	map<string, double> results;
+
 	
 	double anneal = 0.95;
 
@@ -109,26 +113,18 @@ void NuSampling::runCoarseGrainedMC(const string& outFile, int modelNum){
 
 	int len = graph->seqLen;
 	int count = 0;
-	int roundNum = modelNum;
 	char xx[200];
-	for(int round=0;round<roundNum;round++) {
+	for(int round=0;round<modelNum;round++) {
+
 		double clashRescale = initClashRescale;
 		double connectRescale = initConnectRescale;
 
-		cout << "init rand weight" << endl;
 		graph->initRandWeight();
-		cout << "init mst" << endl;
 		graph->MST_kruskal(tree);
-		cout << "update node info" << endl;
 		tree->updateNodeInfoCG(clashRescale, connectRescale);
-		cout << "update edge info" << endl;
 		tree->updateEdgeInfoCG(clashRescale, connectRescale);
-		cout << "update sampling info" << endl;
 		tree->updateSamplingInfo();
-		cout << "rand init cg" << endl;
 		tree->randomInitCG(clashRescale, connectRescale);
-		cout << "print edge" << endl;
-		tree->printEdges();
 		curEne = graph->totalEnergyCG(clashRescale, connectRescale);
 		lastEne = curEne;
 
@@ -333,12 +329,33 @@ void NuSampling::runCoarseGrainedMC(const string& outFile, int modelNum){
 			printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
 		}
 
+		string key = graph->toContactMapHashKeyCG();
+		double ene = graph->totalEnergyCG(1.0, 1.0);
+		if(results.find(key) != results.end()){
+			if(ene < results[key]){
+				results[key] = ene;
+			}
+		}
+		else {
+			results[key] = ene;
+		}
+
+		/*
 		graph->cgToAllAtom();
 		graphInfo* gi = graph->getGraphInfo(graph->totalEnergyCG(1.0, 1.0));
 		gi->printPDBWithPairMtx(outFile_round, graph->pairLib);
 		delete gi;
-
+		*/
 	}
+
+	ofstream out;
+	out.open(outFile, ios::out);
+	map<string,double>::iterator it;
+	for(it=results.begin();it!=results.end();++it){
+		out << it->first << " " << it->second << endl;
+	}
+	out.close();
+
 
 }
 

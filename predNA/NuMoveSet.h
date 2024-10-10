@@ -120,7 +120,6 @@ public:
 	virtual ~NuPairMoveSetLibrary();
 };
 
-
 class MixedNuPairCluster {
 public:
 

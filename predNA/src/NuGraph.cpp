@@ -1352,7 +1352,12 @@ void NuEdge::initMoveSet(BaseDistanceMatrix& dm, double distanceCutoff){
 	vector<double> distanceToClusterCenters;
 	vector<double> pList;
 
-	pairLib->getNeighborClusters(dm, nodeA->baseType, nodeB->baseType, sep, neighborClusters, distanceToClusterCenters, distanceCutoff);
+	if(distanceCutoff == 0.0){
+		pairLib->getNearestCluster(dm, nodeA->baseType, nodeB->baseType, sep, neighborClusters, distanceToClusterCenters);
+	}
+	else {
+		pairLib->getNeighborClusters(dm, nodeA->baseType, nodeB->baseType, sep, neighborClusters, distanceToClusterCenters, distanceCutoff);
+	}
 
 	if(neighborClusters.size() > 0) {
 		double pSum = 0;
@@ -3026,7 +3031,7 @@ void NuTree::updateEdgeInfo(double clashRescale, double connectRescale){
 			cout << e->moveSet->pairType << endl;
 		}
 		e->moveSet->updateEdgeInformation(e->ei);
-
+		printf("edge: %3d-%-3d %12s clusterNum: %4d\n", e->indexA, e->indexB, e->ei->ssSepKey.c_str(), e->ei->validClusterNum);
 	}
 
 }
@@ -3070,7 +3075,7 @@ void NuTree::updateEdgeInfoCG(double clashRescale, double connectRescale){
 			e->moveSet = new MixedNuPairCluster(e->sep, e->nodeA->baseType*4+e->nodeB->baseType, graph->moveLib);
 		}
 		e->moveSet->updateEdgeInformation(e->ei);
-
+		printf("edge: %3d-%-3d %12s clusterNum: %4d\n", e->indexA, e->indexB, e->ei->ssSepKey.c_str(), e->ei->validClusterNum);
 	}
 }
 
@@ -3304,8 +3309,8 @@ graphInfo* NuTree::runAtomicMC(){
 		cout << "calculate total energy" << endl;
 	}	
 	
-	 clashRescale = 0.05;
-	 connectRescale = 0.1;
+	clashRescale = graph->et->para->clashRescale;
+	connectRescale = graph->et->para->connectRescale;
 
 	graph->updateEnergy(clashRescale, connectRescale);
 	double lamda = 1.07;
@@ -3339,6 +3344,7 @@ graphInfo* NuTree::runAtomicMC(){
 	cout << "start MC: " << endl;
 	cout << "total step num: " << stepNum1+stepNum2+stepNum3 << endl;
 
+	cout << "clash rescale: " << clashRescale << " connect rescale: " << connectRescale << endl;
 
 	for(T=T0;T>T1;T=T*anneal){
 
@@ -3479,6 +3485,7 @@ graphInfo* NuTree::runAtomicMC(){
 	curEne = graph->totalEnergy(clashRescale, connectRescale);
 	graph->updateEnergy(clashRescale, connectRescale);
 	cout << "fixed subClusterID move" << endl;
+	cout << "clash rescale: " << clashRescale << " connect rescale: " << connectRescale << endl;
 	for(T=T1;T>T2;T=T*anneal){
 
 		nAc = 0;
@@ -3537,6 +3544,7 @@ graphInfo* NuTree::runAtomicMC(){
 	}
 
 	cout << "fixed SP1000ID move" << endl;
+	cout << "clash rescale: " << clashRescale << " connect rescale: " << connectRescale << endl;
 	for(T=T2;T>T3;T=T*anneal){
 
 		nAc = 0;
@@ -4307,7 +4315,7 @@ NuGraph::NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, Ba
 	}
 }
 
-NuGraph::NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et){
+NuGraph::NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et, const string& cnt){
 	this->pairLib = pairLib;
 	this->rotLib = rotLib;
 	this->atLib = atLib;
@@ -4351,13 +4359,24 @@ NuGraph::NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* p
 	connectToDownstream[seqLen-1] = false;
 
 
-	for(i=0;i<seqLen-1;i++){
-		if(baseList[i]->connectToNeighbor(baseList[i+1]))
-			connectToDownstream[i] = true;
-		else {
-			connectToDownstream[i] = false;
+	if(cnt.length() != seqLen){
+		for(i=0;i<seqLen-1;i++){
+			if(baseList[i]->connectToNeighbor(baseList[i+1]))
+				connectToDownstream[i] = true;
+			else {
+				connectToDownstream[i] = false;
+			}
 		}
 	}
+	else {
+		for(i=0;i<seqLen-1;i++){
+			if(cnt[i] == '-')
+				connectToDownstream[i] = true;
+			else 
+				connectToDownstream[i] = false;
+		}
+	}
+	
 
 	for(i=0;i<seqLen;i++){
 		for(j=0;j<seqLen;j++){
@@ -4537,7 +4556,7 @@ NuGraph::NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* p
 			int sep = this->allEdges[i*seqLen+j]->sep;
 			int pairID1 = this->wcPairPosID[i];
 			int pairID2 = this->wcPairPosID[j];
-			this->allEdges[i*seqLen+j]->initNearNativeMoveSet();
+			this->allEdges[i*seqLen+j]->initNearNativeMoveSet(0.0);
 		}
 	}
 	for(i=0;i<seqLen;i++){
@@ -4789,11 +4808,17 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	}
 	for(int i=0;i<seqLen-1;i++) {
 		if(wcPairPosID[i] < 0 ) continue;
-		if(wcPairPosID[i] > i && wcPairPosID[i+1] == wcPairPosID[i]-1 && connectToDownstream[i] && connectToDownstream[wcPairPosID[i+1]]) {
+		if(wcPairPosID[i] > i && wcPairPosID[i+1] == wcPairPosID[i]-1 && connectToDownstream[i] && connectToDownstream[wcPairPosID[i+1]]) 
+		{
 			stemIndex[i] = currentStemID;
 			stemIndex[i+1] = currentStemID;
 			stemIndex[wcPairPosID[i]] = currentStemID;
 			stemIndex[wcPairPosID[i+1]] = currentStemID;
+			curStemLen ++;
+		}
+		else if(wcPairPosID[i] > i){
+			stemIndex[i] = currentStemID;
+			stemIndex[wcPairPosID[i]] = currentStemID;
 			curStemLen ++;
 		}
 		else if(curStemLen > 0) {
@@ -4837,14 +4862,14 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 				}
 				
 				for(int j=i;j<seqLen;j++) {
-					if(!connectToDownstream[j]) break;
+					if(j>0 && !connectToDownstream[j-1]) break;
 					if(stemIndex[j] >0) {
 						h5Sep = (j-i);
 						h5Id = j;
 						break;
 					}
 				}
-
+				
 				if(h3Sep > 5){
 					h3Sep = -1;
 					h3Id = -1;
@@ -4886,6 +4911,30 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 				h5IDList.push_back(-1);
 			}
 	}
+
+	cout << "h3List: ";
+	for(int i=0;i<seqLen;i++){
+		cout << h3List[i] << " ";
+	}
+	cout << endl;
+
+	cout << "h3IDList: ";
+	for(int i=0;i<seqLen;i++){
+		cout << h3IDList[i] << " ";
+	}
+	cout << endl;
+
+	cout << "h5List: ";
+	for(int i=0;i<seqLen;i++){
+		cout << h5List[i] << " ";
+	}
+	cout << endl;
+
+	cout << "h5IDList: ";
+	for(int i=0;i<seqLen;i++){
+		cout << h5IDList[i] << " ";
+	}
+	cout << endl;
 
 	char xs[200];
 	for(i=0;i<seqLen;i++){
@@ -4975,11 +5024,8 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 					ssSepType = "UNK";
 				}
 			}
-
-			if(ssSepType != "UNK") {
-				cout << "edge ssSepType: " << i << " " << j << " " << ssSepType << endl;
-			}
-
+			
+			
 			if(task == "refinement"){
 				//cout << "init near native move set: "  << endl;
 				this->allEdges[i*seqLen+j]->initNearNativeMoveSet();
@@ -4999,7 +5045,8 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 					exit(0);
 				}
 				if(ssSepType != "UNK") {
-					cout << "init edge: " << i << "-" << j << " " << ssSepType << endl;
+
+
 					this->allEdges[i*seqLen+j]->ei->setToLibPCluster(ssSepType, eiLib);
 					//this->allEdges[i*seqLen+j]->moveSet->updateEdgeInformation(this->allEdges[i*seqLen+j]->ei);
 					this->allEdges[i*seqLen+j]->samplingFreq = this->allEdges[i*seqLen+j]->ei->validClusterNum*1.0;
@@ -5008,7 +5055,10 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 					}
 					this->allEdges[i*seqLen+j]->weight = this->allEdges[i*seqLen+j]->ei->weight;
 					this->allEdges[i*seqLen+j]->weightRand = this->allEdges[i*seqLen+j]->weight;
-					cout << this->allEdges[i*seqLen+j]->ei->totalClusterNum << " " << this->allEdges[i*seqLen+j]->ei->validClusterNum << endl;
+
+					cout << "init edge: " << i << "-" << j << " " << ssSepType <<  " clusterNum: " << this->allEdges[i*seqLen+j]->ei->validClusterNum << endl;
+					if(ssSepType == "nnb-GG-3P5P-2-3")
+						this->allEdges[i*seqLen+j]->ei->print();
 				}
 			}
 			else if(task == "analysis") {
@@ -5132,8 +5182,6 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 			this->allNodes[i]->samplingFreq = 0;
 	}
 
-
-
 	for(i=0;i<seqLen;i++){
 		for(j=i+1;j<seqLen;j++){
 			this->geList.push_back(allEdges[i*seqLen+j]);
@@ -5152,8 +5200,6 @@ void NuGraph::initPho(){
 			allNodes[i]->phoConfTmp->copyValueFrom(allNodes[i]->phoConf);
 		}
 	}
-
-	
 }
 
 void NuGraph::initPho(PO3Builder* pb) {
@@ -5472,7 +5518,8 @@ void NuGraph::updateEnergyCG(double clashRescale, double connectRescale){
 }
 
 string NuGraph::toContactMapHashKeyCG(){
-	string key = "";
+
+	string key;
 	int i,j, k, sep, clusterID;
 	char a,b;
 	double ene;
@@ -5485,84 +5532,25 @@ string NuGraph::toContactMapHashKeyCG(){
 			if(this->allEdges[i*seqLen+j]->pairEneCG[0] < 0){
 				BaseDistanceMatrix dm(this->allNodes[i]->baseConfCG->cs1, allNodes[j]->baseConfCG->cs1);
 				clusterID = pairLib->getPairType(dm, allNodes[i]->baseType, allNodes[j]->baseType, sep);
-				ene = pairLib->getEnergyWithOxy(clusterID, allNodes[i]->baseType, allNodes[j]->baseType, sep);
-				if(ene < 0)
-					wt = ene;
-			}
+				if(clusterID < 0) continue;
 
-			if(sep == 1)
-				wt = wt - 0.5;
+				a = i/90 + '!';
+				b = i%90 + '!';
+				key.push_back(a);
+				key.push_back(b);
 
-			this->allEdges[i*seqLen+j]->weight = wt;
-			this->allEdges[i*seqLen+j]->weightRand = wt;
-			this->allEdges[j*seqLen+i]->weight = wt;
-			this->allEdges[j*seqLen+i]->weightRand = wt;
+				a = j/90 + '!';
+				b = j%90 + '!';
+				key.push_back(a);
+				key.push_back(b);
+
+				a = clusterID/90 + '!';
+				b = clusterID%90 + '!';
+				key.push_back(a);
+				key.push_back(b);
+			}		
 		}
 	}
-
-	NuTree* tmpTree = new NuTree(this);
-	MST_kruskal(tmpTree);
-
-	map<string, string> edgeKeys;
-
-	for( k=0;k<tmpTree->geList.size();k++){
-		NuEdge* edge = tmpTree->geList[k];
-		 i = edge->indexA;
-		 j = edge->indexB;
-		if(i > j) {
-			i = edge->indexB;
-			j = edge->indexA;
-		}
-
-		sep = this->sepTable[i*seqLen+j];
-		BaseDistanceMatrix dm(this->allNodes[i]->baseConfCG->cs1, allNodes[j]->baseConfCG->cs1);
-		clusterID = pairLib->getPairType(dm, allNodes[i]->baseType, allNodes[j]->baseType, sep, 1.5);
-		if(clusterID < 0) continue;
-
-		key = "";
-		a = i/90 + '!';
-		b = i%90 + '!';
-		key.push_back(a);
-		key.push_back(b);
-
-		a = j/90 + '!';
-		b = j%90 + '!';
-		key.push_back(a);
-		key.push_back(b);
-
-		a = clusterID/90 + '!';
-		b = clusterID%90 + '!';
-		key.push_back(a);
-		key.push_back(b);
-
-		edgeKeys[key.substr(0,4)] = key;
-	}
-	delete tmpTree;
-
-	key = "";
-	for(i=0;i<seqLen;i++){
-		for(j=0;j<seqLen;j++){
-			if(i==j) continue;
-			string idKey = "";
-			a = i/90 + '!';
-			b = i%90 + '!';
-			idKey.push_back(a);
-			idKey.push_back(b);
-
-			a = j/90 + '!';
-			b = j%90 + '!';
-			idKey.push_back(a);
-			idKey.push_back(b);
-
-			if(edgeKeys.find(idKey) != edgeKeys.end()){
-				key = key + edgeKeys[idKey];
-			}
-
-			this->allEdges[i*seqLen+j]->weight = this->allEdges[i*seqLen+j]->ei->weight;
-			this->allEdges[i*seqLen+j]->weightRand = this->allEdges[i*seqLen+j]->weight;
-		}
-	}
-
 	return key;
 }
 
@@ -5956,10 +5944,9 @@ void NuGraph::printEnergyCG(double clashRescale){
 	}
 	printf("delta: %7.3f\n", delta);
 
-
-
-
 }
+
+
 
 void NuGraph::cgToAllAtom(){
 
@@ -6009,6 +5996,95 @@ double NuGraph::getTotalEnergyForModelSelection(){
 
 	return ene;	
 }
+
+void NuGraph::printBaseEnergyList(const string& outfile){
+	ofstream out;
+	out.open(outfile.c_str(), ios::out | ios::app);
+	int i,j,sep, sepR;
+
+	double* eneList = new double[seqLen];
+	for(i=0;i<seqLen;i++){
+		eneList[i] = 0.0;
+	}
+
+	double ene;
+
+	for(i=0;i<seqLen;i++){
+		for(j=i+1;j<seqLen;j++){
+			sep = sepTable[i*seqLen+j];
+			sepR = sepTable[j*seqLen+i];
+			ene = nuBaseBaseEnergyForSelection(allNodes[i]->baseConf, allNodes[j]->baseConf, sep, et);
+			ene += nuBaseRiboseEnergyForSelection(allNodes[i]->baseConf, allNodes[j]->riboseConf, sep, et);
+			ene += nuBaseRiboseEnergyForSelection(allNodes[j]->baseConf, allNodes[i]->riboseConf, sepR, et);
+			ene += nuBasePhoEnergyForSelection(allNodes[i]->baseConf, allNodes[j]->phoConf, sep, et);
+			ene += nuBasePhoEnergyForSelection(allNodes[j]->baseConf, allNodes[i]->phoConf, sepR, et);
+			ene += nuRiboseRiboseEnergyForSelection(allNodes[i]->riboseConf, allNodes[j]->riboseConf, sep, et);
+			ene += nuRibosePhoEnergyForSelection(allNodes[i]->riboseConf, allNodes[j]->phoConf, sep, et);
+			ene += nuRibosePhoEnergyForSelection(allNodes[j]->riboseConf, allNodes[i]->phoConf, sepR, et);
+			ene += nuPhoPhoEnergyForSelection(allNodes[i]->phoConf, allNodes[j]->phoConf, sep, et);
+			
+			eneList[i] += 0.5*ene;
+			eneList[j] += 0.5*ene;
+
+			cout << "pos: " << i << " " << j << " " << ene << endl;
+		}
+	}
+
+	string augc = "AUGCatgc";
+	char xx[200];
+	vector<double> eList;
+	for(i=0;i<seqLen;i++){
+		sprintf(xx, "eBase: %-3d %c %7.3f", i, augc[this->seq[i]], eneList[i]);
+		out << string(xx) << endl;
+	}
+	out.close();
+}
+
+void NuGraph::printPairwiseEnergy(const string& outfile){
+	ofstream out;
+	out.open(outfile.c_str(), ios::out | ios::app);
+	int i,j,sep, sepR;
+
+	double* eneMatrix = new double[seqLen*seqLen];
+	for(i=0;i<seqLen*seqLen;i++){
+		eneMatrix[i] = 0.0;
+	}
+
+	double ene;
+
+	for(i=0;i<seqLen;i++){
+		for(j=i+1;j<seqLen;j++){
+			sep = sepTable[i*seqLen+j];
+			sepR = sepTable[j*seqLen+i];
+			ene = nuBaseBaseEnergyForSelection(allNodes[i]->baseConf, allNodes[j]->baseConf, sep, et);
+			ene += nuBaseRiboseEnergyForSelection(allNodes[i]->baseConf, allNodes[j]->riboseConf, sep, et);
+			ene += nuBaseRiboseEnergyForSelection(allNodes[j]->baseConf, allNodes[i]->riboseConf, sepR, et);
+			ene += nuBasePhoEnergyForSelection(allNodes[i]->baseConf, allNodes[j]->phoConf, sep, et);
+			ene += nuBasePhoEnergyForSelection(allNodes[j]->baseConf, allNodes[i]->phoConf, sepR, et);
+			ene += nuRiboseRiboseEnergyForSelection(allNodes[i]->riboseConf, allNodes[j]->riboseConf, sep, et);
+			ene += nuRibosePhoEnergyForSelection(allNodes[i]->riboseConf, allNodes[j]->phoConf, sep, et);
+			ene += nuRibosePhoEnergyForSelection(allNodes[j]->riboseConf, allNodes[i]->phoConf, sepR, et);
+			ene += nuPhoPhoEnergyForSelection(allNodes[i]->phoConf, allNodes[j]->phoConf, sep, et);
+			
+			eneMatrix[i*seqLen+j] = ene;
+			eneMatrix[j*seqLen+i] = ene;
+		}
+	}
+
+	string augc = "AUGCatgc";
+	char xx[200];
+
+	for(i=0;i<seqLen;i++){
+		for(j=i+1;j<seqLen;j++){
+			if(abs(eneMatrix[i*seqLen+j]) < 0.01) continue;
+			sprintf(xx, "ePair: %-4d %c %-4d %c %7.3f", i, augc[this->seq[i]], j, augc[this->seq[j]], eneMatrix[i*seqLen+j]);
+			out << string(xx) << endl;
+		}
+		
+	}
+	out.close();	
+}
+
 
 graphInfo* NuGraph::getGraphInfo(){
 	graphInfo* gi = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, getTotalEnergyForModelSelection(), atLib, 0);

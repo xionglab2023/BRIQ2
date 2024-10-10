@@ -323,7 +323,7 @@ public:
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int InitMode);
-	NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et);
+	NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et, const string& cnt);
 
 	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& csn, const string& cst, const string& cnt, const string& contactKey, vector<string>& ctList);
 	void initPho();
@@ -339,6 +339,9 @@ public:
 	void updateEnergy(double clashRescale, double connectRescale);
 	void updateEnergyCG(double clashRescale, double connectRescale);
 
+	void generateSubGraph(int corePos, int* subGraphPosList, int* fixedPositions, NuGraph* subGraph);
+	void refineSubGraph(int * subGraphPosList, NuGraph* subGraph);
+
 	string toContactMapHashKeyCG();
 
 	void keyToContactMatrix(const string& key);
@@ -350,6 +353,7 @@ public:
 	void checkEnergyCG(double clashRescale, double connectRescale);
 	double totalEnergy(double clashRescale, double connectRescale);
 	double nbEnergy(double clashRescale, double connectRescale);
+
 	double nnbEnergy(double clashRescale, double connectRescale);
 	double totalEnergyCG(double clashRescale, double connectRescale);
 	double totalEnergyCGTmp(double clashRescale, double connectRescale);
@@ -358,6 +362,8 @@ public:
 
 	void printEnergy();
 	void printEnergyCG(double clashRescale);
+	void printBaseEnergyList(const string& outfile);
+	void printPairwiseEnergy(const string& outfile);
 	void cgToAllAtom();
 
 	double getTotalEnergyForModelSelection();

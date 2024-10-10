@@ -34,7 +34,10 @@ add_executable(subPDB GetSubPDB.cpp)
 add_executable(key2pdb KeyToModel.cpp)
 add_executable(briqx_run RunPredict.cpp)
 add_executable(briqx_refineBB BackboneRefinement.cpp)
+add_executable(briqx_keySelection ContactKeySelection.cpp)
 
+
+target_link_libraries (briqx_keySelection briqx)
 target_link_libraries (briqx_refineBB briqx)
 target_link_libraries (briqx_run briqx)
 target_link_libraries (key2pdb briqx)
@@ -72,5 +75,5 @@ target_link_libraries (briq_InitPDB briqx)
 target_link_libraries (rnaScoring briqx)
 target_link_libraries (testMoveIO briqx)
 
-install(TARGETS testGraph testMoveIO testTree testGraphMP buildBB trainSamp testRand trainFFP trainSingleBase testSingle trainSingle2 eiLib testMove trainCG inputToContactMatrix briq_InitPDB cgModeling rna_assemble rna_refinement alignPDB subPDB rna_buildMutation key2pdb briqx_run briqx_refineBB
+install(TARGETS testGraph testMoveIO testTree testGraphMP buildBB trainSamp testRand trainFFP trainSingleBase testSingle trainSingle2 eiLib testMove trainCG inputToContactMatrix briq_InitPDB cgModeling rna_assemble rna_refinement alignPDB subPDB rna_buildMutation key2pdb briqx_run briqx_refineBB briqx_keySelection
     RUNTIME DESTINATION bin)

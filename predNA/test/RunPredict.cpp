@@ -31,9 +31,9 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
    	et->para->T3 = 0.01;
     et->para->clashRescale = 0.2;
     et->para->connectRescale = 0.5;
-	et->para->kStepNum1 = 200;
-	et->para->kStepNum2 = 100;
-	et->para->kStepNum3 = 100;
+	et->para->kStepNum1 = (int)(200*kStep);
+	et->para->kStepNum2 = (int)(100*kStep);
+	et->para->kStepNum3 = (int)(100*kStep);
 	et->para->withRandomInit = false;
 
 	BasePairLib* pairLib = new BasePairLib("stat");
@@ -65,19 +65,19 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
     return 0;
 }
 
-int runRefinementFromPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& pdbFile, const string& outFile, int randSeed, double kStep){
+int runRefinementFromPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& pdbFile, const string& outFile, int randSeed, double kStep, const string& cnt){
 
     srand(randSeed);
 
-   	et->para->T0 = 2.0;
-    et->para->T1 = 0.2;
-    et->para->T2 = 0.05;
-   	et->para->T3 = 0.01;
+   	et->para->T0 = 0.3;
+    et->para->T1 = 0.07;
+    et->para->T2 = 0.015;
+   	et->para->T3 = 0.002;
     et->para->clashRescale = 0.2;
-    et->para->connectRescale = 0.5;
-	et->para->kStepNum1 = 600;
-	et->para->kStepNum2 = 500;
-	et->para->kStepNum3 = 500;
+    et->para->connectRescale = 0.4;
+	et->para->kStepNum1 = (int)(500*kStep);
+	et->para->kStepNum2 = (int)(500*kStep);
+	et->para->kStepNum3 = (int)(500*kStep);
 	et->para->withRandomInit = false;
 
 	cout << "init libs" << endl;
@@ -90,7 +90,7 @@ int runRefinementFromPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLi
 	cout << "pdbFile: " << pdbFile << endl;
 	RNAPDB* pdb = new RNAPDB(pdbFile);
 	cout << "init graph" <<endl;
-	NuGraph* graph = new NuGraph(pdb, rotLib, atLib, pairLib, moveLib, eiLib, et);
+	NuGraph* graph = new NuGraph(pdb, rotLib, atLib, pairLib, moveLib, eiLib, et, cnt);
 	cout << "init weight" << endl;
 	graph->initRandWeight();
 	NuTree* tree = new NuTree(graph);
@@ -105,7 +105,8 @@ int runRefinementFromPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLi
 	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();
     gi->printPDB(outFile);
-	graph->printEnergy();
+	graph->printBaseEnergyList(outFile);
+	graph->printPairwiseEnergy(outFile);
 
 	delete pdb;
     delete gi;
@@ -226,7 +227,9 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib
 
 	clock_t start = clock();
 
+	
     NuSampling* samp = new NuSampling(graph, tree);
+	cout << "runMC" << endl;
     samp->runCoarseGrainedMC(outFile, modelNum);
 
 	delete pairLib;
@@ -318,12 +321,13 @@ int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, 
 void printHelp(){
 	cout << "Usage: " << endl;
 	cout << "run refinement:" <<endl;
-	cout << "briqx_run -task $TASK -in $INPUTFILE -out $OUTPUT -seed $RANDOM_SEED" << endl;
-	cout << "briqx_run -task $TASK -pdb $PDBFILE -out OUTPDB -seed $RANDOM_SEED" << endl;
+	cout << "briqx_run -in $INPUTFILE -out $OUTPUT -seed $RANDOM_SEED" << endl;
+	cout << "briqx_run -pdb $PDBFILE -out OUTPDB -seed $RANDOM_SEED" << endl;
+	cout << "briqx_run -pdb $PDBFILE -out OUTPDB -seed $RANDOM_SEED -cnt \"X$CNT\"" << endl;  
 	cout << "run predict: " << endl;
-	cout << "briqx_run -task $TASK -in $INPUTFILE -out $OUTPUT -seed $RANDOM_SEED" << endl;
+	cout << "briqx_run -in $INPUTFILE -out $OUTPUT -seed $RANDOM_SEED" << endl;
 	cout << "run cgModeling: " << endl;
-	cout << "briqx_run -task $TASK -in $INPUTFILE -out $OUTPUT -seed $RANDOM_SEED -n $KEYNum -mp $THREADNum" << endl;
+	cout << "briqx_run -in $INPUTFILE -out $OUTPUT -seed $RANDOM_SEED -n $KEYNum -mp $THREADNum" << endl;
 
 }
 
@@ -381,10 +385,19 @@ int main(int argc, char** argv){
 	para->libType = libType;
 
 	RnaEnergyTable* et = new RnaEnergyTable(para);
+
 	if(cmdArgs.specifiedOption("-pdb")){
 		et->loadAtomicEnergy();
 		cout << "run refinement from PDB" << endl;
-		runRefinementFromPDB(moveLib, eiLib, et, pdbFile, outputFile, seed, kStep);
+		string cnt = "";
+		if(cmdArgs.specifiedOption("-cnt"))
+			cnt = cmdArgs.getValue("-cnt");
+
+		if(cnt.length() > 1)
+			cnt = cnt.substr(1, cnt.length()-1);
+			
+		cout << "cnt: " << cnt << endl;
+		runRefinementFromPDB(moveLib, eiLib, et, pdbFile, outputFile, seed, kStep, cnt);
 	}
 	else {
 		if(inputFile.length() == 0){
@@ -423,50 +436,6 @@ int main(int argc, char** argv){
 			et->loadCoarseGrainedEnergy();
 			runCGMC(moveLib, et, eiLib, inputFile, outputFile, modelNum, seed, kStep);
 		}
-
-			/*
-			
-    		ofstream out;
-   		 	out.open(outputFile.c_str(), ios::out);
-
-    		int startID = 0;
-    
-
-		
-
-    		shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
-    		size_t jid = 0;
-    		char xx[200];
-
-    		cgResult* resultList[mp];
-    		for(int i=0;i<mp;i++){
-    	    	resultList[i] = new cgResult();
-    		}
-
-    		for(int i=startID;i<startID+mp;i++) {
-    	    	shared_ptr<IntFuncTask> request(new IntFuncTask);
-
-     		   	request->asynBind(runCGMC, moveLib, et, eiLib, inputFile,  resultList[i-startID],modelNum, time(0)+i, kStep);
-    	   		jid++;
-    	    	thrPool->addTask(request);
-    		}
-
-    		while(true) {
-        		sleep(1);
-        		if(thrPool->getTaskCount() == 0) {
-        		break;
-        		}
-    		}
-
-    		for(int i=1;i<mp;i++){
-        		resultList[0]->mergeResult(resultList[i]);
-    		}
-
-    		resultList[0]->print(out);
-				out.close();
-		}
-
-		*/
 
 	}
 

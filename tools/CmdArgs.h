@@ -45,10 +45,16 @@ public:
 				options.push_back(CmdOption(tag, value));
 			}
 			else if(args[i][0] == '-'){
+			
 				string tag = string(args[i]);
 				string value = string(args[i+1]);
+
+				if(value[0] == '\"' && value[value.length()-1] == '\"')
+					value = value.substr(1, value.length()-2);
+
 				options.push_back(CmdOption(tag, value));
 			}
+
 		}
 	}
 

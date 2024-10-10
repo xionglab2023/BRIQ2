@@ -304,7 +304,7 @@ EdgeInformationLib::EdgeInformationLib(){
 			n++;
 			if(clusterID < 0)
 				pContact = pContact-p;
-			else
+			else if(p > 0)
 				pList[clusterID] = p;
 		}
 

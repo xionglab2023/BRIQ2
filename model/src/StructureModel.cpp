@@ -930,7 +930,7 @@ PolarAtom::PolarAtom(RNABase* base, string atomName){
 
 	if(base->baseTypeInt == 0 || base->baseTypeInt == 4){
 		if(atomName == "N1"){
-			if(base->getAtom("N1") != NULL && base->getAtom("N1") != NULL && base->getAtom("N1") != NULL){
+			if(base->getAtom("N1") != NULL && base->getAtom("C2") != NULL && base->getAtom("C6") != NULL){
 				XYZ c = base->getAtom("N1")->coord;
 				XYZ sup1 = base->getAtom("C2")->coord;
 				XYZ sup2 = base->getAtom("C6")->coord;
