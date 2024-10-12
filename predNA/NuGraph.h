@@ -244,6 +244,7 @@ public:
 	void printEdges();
 	void printEdgeInfo(const string& output);
 	void printEdgeInfo();
+	void printTreeInfomation(const string& output); //print PDB in tre format
 
 	graphInfo* runAtomicMC();
 	void runCoarseGrainedMC(const string& output);

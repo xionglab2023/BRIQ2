@@ -50,7 +50,7 @@ ForceFieldPara::ForceFieldPara() {
 	}
 
 	this->bwTag = "bw5";
-	this->libType = "xtb"; //"stat" or "xtb" or "adj"
+	this->libType = "stat"; //"stat" or "xtb" or "adj"
 	this->cgEneType = "stat"; //"stat" or "xtb"
 
 	this->wtBp1 = 2.0;
@@ -136,7 +136,7 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 	}
 
 	this->bwTag = "bw5";
-	this->libType = "xtb"; //"stat" or "xtb" or "adj"
+	this->libType = "stat"; //"stat" or "xtb" or "adj"
 	this->cgEneType = "stat"; //"stat" or "xtb"
 
 	this->wtBp1 = 2.0;

@@ -19,7 +19,7 @@ using namespace NSPthread;
 
 void printHelp(){
 	cout << "Usage: " << endl;
-	cout << "briqx_keySelection -in $INPUTFILE -key $KEYFILE -max $MAXNUM -out $OUTPUT" <<endl;
+	cout << "briqx_keySelection -in $INPUTFILE -key $KEYFILE -n $MAXNUM -out $OUTPUT" <<endl;
 }
 
 class keyEnergy{
@@ -154,8 +154,8 @@ int main(int argc, char** argv){
 
     int maxNum = 100;
 
-    if(cmdArgs.specifiedOption("-max"))
-        maxNum = atoi(cmdArgs.getValue("-max").c_str());
+    if(cmdArgs.specifiedOption("-n"))
+        maxNum = atoi(cmdArgs.getValue("-n").c_str());
 
     ifstream file;
     file.open(keyFile.c_str(), ios::in);
@@ -169,10 +169,16 @@ int main(int argc, char** argv){
     vector<string> keys;
     vector<double> eneList;
 
-    while(file >> key >> ene){
-        keys.push_back(key);
-        eneList.push_back(ene);
+    string s;
+    vector<string> spt;
+
+    while(getline(file, s)){
+        splitString(s, " ", &spt);
+        if(spt.size() < 2) continue;
+        keys.push_back(spt[0]);
+        eneList.push_back(atof(spt[1].c_str()));    
     }
+
     file.close();
 
     NSPtools::InputParser input(inputFile);

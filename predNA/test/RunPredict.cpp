@@ -240,76 +240,81 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib
     return 0;
 }
 
-int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep){
+int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int modelNum, int randSeed, double kStep){
     srand(randSeed);
-
-   	et->para->T0 = 10.0;
-    et->para->T1 = 1.0;
-    et->para->T2 = 0.1;
-   	et->para->T3 = 0.01;
-    et->para->clashRescale = 0.2;
-    et->para->connectRescale = 0.5;
-	et->para->kStepNum1 = 200;
-	et->para->kStepNum2 = 100;
-	et->para->kStepNum3 = 100;
-	et->para->withRandomInit = false;
-
-	et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
-	et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
-	et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
-	
-
 	BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
-	cout << "init for mc" << endl;
-    graph->initForMC(inputFile);
-	cout << "init rand weight" << endl;
-	graph->initRandWeight();
-	graph->printAllEdge();
-	cout << "init tree" << endl;
+	graph->initForMC(inputFile);
 	NuTree* tree = new NuTree(graph);
-	cout << "MST" << endl;
-	graph->MST_kruskal(tree);
-	cout << "update node info" << endl;
-	tree->updateNodeInfo(1.0, 1.0);
-	cout << "update edge info" << endl;
-	tree->updateEdgeInfo(1.0, 1.0);
-	cout << "update sampling info" << endl;
-	tree->updateSamplingInfo();
 
-	cout << "run MC" << endl;
-	tree->runAtomicMC();
+	ofstream out;
+	out.open(outFile.c_str(), ios::out);
+	if(!out.is_open()) {
+		cout << "fail to open file: " << outFile << endl;
+		exit(0);
+	}
+	out.close();
+
+	for(int i=0;i<modelNum;i++){
+
+		et->para->T0 = 10.0;
+    	et->para->T1 = 1.0;
+    	et->para->T2 = 0.1;
+   		et->para->T3 = 0.01;
+    	et->para->clashRescale = 0.2;
+    	et->para->connectRescale = 0.5;
+		et->para->kStepNum1 = 200;
+		et->para->kStepNum2 = 100;
+		et->para->kStepNum3 = 100;
+		et->para->withRandomInit = true;
+
+		et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
+		et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
+		et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
+
+		graph->initRandWeight();
+		graph->printAllEdge();
+
+		graph->MST_kruskal(tree);
+		tree->updateNodeInfo(1.0, 1.0);
+		tree->updateEdgeInfo(1.0, 1.0);
+		tree->updateSamplingInfo();
+
+		cout << "run MC" << endl;
+		tree->runAtomicMC();
 	
-	graph->initNearestNativeEdge();
-	graph->initRandWeight();
-	graph->MST_kruskal(tree);
-	tree->updateNodeInfo(1.0, 1.0);
-	tree->updateEdgeInfo(1.0, 1.0);
-	tree->updateSamplingInfo();
+		graph->initNearestNativeEdge();
+		graph->initRandWeight();
+		graph->MST_kruskal(tree);
+		tree->updateNodeInfo(1.0, 1.0);
+		tree->updateEdgeInfo(1.0, 1.0);
+		tree->updateSamplingInfo();
 
-   	et->para->T0 = 1.0;
-    et->para->T1 = 0.2;
-    et->para->T2 = 0.05;
-   	et->para->T3 = 0.01;
-    et->para->clashRescale = 0.2;
-    et->para->connectRescale = 0.5;
-	et->para->kStepNum1 = 200;
-	et->para->kStepNum2 = 100;
-	et->para->kStepNum3 = 100;
-	et->para->withRandomInit = false;
+   		et->para->T0 = 1.0;
+    	et->para->T1 = 0.2;
+    	et->para->T2 = 0.05;
+   		et->para->T3 = 0.01;
+    	et->para->clashRescale = 0.2;
+    	et->para->connectRescale = 0.5;
+		et->para->kStepNum1 = 200;
+		et->para->kStepNum2 = 100;
+		et->para->kStepNum3 = 100;
+		et->para->withRandomInit = false;
 
-	et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
-	et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
-	et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
+		et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
+		et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
+		et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
 
-	cout << "run MC2" << endl;
-	graphInfo* gi = tree->runAtomicMC();
+		cout << "run MC2" << endl;
+		graphInfo* gi = tree->runAtomicMC();
 
-    gi->printPDB(outFile);
+		tree->printTreeInfomation(outFile);
+		delete gi;
+	}
 
-    delete gi;
+
     delete pairLib;
     delete rotLib;
     delete atLib;
@@ -423,8 +428,12 @@ int main(int argc, char** argv){
 			runPredict(moveLib, eiLib, et, inputFile, outputFile, seed, kStep);
 		}
 		else if(task == "predict"){
+			int modelNum = 10;
+			if(cmdArgs.specifiedOption("-n"))
+				modelNum = atoi(cmdArgs.getValue("-n").c_str());
+
 			et->loadAtomicEnergy();
-			cgKeyToAllAtomPDB(moveLib, eiLib, et, inputFile, outputFile, seed, kStep);
+			cgKeyToAllAtomPDB(moveLib, eiLib, et, inputFile, outputFile, modelNum, seed, kStep);
 		}
 		else if(task == "cgModeling"){
 

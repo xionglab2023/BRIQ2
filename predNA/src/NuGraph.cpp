@@ -3276,6 +3276,53 @@ void NuTree::printEdgeInfo(){
 	}
 }
 
+void NuTree::printTreeInfomation(const string& output) {
+	ofstream out;
+	out.open(output.c_str(), ios::out|ios::app);
+	string augc = "AUGCatgc";
+	string seq = "";
+	string cnt = "";
+	for(int i=0;i<graph->seqLen;i++){
+		seq.append(augc.substr(graph->seq[i], 1));
+		if(graph->connectToDownstream[i])
+			cnt.append("-");
+		else
+			cnt.append("|");
+	}
+
+	out << "model " << seq << " " << cnt << " " << graph->getTotalEnergyForModelSelection() << endl;
+
+	for(int i=0;i<graph->seqLen;i++){
+		out <<  graph->allNodes[i]->riboseConf->rot->rotType << " ";
+	}
+	out << endl;
+
+	for(int i=0;i<graph->seqLen;i++){
+		if(graph->connectToDownstream[i])
+			out <<  graph->allNodes[i]->phoConf->rot->dihed1 << " ";
+		else 
+			out << "0 ";
+	}
+	out << endl;	
+
+	for(int i=0;i<graph->seqLen;i++){
+		if(graph->connectToDownstream[i])
+			out  <<  graph->allNodes[i]->phoConf->rot->dihed2 << " ";
+		else 
+			out << "0 " ;
+	}
+	out << endl;
+
+	for(int i=1;i<graph->seqLen;i++){
+		CsMove cm = graph->allNodes[i]->baseConf->cs1 - graph->allNodes[0]->baseConf->cs1;
+		out << cm.toString() << endl;
+
+	}
+
+	out.close();
+
+}
+
 graphInfo* NuTree::runAtomicMC(){
 
 	double clashRescale = 1.0;
