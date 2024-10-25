@@ -74,7 +74,7 @@ int runRefinementFromPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLi
     et->para->T2 = 0.015;
    	et->para->T3 = 0.002;
     et->para->clashRescale = 0.2;
-    et->para->connectRescale = 0.4;
+    et->para->connectRescale = 0.5;
 	et->para->kStepNum1 = (int)(500*kStep);
 	et->para->kStepNum2 = (int)(500*kStep);
 	et->para->kStepNum3 = (int)(500*kStep);
@@ -226,7 +226,6 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib
 	tree->updateSamplingInfo();
 
 	clock_t start = clock();
-
 	
     NuSampling* samp = new NuSampling(graph, tree);
 	cout << "runMC" << endl;

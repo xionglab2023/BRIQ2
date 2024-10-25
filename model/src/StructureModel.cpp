@@ -1599,11 +1599,18 @@ void RNAPDB::readPDB(const string& pdbFile){
 
     RNAChain* curChain;
     RNABase* curResidue;
+	Ligand* curLigand = NULL;
     ResName rn;
+	vector<string> spt;
 
 	while(getline(input,s))
     {
 		//cout << s << endl;
+		if(s.length() > 3 && s.substr(0,3) == "ene") {
+			splitString(s, " " , &spt);
+			this->ene = atof(spt[1].c_str());
+		}
+
         len = s.length();
         if(len < 6) continue;
         string prefix = s.substr(0,6);
@@ -1620,10 +1627,7 @@ void RNAPDB::readPDB(const string& pdbFile){
         if(rawResName == "HOH") continue;
 
         rawResName = trimString(rawResName);
-        if(!rn.isRNABase(rawResName)) continue;
-		
-        resName = rn.toStandardBase(rawResName);
-		//cout << rawResName << " " << resName << endl;
+
 
         curChainID = s.substr(21,1);
         curResID = trimString(s.substr(22,5));
@@ -1641,37 +1645,58 @@ void RNAPDB::readPDB(const string& pdbFile){
         }
 
         if(a->type == "H") continue;
-        if(curChainID != lastChainID)
-        {
-             if(getChain(curChainID) == NULL)
-             {
-                  curChain = new RNAChain(curChainID);
-                  this->chains.push_back(curChain);
-             }
-             else
-            	  curChain = getChain(curChainID);
 
-             lastChainID = curChainID;
-             lastResID = "XXX";
-        }
+		if(rn.isRNABase(rawResName)){
+			resName = rn.toStandardBase(rawResName);
+        	if(curChainID != lastChainID)
+       		{
+            	if(getChain(curChainID) == NULL)
+             	{
+                	curChain = new RNAChain(curChainID);
+                	this->chains.push_back(curChain);
+             	}
+             	else
+            		curChain = getChain(curChainID);
 
-        if(curResID != lastResID)
-        {
-        	curResidue = new RNABase(curResID, curChainID, resName[0]);
-			//cout << curResidue->getType() << endl;
-        	curResidue->setResSeqID(curResSeqID);
-        	curResSeqID++;
-        	curChain->addBase(curResidue);
-            baseList.push_back(curResidue);
-            lastResID = curResID;
-        }
-        if(altLoc != ' ' && altLoc != 'A' && altLoc != '1') {
-        	curResidue->hasAltConf = true;
-        	continue;
-        }
+             	lastChainID = curChainID;
+             	lastResID = "XXX";
+        	}
 
-        curResidue->addAtom(a);
-        curResidue->setAltLoc(altLoc);
+        	if(curResID != lastResID)
+        	{
+        		curResidue = new RNABase(curResID, curChainID, resName[0]);
+				//cout << curResidue->getType() << endl;
+        		curResidue->setResSeqID(curResSeqID);
+        		curResSeqID++;
+        		curChain->addBase(curResidue);
+            	baseList.push_back(curResidue);
+            	lastResID = curResID;
+        	}
+        	if(altLoc != ' ' && altLoc != 'A' && altLoc != '1') {
+        		curResidue->hasAltConf = true;
+        		continue;
+        	}
+
+        	curResidue->addAtom(a);
+        	curResidue->setAltLoc(altLoc);
+		}
+		else if(rn.isAminoAcid(rawResName)) {
+			continue; //ignore protein atoms
+		}
+		else {
+			//read ligands
+			if(curChainID != lastChainID || curResID != lastResID || curLigand == NULL){
+				lastChainID = curChainID;
+				lastResID = curResID;
+				curLigand = new Ligand();
+				curLigand->setChainID(curChainID);
+				curLigand->setLigandName(rawResName);
+				curLigand->setResID(curResID);
+				this->ligList.push_back(curLigand);
+			}
+
+			curLigand->addAtom(a);
+		}
     }
 
     input.close();
@@ -1693,8 +1718,9 @@ void RNAPDB::readCIF(const string& cifFile){
     string lastChainID = "@";
     string lastResID = "XXX";
 
-    string curChainID;
-    string curResID;
+    string curChainID = "";
+    string curResID = "";
+	string curLigID = "";
     int curResSeqID = 0;
     string insCode;
 	string altCode;
@@ -1705,6 +1731,8 @@ void RNAPDB::readCIF(const string& cifFile){
     RNABase* curResidue;
     ResName rn;
 
+	Ligand* curLigand = NULL;
+
     vector<string> spt;
 	map<string, int> atomSiteMap;
 
@@ -1712,6 +1740,12 @@ void RNAPDB::readCIF(const string& cifFile){
 	while(getline(input,s))
     {
 		//cout << s << endl;
+
+		if(s.length() > 3 && s.substr(0,3) == "ene") {
+			splitString(s, " " , &spt);
+			this->ene = atof(spt[1].c_str());
+		}
+		
         len = s.length();
         if(len < 5) continue;
         string prefix = s.substr(0,5);
@@ -1751,9 +1785,7 @@ void RNAPDB::readCIF(const string& cifFile){
         rawResName = spt[atomSiteMap["label_comp_id"]];
         if(rawResName == "HOH") continue;
 
-        rawResName = trimString(rawResName);
-        if(!rn.isRNABase(rawResName)) continue;
-        resName = rn.toStandardBase(rawResName);
+
 
         curChainID = spt[atomSiteMap["label_asym_id"]];
 
@@ -1776,38 +1808,61 @@ void RNAPDB::readCIF(const string& cifFile){
         }
 
         if(a->type == "H") continue;
-        if(curChainID != lastChainID)
-        {
-             if(getChain(curChainID) == NULL)
-             {
-                  curChain = new RNAChain(curChainID);
-                  this->chains.push_back(curChain);
-             }
-             else
-            	  curChain = getChain(curChainID);
 
-             lastChainID = curChainID;
-             lastResID = "XXX";
-        }
+        rawResName = trimString(rawResName);
+        if(!rn.isRNABase(rawResName)) continue;
+        
+		if(rn.isRNABase(rawResName)) {
+			resName = rn.toStandardBase(rawResName);
+        	if(curChainID != lastChainID)
+        	{
+             	if(getChain(curChainID) == NULL)
+             	{
+                	curChain = new RNAChain(curChainID);
+                	this->chains.push_back(curChain);
+             	}
+             	else
+            		curChain = getChain(curChainID);
 
-        if(curResID != lastResID)
-        {
-        	curResidue = new RNABase(curResID, curChainID, resName[0]);
-        	curResidue->setResSeqID(curResSeqID);
-        	curResSeqID++;
-        	curChain->addBase(curResidue);
-            baseList.push_back(curResidue);
-            lastResID = curResID;
-        }
+            	lastChainID = curChainID;
+             	lastResID = "XXX";
+        	}
 
+        	if(curResID != lastResID)
+        	{
+        		curResidue = new RNABase(curResID, curChainID, resName[0]);
+        		curResidue->setResSeqID(curResSeqID);
+        		curResSeqID++;
+        		curChain->addBase(curResidue);
+            	baseList.push_back(curResidue);
+            	lastResID = curResID;
+        	}
 
-        if(altCode != "." && altCode != "A" && altCode != "1") {
-        	curResidue->hasAltConf = true;
-        	continue;
-        }
+        	if(altCode != "." && altCode != "A" && altCode != "1") {
+        		curResidue->hasAltConf = true;
+        		continue;
+        	}
 
-        curResidue->addAtom(a);
-        curResidue->setAltLoc(altCode[0]);
+        	curResidue->addAtom(a);
+        	curResidue->setAltLoc(altCode[0]);
+		}
+		else if(rn.isAminoAcid(rawResName)) {
+			continue; //ignore protein atoms
+		}
+		else {
+			//read ligands
+			if(curChainID != lastChainID || curResID != lastResID || curLigand == NULL){
+				lastChainID = curChainID;
+				lastResID = curResID;
+				curLigand = new Ligand();
+				curLigand->setChainID(curChainID);
+				curLigand->setLigandName(rawResName);
+				curLigand->setResID(curResID);
+				this->ligList.push_back(curLigand);
+			}
+
+			curLigand->addAtom(a);
+		}
     }
 
     input.close();

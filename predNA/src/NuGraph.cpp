@@ -3514,7 +3514,7 @@ graphInfo* NuTree::runAtomicMC(){
 		
 		double rms = gi->rmsd(this->graph->initInfo);
 		delete gi;
-		printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms);
+		printf("T=%7.4f nTot=%7d pN=%6.4f eTot=%7d pE=%6.4f curE=%8.3f totEne=%8.3f rms: %6.3f clashRescale: %6.3f\n", T, nTot, nAc*1.0/nTot, eTot, eAc*1.0/eTot, curEne, totEne, rms, clashRescale);
 
 		clashRescale = clashRescale*lamda;
 		connectRescale = connectRescale*lamda;

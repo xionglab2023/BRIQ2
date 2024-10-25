@@ -82,8 +82,8 @@ ForceFieldPara::ForceFieldPara() {
 		}
 	}
 
-	this->clashRescale = 1.0;
-	this->connectRescale = 1.0;
+	this->clashRescale = 0.1;
+	this->connectRescale = 0.4;
 	this->rescaleIncreaseFactor = 1.05;
 
 	this->phoRep = 2.0;
@@ -168,8 +168,8 @@ ForceFieldPara::ForceFieldPara(const string& paraFile){
 		}
 	}
 
-	this->clashRescale = 1.0;
-	this->connectRescale = 1.0;
+	this->clashRescale = 0.1;
+	this->connectRescale = 0.4;
 	this->rescaleIncreaseFactor = 1.05;
 
 	this->phoRep = 2.0;

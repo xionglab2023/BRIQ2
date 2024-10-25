@@ -314,7 +314,7 @@ int main(int argc, char** argv){
             selectEnes.push_back(keList[i]->ene);
 
             for(j=i+1;j<n;j++){
-                double d = keySimilarity(seqLen, typeList, sepTable, keList[i]->key, keList[j]->key, bpLib);
+                double d =  keySimilarity(seqLen, typeList, sepTable, keList[i]->key, keList[j]->key, bpLib);
                 if(d > distCutoff){
                     selected[j] = true;
                 }
@@ -323,9 +323,13 @@ int main(int argc, char** argv){
 
     }
 
-    cout << distCutoff1 << " " << distCutoff2 << " " << distCutoff3 << endl;
 
-
+    for(i=0;i<4;i++){
+        for(j=0;j<4;j++){
+           double d = keySimilarity(seqLen, typeList, sepTable, selectKeys[i], selectKeys[j], bpLib);
+           cout << "dist: " << i << " " << j << " " << d << endl;
+        }
+    }
 
 
     ofstream out;
