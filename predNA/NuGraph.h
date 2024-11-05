@@ -17,6 +17,8 @@
 #include <fstream>
 #include <algorithm>
 #include <memory>
+#include <unordered_map>
+#include <unordered_set>
 #include "model/StructureModel.h"
 #include "model/AtomLib.h"
 #include "model/RotamerLib.h"
@@ -340,8 +342,18 @@ public:
 	void updateEnergy(double clashRescale, double connectRescale);
 	void updateEnergyCG(double clashRescale, double connectRescale);
 
-	void generateSubGraph(int corePos, int* subGraphPosList, int* fixedPositions, NuGraph* subGraph);
-	void refineSubGraph(int * subGraphPosList, NuGraph* subGraph);
+	void generateSubGraph(const string& inputFile, int corePos, int* subGraphPosList, int* fixedPositions, NuGraph* subGraph, vector<int>& outsubGraphPosList, vector<vector<int>>& Bclusters, vector<vector<int>>& Cclusters);
+	//void generateSubGraph(int corePos, int* subGraphPosList, int* fixedPositions, NuGraph* subGraph);
+	void clusterContacts(int* array, int array_size, vector<vector<int>>& clusters);
+	void dfsCluster(int* array, int array_size, int currentIdx, vector<bool>& visited, vector<int>& cluster) ;
+	void mergeClusters(vector<vector<int>>& clusters, double threshold);
+	double findMinDistanceBetweenClusters(const vector<int>& clusterA, const vector<int>& clusterB);
+	string indexToBractString(int* index, int indexCount);
+	void extractPDBAtoms(const string& inputFile, const string& outputFile, int* subGraphPosList, int subGraphCount);
+	double minSquareDistance(int Node1,int Node2);
+
+	void refineSubGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et);
+	//void refineSubGraph(int * subGraphPosList, NuGraph* subGraph);
 
 	string toContactMapHashKeyCG();
 
