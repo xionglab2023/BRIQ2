@@ -64,7 +64,176 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
 	delete graph;
     return 0;
 }
+int runRefinementsub(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep, bool printDetail){
 
+    srand(randSeed);
+
+   	et->para->T0 = 1.0;
+    et->para->T1 = 0.2;
+    et->para->T2 = 0.05;
+   	et->para->T3 = 0.01;
+    et->para->clashRescale = 0.2;
+    et->para->connectRescale = 0.5;
+	et->para->kStepNum1 = (int)(200*kStep);
+	et->para->kStepNum2 = (int)(100*kStep);
+	et->para->kStepNum3 = (int)(100*kStep);
+	et->para->withRandomInit = false;
+
+	BasePairLib* pairLib = new BasePairLib("stat");
+	RotamerLib* rotLib = new RotamerLib();
+	AtomLib* atLib = new AtomLib();
+	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
+	graph->initForMC(inputFile);
+	
+	int* subGraphPosList = new int[graph->seqLen]();
+	int* fixedPositions = new int[graph->seqLen]();
+	int corePos = 100;
+	vector<int> outsubGraphPosList;
+	vector<vector<int>> Bclusters;
+	vector<vector<int>> Cclusters;
+	double clashRescale = 1.0;
+	double connectRescale = 1.0;
+	NuGraph* subGraph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
+	graph->generateSubGraph(inputFile, corePos, subGraphPosList, fixedPositions, subGraph, outsubGraphPosList, Bclusters, Cclusters);
+	
+	// graph->refineSubGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
+	// cout << "refineSubGraph ok" << endl;
+	vector<pair<int, int>> ranges; // 存储连续序列的首尾
+	if (outsubGraphPosList.empty()) {
+		cout << "outsubGraphPosList is empty" << endl;
+		exit(0);
+	}
+	int start = outsubGraphPosList[0];
+	for (size_t i = 1; i < outsubGraphPosList.size(); i++) {
+		// 检查当前元素与前一个元素的差值
+		if (outsubGraphPosList[i] != outsubGraphPosList[i - 1] + 1) {
+			// 找到一个连续序列的结束
+			ranges.emplace_back(start, outsubGraphPosList[i - 1]);
+			start = outsubGraphPosList[i]; // 更新开始位置
+		}
+	}
+	// 添加最后一个连续序列
+	ranges.emplace_back(start, outsubGraphPosList.back());
+	// 输出结果
+	for (const auto& range : ranges) {
+		cout << "Continuous sequence: " << range.first << " to " << range.second << endl;
+	}
+
+	//在run MC之前/更新节点坐标前记录cm关系
+	vector<vector<CsMove>> csMoveLists;
+	for(size_t i = 0; i < Bclusters.size(); i++){
+		vector<CsMove> csMoveList;
+		int Bpos = Bclusters[i][0];
+		for(size_t j = 0; j < Cclusters[i].size(); j++) {
+			int Cpos = Cclusters[i][j];
+			//if(Bpos < Cpos) {
+				csMoveList.push_back(graph->allNodes[Cpos]->baseConf->cs1 - graph->allNodes[Bpos]->baseConf->cs1);
+				//csMoveList.push_back(graph->allEdges[Bpos*graph->seqLen + Cpos]->cm);
+			//}
+		}
+		csMoveLists.push_back(csMoveList);
+	}
+
+	subGraph->initRandWeight();
+	NuTree* subtree = new NuTree(subGraph);
+	subGraph->MST_kruskal(subtree);
+	subtree->updateNodeInfo(1.0, 1.0);
+	subtree->updateEdgeInfo(1.0, 1.0);
+	subtree->updateSamplingInfo();
+
+	cout << "run MC" << endl;
+	graphInfo* subgi = subtree->runAtomicMC();
+	
+	const string& outputFile1 = "outFile_1105.pdb";
+    subgi->printPDB(outputFile1);
+
+	vector<int> subconnectionBreakPoints;
+	int indexcBP = 0;
+	for (const auto& range : ranges) {
+		subconnectionBreakPoints.push_back(range.first);
+		indexcBP++;
+		cout << "connectionBreakPoints[" << indexcBP << "] = " <<  range.first << ' ';
+	}
+	cout << endl;
+
+	for (size_t i = 0; i < outsubGraphPosList.size(); i++) {
+		// 检查 outsubGraphPosList[i] 是否不在 subconnectionBreakPoints 中
+		if (find(subconnectionBreakPoints.begin(), subconnectionBreakPoints.end(), outsubGraphPosList[i]) == subconnectionBreakPoints.end()) {
+			graph->allNodes[outsubGraphPosList[i]] = subGraph->allNodes[i];
+			cout << "node " << outsubGraphPosList[i] << " updated" << endl;
+		}
+	}
+
+	for(size_t i = 0; i < outsubGraphPosList.size(); i++){
+		for(size_t j = 0; j < outsubGraphPosList.size(); j++){
+			graph->allEdges[outsubGraphPosList[i]*graph->seqLen + outsubGraphPosList[j]] = subGraph->allEdges[i*subGraph->seqLen + j];
+			// cout << "Edge " << outsubGraphPosList[i] << " " << outsubGraphPosList[j] << " updated" << endl;
+		}
+	}
+
+	for(size_t i = 0; i < Bclusters.size(); i++){
+		int Bpos = Bclusters[i][0];
+		cout << "Bpos:" << Bpos << endl;
+		for(size_t j = 0; j < Cclusters[i].size(); j++) {
+			int Cpos = Cclusters[i][j];
+			cout << "Cpos:" << Cpos << " ";
+			LocalFrame cs1 = graph->allEdges[Bpos*graph->seqLen + Cpos]->nodeA->baseConfTmp->cs1 + csMoveLists[i][j];
+			graph->allEdges[Bpos*graph->seqLen + Cpos]->nodeB->updateCoordinate(cs1);
+			graph->allEdges[Bpos*graph->seqLen + Cpos]->nodeB->acceptCoordMove();
+		}
+		cout << endl;
+	}
+
+
+	for(size_t i = 0;i < subconnectionBreakPoints.size();i++){
+		int j = subconnectionBreakPoints[i]-1;
+		cout << "subconnectionBreakPoints[" << i << "] = " <<  subconnectionBreakPoints[i] << ' ';
+		graph->et->pb->buildPhosphate(graph->allNodes[j]->riboseConfTmp, graph->allNodes[j+1]->riboseConfTmp, graph->allNodes[j]->phoConfTmp);
+		graph->allNodes[j+1]->phoConf->copyValueFrom(graph->allNodes[j+1]->phoConfTmp);
+	}
+
+	for(size_t i = 0; i < graph->seqLen; i++){
+		for(size_t j = 0; j < graph->seqLen; j++){
+			graph->allEdges[i*graph->seqLen +j] = new NuEdge(graph->allNodes[i], graph->allNodes[j], graph);
+		}
+	}
+
+	graphInfo* gi = graph->getGraphInfo();	
+	gi->printPDB(outFile);
+    // graph->initForMC(inputFile);
+	// graph->initRandWeight();
+	// NuTree* tree = new NuTree(graph);
+	// graph->MST_kruskal(tree);
+	// tree->updateNodeInfo(1.0, 1.0);
+	// tree->updateEdgeInfo(1.0, 1.0);
+	// tree->updateSamplingInfo();
+
+	// cout << "run MC" << endl;
+	// graphInfo* gi = tree->runAtomicMC();
+    // gi->printPDB(outFile);
+	if(printDetail){
+		cout << "detail energy: " << endl;
+		graph->printEnergy();
+	}
+
+
+    delete subgi;
+	delete gi;
+    delete pairLib;
+    delete rotLib;
+    delete atLib;
+
+	delete subtree;//delete tree;
+	
+	delete [] subGraph->allNodes;
+	subGraph->allNodes = nullptr;
+	delete [] subGraph->allEdges;
+	subGraph->allEdges = nullptr;
+	delete subGraph;// 由于子图的allNodes和allEdges和主图中subGraphPosList中的元素对应的allNodes和allEdges指向相同的内存，
+	// 所以这一步先不释放内存，直接将对应的指针置空，等待主图释放内存。
+	delete graph;
+    return 0;
+}
 int runRefinementFromPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& pdbFile, const string& outFile, int randSeed, double kStep, const string& cnt){
 
     srand(randSeed);
