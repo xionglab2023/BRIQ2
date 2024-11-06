@@ -160,10 +160,16 @@ int runRefinementsub(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, R
 	for (size_t i = 0; i < outsubGraphPosList.size(); i++) {
 		// 检查 outsubGraphPosList[i] 是否不在 subconnectionBreakPoints 中
 		if (find(subconnectionBreakPoints.begin(), subconnectionBreakPoints.end(), outsubGraphPosList[i]) == subconnectionBreakPoints.end()) {
-			graph->allNodes[outsubGraphPosList[i]] = subGraph->allNodes[i];
+			graph->allNodes[outsubGraphPosList[i]]->updateCoordinate(subGraph->allNodes[i]->baseConf->cs1);
+			graph->allNodes[outsubGraphPosList[i]]->acceptCoordMove();
+			graph->allNodes[outsubGraphPosList[i]]->updateRiboseRotamer(subGraph->allNodes[i]->riboseConf->rot, 1.0, 1.0);
+			graph->allNodes[outsubGraphPosList[i]]->acceptRotMutation();
+			
 			cout << "node " << outsubGraphPosList[i] << " updated" << endl;
 		}
 	}
+	graph->initPho();
+	
 
 	for(size_t i = 0; i < outsubGraphPosList.size(); i++){
 		for(size_t j = 0; j < outsubGraphPosList.size(); j++){

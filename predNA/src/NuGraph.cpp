@@ -6528,7 +6528,7 @@ void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGra
 	//pdb
  	// 调用函数，提取符合条件的 ATOM 行并生成新文件
 
-	RNAPDB* subpdb;
+	RNAPDB* subpdb = new RNAPDB();
 	vector<NuNode*> subNodeList;
 	for(size_t i=0;i<subGraphPosCount;i++){
 		subNodeList.push_back(this->allNodes[subGraphPosList[i]]);
@@ -6542,6 +6542,7 @@ void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGra
 	
 	subGraph->initPho();
 	subGraph->initInfo = new graphInfo(subGraph->seqLen, subGraph->seq, subGraph->connectToDownstream, subGraph->fixed, subGraph->allNodes, 0.0, atLib, 0);
+	delete subpdb;
 
     // 将元素复制到 vector
     for (int i = 0; i < subGraphPosCount; i++) {
