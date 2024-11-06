@@ -7,13 +7,23 @@
 
 namespace NSPmodel {
 
-AssignRNASS::AssignRNASS(RNAPDB* pdb, AtomLib* atLib) {
-	// TODO Auto-generated constructor stub
-
-	this->baseList = pdb->getValidBaseList(atLib);
-
+AssignRNASS::AssignRNASS(vector<RNABase*>& bList, AtomLib* atLib){
 	this->len = this->baseList.size();
 
+	for(int i=0;i<len;i++){
+		this->baseList.push_back(bList[i]);
+	}
+	init(atLib);
+}
+
+AssignRNASS::AssignRNASS(RNAPDB* pdb, AtomLib* atLib) {
+	// TODO Auto-generated constructor stub
+	this->baseList = pdb->getValidBaseList(atLib);
+	this->len = baseList.size();
+	init(atLib);
+}
+
+void AssignRNASS::init(AtomLib* atLib){
 	//cout << "length: " << len << endl;
 	char cseq[this->len+1];
 

@@ -4369,14 +4369,15 @@ NuGraph::NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* p
 	this->moveLib = moveLib;
 	this->et = et;
 	this->eiLib = eiLib;
-	AssignRNASS* ar = new AssignRNASS(pdb, atLib);
 
+	AssignRNASS* ar = new AssignRNASS(pdb, atLib);
 
 	string task = "refinement";
 	vector<RNABase*> baseList = pdb->getBaseList();
 	string baseSeq = ar->seq;
 	string baseSec = ar->ssSeq;
 	delete ar;
+
 	int i,j,k;
 	vector<string> spt;
 	this->oi = new OrientationIndex();
@@ -4424,7 +4425,6 @@ NuGraph::NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* p
 		}
 	}
 	
-
 	for(i=0;i<seqLen;i++){
 		for(j=0;j<seqLen;j++){
 			int ij = i*seqLen+j;
@@ -4504,7 +4504,6 @@ NuGraph::NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* p
 		this->allNodes[i]->connectToNeighbor = connectToDownstream[i];
 		this->allNodes[i]->graph = this;
 	}
-
 
 	/*
 	 * parse secondary structure information
@@ -4612,9 +4611,8 @@ NuGraph::NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* p
 		}
 	}
 	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 0);	
-
-
 }
+
 
 NuGraph::~NuGraph() {
 
@@ -4678,7 +4676,7 @@ NuGraph::~NuGraph() {
 	}
 }
 
-void NuGraph::init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& csn, const string& cst, const string& cnt, const string& contactKey, vector<string>& ctList){
+void NuGraph::init(const string& task, RNAPDB* pdb, const string& baseSeq, const string& baseSec, const string& csn, const string& cst, const string& cnt, const string& contactKey, vector<string>& ctList){
 	int i,j,k;
 	vector<string> spt;
 
@@ -4757,8 +4755,8 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	 * init NuNodes
 	 */
 	cout << "init nodes" << endl;
-	RNAPDB pdb(pdbFile, "pdbid");
-	vector<RNABase*> baseList = pdb.getBaseList();
+
+	vector<RNABase*> baseList = pdb->getBaseList();
 
 	if(baseList.size() != baseSeq.length()) {
 		cout << "pdb size: " << baseList.size() << " not equal to sequence length: " << baseSeq.length() << endl;
@@ -5270,13 +5268,10 @@ void NuGraph::init(const string& task, const string& pdbFile, const string& base
 	cout << "finish init" << endl;
 }
 
-
-
 void NuGraph::initPho(){
 	for(int i=0;i<seqLen;i++){
 		if(connectToDownstream[i]){
 			et->pb->buildPhosphate(allNodes[i]->riboseConf, allNodes[i+1]->riboseConf, allNodes[i]->phoConf);
-			double ene = allNodes[i]->phoConf->ene;
 			allNodes[i]->phoConfTmp->copyValueFrom(allNodes[i]->phoConf);
 		}
 	}
@@ -5330,10 +5325,15 @@ void NuGraph::initForMC(const string& inputFile){
 		}
 	}
 
-	init(task, pdbFile, baseSeq, baseSec, csn, cst, cnt, key, ctList);
+	RNAPDB* pdb = new RNAPDB(pdbFile);
+
+	init(task, pdb, baseSeq, baseSec, csn, cst, cnt, key, ctList);
 	
+
 	initPho();
 	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 0);	
+
+	delete pdb;
 }
 
 void NuGraph::initForCGMC(const string& inputFile){
@@ -5375,12 +5375,11 @@ void NuGraph::initForCGMC(const string& inputFile){
 		}
 	}
 
-
-	init(task, pdbFile, baseSeq, baseSec, csn, cst, cnt, key, ctList);
+	RNAPDB* pdb = new RNAPDB(pdbFile);
+	init(task, pdb, baseSeq, baseSec, csn, cst, cnt, key, ctList);
 	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 1);	
+	delete pdb;
 }
-
-
 
 void NuGraph::initForMST(const string& inputFile){
 	NSPtools::InputParser input(inputFile);
@@ -5401,7 +5400,9 @@ void NuGraph::initForMST(const string& inputFile){
 	}
 
 	string cnt = input.getValue("cnt");
-	init(task, pdbFile, baseSeq, baseSec, csn, cst, cnt, key, ctList);
+	RNAPDB* pdb = new RNAPDB(pdbFile);
+	init(task, pdb, baseSeq, baseSec, csn, cst, cnt, key, ctList);
+	delete pdb;
 }
 
 void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
@@ -5431,9 +5432,14 @@ void NuGraph::initForSingleResiduePrediction(const string& inputFile, int pos){
 	string key = input.getValue("key");
 
 	string cnt = input.getValue("cnt");
-	init(task, pdbFile, baseSeq, baseSec, csn, cst, cnt, key, ctList);
+
+	RNAPDB* pdb = new RNAPDB(pdbFile);
+	init(task, pdb, baseSeq, baseSec, csn, cst, cnt, key, ctList);
+
 	initPho();
 	this->initInfo = new graphInfo(seqLen, seq, connectToDownstream, fixed, allNodes, 0.0, atLib, 0);	
+	delete pdb;
+
 	NuNode* nodeTarget = allNodes[pos];
 	double d;
 	int i,j,k;
@@ -6026,8 +6032,6 @@ void NuGraph::printEnergyCG(double clashRescale){
 
 }
 
-
-
 void NuGraph::cgToAllAtom(){
 
 	for(int i=0;i<seqLen;i++){
@@ -6523,10 +6527,18 @@ void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGra
 
 	//pdb
  	// 调用函数，提取符合条件的 ATOM 行并生成新文件
-    extractPDBAtoms(pdbFile, "output_subGraph.pdb", subGraphPosList, subGraphPosCount);
-    cout << "New PDB file generated: output_subGraph.pdb" << endl;
 
-	subGraph->init(task, "output_subGraph.pdb", subseq, subsec, subcsn, subcst, subcnt, key, ctList);
+	RNAPDB* subpdb;
+	vector<NuNode*> subNodeList;
+	for(size_t i=0;i<subGraphPosCount;i++){
+		subNodeList.push_back(this->allNodes[subGraphPosList[i]]);
+	}
+	nodeListToPDBWithoutPho(subNodeList, subpdb);
+
+    //extractPDBAtoms(pdbFile, "output_subGraph.pdb", subGraphPosList, subGraphPosCount);
+    //cout << "New PDB file generated: output_subGraph.pdb" << endl;
+
+	subGraph->init(task, subpdb, subseq, subsec, subcsn, subcst, subcnt, key, ctList);
 	
 	subGraph->initPho();
 	subGraph->initInfo = new graphInfo(subGraph->seqLen, subGraph->seq, subGraph->connectToDownstream, subGraph->fixed, subGraph->allNodes, 0.0, atLib, 0);
@@ -6535,6 +6547,26 @@ void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGra
     for (int i = 0; i < subGraphPosCount; i++) {
         outsubGraphPosList.push_back(subGraphPosList[i]);  // 将元素添加到 vector 中
     }
+}
+
+void NuGraph::nodeListToPDBWithoutPho(vector<NuNode*> nodeList, RNAPDB* outpdb){
+	RNAChain* rc;
+	string s = "AUGCatgc";
+	char ss[20];
+	int seqID = 0;
+
+	for(int i=0;i<nodeList.size();i++) {
+		seqID++;
+		sprintf(ss, "%d", seqID);
+		RNABase* base = new RNABase(string(ss), "A", s[nodeList[i]->baseType]);
+		vector<Atom*> aList = nodeList[i]->toAtomList(this->atLib);
+		for(int j=0;j<aList.size();j++)
+			base->addAtom(aList[j]);
+		rc->addBase(base);
+	}
+	outpdb->chains.clear();
+	outpdb->addChain(rc);
+	
 }
 
 // 函数：从 PDB 文件中提取符合 subGraphPosList 的 ATOM 行，并生成新的 PDB 文件

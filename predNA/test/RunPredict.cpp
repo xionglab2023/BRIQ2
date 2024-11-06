@@ -64,6 +64,7 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
 	delete graph;
     return 0;
 }
+
 int runRefinementsub(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep, bool printDetail){
 
     srand(randSeed);
@@ -589,7 +590,8 @@ int main(int argc, char** argv){
 
 		if(task == "refinement"){
 			et->loadAtomicEnergy();
-			runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep, printEnergyDetail);
+			//runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep, printEnergyDetail);
+			runRefinementsub(moveLib, eiLib,et, inputFile, outputFile, seed, kStep, printEnergyDetail);
 		}
 		else if(task == "predict" && key.length() == 0) {
 			et->loadAtomicEnergy();

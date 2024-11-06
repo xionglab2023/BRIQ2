@@ -327,8 +327,9 @@ public:
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int InitMode);
 	NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et, const string& cnt);
+	
+	void init(const string& task, RNAPDB* pdb, const string& baseSeq, const string& baseSec, const string& csn, const string& cst, const string& cnt, const string& contactKey, vector<string>& ctList);
 
-	void init(const string& task, const string& pdbFile, const string& baseSeq, const string& baseSec, const string& csn, const string& cst, const string& cnt, const string& contactKey, vector<string>& ctList);
 	void initPho();
 	void initPho(PO3Builder* pb);
 	void initForMC(const string& inputFile);
@@ -341,6 +342,7 @@ public:
 	void printAllEdge();
 	void updateEnergy(double clashRescale, double connectRescale);
 	void updateEnergyCG(double clashRescale, double connectRescale);
+	void nodeListToPDBWithoutPho(vector<NuNode*> nodeList, RNAPDB* outpdb);
 
 	void generateSubGraph(const string& inputFile, int corePos, int* subGraphPosList, int* fixedPositions, NuGraph* subGraph, vector<int>& outsubGraphPosList, vector<vector<int>>& Bclusters, vector<vector<int>>& Cclusters);
 	//void generateSubGraph(int corePos, int* subGraphPosList, int* fixedPositions, NuGraph* subGraph);
