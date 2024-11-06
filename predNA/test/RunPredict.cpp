@@ -64,6 +64,7 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
 	delete graph;
     return 0;
 }
+
 int runRefinementsub(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep, bool printDetail){
 
     srand(randSeed);
@@ -127,9 +128,22 @@ int runRefinementsub(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, R
 	for (size_t i = 0; i < outsubGraphPosList.size(); i++) {
 		// 检查 outsubGraphPosList[i] 是否不在 subconnectionBreakPoints 中
 		//if (find(subconnectionBreakPoints.begin(), subconnectionBreakPoints.end(), outsubGraphPosList[i]) == subconnectionBreakPoints.end()) {
-			graph->allNodes[outsubGraphPosList[i]] = subGraph->allNodes[i];
+			graph->allNodes[outsubGraphPosList[i]]->updateCoordinate(subGraph->allNodes[i]->baseConf->cs1);
+			graph->allNodes[outsubGraphPosList[i]]->acceptCoordMove();
+			graph->allNodes[outsubGraphPosList[i]]->updateRiboseRotamer(subGraph->allNodes[i]->riboseConf->rot, 1.0, 1.0);
+			graph->allNodes[outsubGraphPosList[i]]->acceptRotMutation();
+			
 			cout << "node " << outsubGraphPosList[i] << " updated" << endl;
 		//}
+	}
+	graph->initPho();
+	
+
+	for(size_t i = 0; i < outsubGraphPosList.size(); i++){
+		for(size_t j = 0; j < outsubGraphPosList.size(); j++){
+			graph->allEdges[outsubGraphPosList[i]*graph->seqLen + outsubGraphPosList[j]] = subGraph->allEdges[i*subGraph->seqLen + j];
+			// cout << "Edge " << outsubGraphPosList[i] << " " << outsubGraphPosList[j] << " updated" << endl;
+		}
 	}
 
 	for(size_t i = 0; i < Bclusters.size(); i++){
@@ -564,7 +578,8 @@ int main(int argc, char** argv){
 
 		if(task == "refinement"){
 			et->loadAtomicEnergy();
-			runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep, printEnergyDetail);
+			//runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep, printEnergyDetail);
+			runRefinementsub(moveLib, eiLib,et, inputFile, outputFile, seed, kStep, printEnergyDetail);
 		}
 		else if(task == "predict" && key.length() == 0) {
 			et->loadAtomicEnergy();
