@@ -6551,7 +6551,8 @@ void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGra
 }
 
 void NuGraph::nodeListToPDBWithoutPho(vector<NuNode*> nodeList, RNAPDB* outpdb){
-	RNAChain* rc;
+
+	RNAChain* rc = new RNAChain("A");
 	string s = "AUGCatgc";
 	char ss[20];
 	int seqID = 0;
@@ -6561,8 +6562,9 @@ void NuGraph::nodeListToPDBWithoutPho(vector<NuNode*> nodeList, RNAPDB* outpdb){
 		sprintf(ss, "%d", seqID);
 		RNABase* base = new RNABase(string(ss), "A", s[nodeList[i]->baseType]);
 		vector<Atom*> aList = nodeList[i]->toAtomList(this->atLib);
-		for(int j=0;j<aList.size();j++)
+		for(int j=0;j<aList.size();j++) {
 			base->addAtom(aList[j]);
+		}
 		rc->addBase(base);
 	}
 	outpdb->chains.clear();
