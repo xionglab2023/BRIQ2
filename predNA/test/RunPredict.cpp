@@ -283,6 +283,7 @@ int runRefinementFromPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLi
     gi->printPDB(outFile);
 	graph->printBaseEnergyList(outFile);
 	graph->printPairwiseEnergy(outFile);
+	graph->printEnergy();
 
 	delete pdb;
     delete gi;
