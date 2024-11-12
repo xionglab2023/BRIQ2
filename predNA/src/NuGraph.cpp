@@ -5520,10 +5520,13 @@ void NuGraph::initRandWeight(){
 	}
 }
 
-void NuGraph::initNearestNativeEdge(){
+void NuGraph::resetEdgeMoveToCurrentCluster(){
 	for(int i=0;i<seqLen;i++){
 		for(int j=i+1;j<seqLen;j++){
-			allEdges[i*seqLen+j]->initNearNativeMoveSet();
+			if(allEdges[i*seqLen+j]->samplingFreq > 0) {
+				allEdges[i*seqLen+j]->initNearNativeMoveSet();
+			}
+			
 		}
 	}
 }

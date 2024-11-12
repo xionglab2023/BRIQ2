@@ -97,6 +97,8 @@ public:
 	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamerCG* baseRot, RiboseRotamerCG* riboRot, AtomLib* atLib);
 	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamer* baseRot, BaseRotamerCG* baseRotCG, RiboseRotamer* riboRot, RiboseRotamerCG* riboRotCG, AtomLib* atLib);
 
+
+
 	void updateEnergy(double clashRescale, double connectRescale);
 	void updateEnergyCG(double clashRescale, double connectRescale);
 	void updateNodeInformation(NuTree* tree, double clashRescale, double connectRescale);
@@ -337,7 +339,7 @@ public:
 	void initForMST(const string& inputFile);
 	void initForSingleResiduePrediction(const string& inputFile, int pos);
 	void initRandWeight();
-	void initNearestNativeEdge();
+	void resetEdgeMoveToCurrentCluster();
 	void MST_kruskal(NuTree* output);
 	void printAllEdge();
 	void updateEnergy(double clashRescale, double connectRescale);

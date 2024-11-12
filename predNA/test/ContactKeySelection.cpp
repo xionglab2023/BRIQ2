@@ -131,16 +131,17 @@ double keySimilarity(int seqLen, int* typeList, int* sepTable, const string& key
     return p;  
 }
 
+
 int main(int argc, char** argv){
 
-    /*
+    
     if(argc == 1) {
         printHelp();
         return EXIT_SUCCESS;
     }
 
 	clock_t start = clock();
-    */
+    
 
     CmdArgs cmdArgs{argc, argv};
 	if(cmdArgs.specifiedOption("-h")){
@@ -159,9 +160,9 @@ int main(int argc, char** argv){
 
     ifstream file;
     file.open(keyFile.c_str(), ios::in);
-    cout << "open file: " << keyFile << endl;
     if(!file.is_open()){
         cout << "fail to open file: " << inputFile << endl;
+        exit(0);
     }
     
     string key;
@@ -282,18 +283,34 @@ int main(int argc, char** argv){
 
     double distCutoff;
 
-    while(selectKeys.size()==0 ||  selectKeys.size() > maxNum*1.15){
+    vector<double> cutoffList;
+
+
+    double stepLength = -0.02;
+    int round = 0;
+
+    while(selectKeys.size()==0 ||  selectKeys.size() > maxNum*1.05 || selectKeys.size() < maxNum ){
+        round++;
+        if(round > 20) break;
+
+        if(selectKeys.size() > maxNum*1.1 && stepLength >0){
+            stepLength = -stepLength*0.7;
+        }
+        else if(selectKeys.size() > 0 && selectKeys.size() < maxNum && stepLength <0){
+            stepLength = -stepLength*0.7;
+        }
+
+        if(abs(stepLength) < 0.001) break;
+
+        distCutoff1 = distCutoff1 + stepLength;
+        distCutoff2 = 1 - (1-distCutoff1)*2;
+        distCutoff3 = 1 - (1-distCutoff1)*4;
+
         selectKeys.clear();
         selectEnes.clear();
         for(i=0;i<n;i++){
             selected[i] = false;
         }
-
-        distCutoff1 = distCutoff1*0.99;
-        distCutoff2 = 1 - (1-distCutoff1)*2;
-        distCutoff3 = 1 - (1-distCutoff1)*4;
-
-        if(distCutoff1 < 0.75) break;
 
         for(i=0;i<n;i++){
             if(selected[i]) continue;
@@ -323,28 +340,25 @@ int main(int argc, char** argv){
 
     }
 
-
-    for(i=0;i<4;i++){
-        for(j=0;j<4;j++){
-           double d = keySimilarity(seqLen, typeList, sepTable, selectKeys[i], selectKeys[j], bpLib);
-           cout << "dist: " << i << " " << j << " " << d << endl;
+    int maxLen = 200;
+    for(i=0;i<selectKeys.size();i++){
+        if(selectKeys[i].length() > maxLen){
+            maxLen = selectKeys[i].length();
         }
     }
 
-
     ofstream out;
     out.open(outputFile.c_str(), ios::out);
-    char xx[200];
+    char xx[maxLen + 100];
 
 
     for(i=0;i<selectKeys.size() && i < maxNum;i++){
+    
         sprintf(xx, "%s %7.3f", selectKeys[i].c_str(), selectEnes[i]);
         out << string(xx) << endl;
     }
    
     out.close();
-
-    
 
     delete bpLib;
 
