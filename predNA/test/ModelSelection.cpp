@@ -256,6 +256,7 @@ void printHelp(){
 	cout << "briqx_modelSelection -pdbList $PDBLIST -n $MODELNUM -cutoff $RMSDCUTOFF -out $OUTPUT" <<endl;
 	cout << "briqx_modelSelection -tre $TREEFILE -n $MODELNUM -cutoff $RMSDCUTOFF -out $OUTPUT" << endl;
 	cout << "briqx_modelSelection -treList $TREELIST -n $MODELNUM -cutoff $RMSDCUTOFF -out $OUTPUT" << endl;
+	cout << "briqx_modelSelection -plot -tre $TREEFILE -temp $TEMPLATE -out $OUTPUT" << endl;
 }
 
 int main(int argc, char** argv){

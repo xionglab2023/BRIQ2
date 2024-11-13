@@ -36,8 +36,6 @@ public:
 	BaseDistanceMatrix revNbDMClusterCenters[16][3000]; 
 	BaseDistanceMatrix nnbDMClusterCenters[16][3000];
 
-	
-
 	/*
 	 * all neighbor pairs
 	 */

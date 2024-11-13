@@ -37,7 +37,9 @@ add_executable(briqx_refineBB BackboneRefinement.cpp)
 add_executable(briqx_keySelection ContactKeySelection.cpp)
 add_executable(briqx_keyInput WriteInputFile.cpp)
 add_executable(briqx_modelSelection ModelSelection.cpp)
+add_executable(briqx_keyAnalysis ContactKeyAnalysis.cpp)
 
+target_link_libraries (briqx_keyAnalysis briqx)
 target_link_libraries (briqx_modelSelection briqx)
 target_link_libraries (briqx_keyInput briqx)
 target_link_libraries (briqx_keySelection briqx)
@@ -81,5 +83,5 @@ target_link_libraries (testMoveIO briqx)
 install(TARGETS testGraph testMoveIO testTree testGraphMP buildBB trainSamp testRand trainFFP 
         trainSingleBase testSingle trainSingle2 eiLib testMove trainCG inputToContactMatrix 
         briq_InitPDB cgModeling rna_assemble rna_refinement alignPDB subPDB rna_buildMutation key2pdb 
-        briqx_run briqx_refineBB briqx_keySelection briqx_keyInput briqx_modelSelection
+        briqx_run briqx_refineBB briqx_keySelection briqx_keyInput briqx_modelSelection briqx_keyAnalysis
     RUNTIME DESTINATION bin)
