@@ -51,6 +51,7 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
 	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();
     gi->printPDB(outFile);
+	graph->printBaseEnergyList(outFile);
 	if(printDetail){
 		cout << "detail energy: " << endl;
 		graph->printEnergy();
@@ -265,6 +266,7 @@ int runRefinementFromPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLi
     gi->printPDB(outFile);
 	graph->printBaseEnergyList(outFile);
 	graph->printPairwiseEnergy(outFile);
+	graph->printEnergy();
 
 	delete pdb;
     delete gi;
@@ -289,6 +291,8 @@ int runPredict(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEner
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
     graph->initForMC(inputFile);
 	graph->initRandWeight();
+
+
 	NuTree* tree = new NuTree(graph);
 	graph->MST_kruskal(tree);
 	tree->updateNodeInfo(1.0, 1.0);
@@ -406,6 +410,8 @@ int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, 
 	graph->initForMC(inputFile);
 	NuTree* tree = new NuTree(graph);
 
+
+
 	ofstream out;
 	out.open(outFile.c_str(), ios::out);
 	if(!out.is_open()) {
@@ -442,7 +448,8 @@ int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, 
 		cout << "run MC" << endl;
 		tree->runAtomicMC();
 	
-		graph->initNearestNativeEdge();
+
+		graph->resetEdgeMoveToCurrentCluster();
 		graph->initRandWeight();
 		graph->MST_kruskal(tree);
 		tree->updateNodeInfo(1.0, 1.0);
@@ -578,8 +585,8 @@ int main(int argc, char** argv){
 
 		if(task == "refinement"){
 			et->loadAtomicEnergy();
-			//runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep, printEnergyDetail);
-			runRefinementsub(moveLib, eiLib,et, inputFile, outputFile, seed, kStep, printEnergyDetail);
+			runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep, printEnergyDetail);
+			//runRefinementsub(moveLib, eiLib,et, inputFile, outputFile, seed, kStep, printEnergyDetail);
 		}
 		else if(task == "predict" && key.length() == 0) {
 			et->loadAtomicEnergy();
@@ -602,6 +609,8 @@ int main(int argc, char** argv){
 
 			et->loadCoarseGrainedEnergy();
 			runCGMC(moveLib, et, eiLib, inputFile, outputFile, modelNum, seed, kStep);
+
+
 		}
 
 	}

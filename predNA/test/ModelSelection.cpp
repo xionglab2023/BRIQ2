@@ -338,10 +338,12 @@ int main(int argc, char** argv){
 			pdbList.push_back(pdb);
 		}
 		file.close();
+		selectModel(pdbList, n, cutoff, output);
 	}
 	else if(cmdArgs.specifiedOption("-tre")) {
 		
 		readPDBFromTreeFile(cmdArgs.getValue("-tre"), pdbList);
+		selectModel(pdbList, n, cutoff, output);
 		
 	}
 	else if(cmdArgs.specifiedOption("-treList")) {
@@ -354,12 +356,13 @@ int main(int argc, char** argv){
 			readPDBFromTreeFile(s, pdbList);
 		}
 		file.close();
+		selectModel(pdbList, n, cutoff, output);
 	}
 	else {
 		printHelp();
 		exit(1);
 	}
 
-   selectModel(pdbList, n, cutoff, output);
+
 
 }

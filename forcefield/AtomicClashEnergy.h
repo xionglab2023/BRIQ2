@@ -192,7 +192,7 @@ public:
 		double rep = 0;
 		if(phoTypeA > 1 && phoTypeB > 1) {
 			if(dd < 4.0) {
-				rep = -sqrt(dd);
+				rep = -sqrt(dd) + 4.0;
 			}
 			else {
 				rep = 6.0/sqrt(dd) - 1.0;
