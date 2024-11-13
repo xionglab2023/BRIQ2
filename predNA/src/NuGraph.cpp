@@ -4644,7 +4644,6 @@ NuGraph::~NuGraph() {
 		sepTable = nullptr;
 	}
 	if (allNodes){
-		cout << seqLen << endl;
 		for(int i=0;i<seqLen;i++){	
 			if (allNodes[i]!= NULL){
 				delete allNodes[i];
@@ -6171,7 +6170,7 @@ void NuGraph::printPairwiseEnergy(const string& outfile){
 	out.close();	
 }
 
-void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGraphPosList, int* fixedPositions, NuGraph* subGraph, vector<int>& outsubGraphPosList, vector<vector<int>>& Bclusters, vector<vector<int>>& Cclusters) {
+void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGraphPosList, int* fixedPositions, NuGraph* subGraph, vector<int>& outsubGraphPosList, vector<int>& outupdatePosList, vector<vector<int>>& Bclusters, vector<vector<int>>& Cclusters) {
 	NSPtools::InputParser input(inputFile);
 	input.printOptions();
 
@@ -6223,6 +6222,11 @@ void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGra
 		cout << subGraphPosList[i] << " ";
 	}
 	cout << endl;
+
+	// 将A集合（将被更新的节点）复制到 vector
+    for (int i = 0; i < subGraphPosCount; i++) {
+        outupdatePosList.push_back(subGraphPosList[i]);  // 将元素添加到 vector 中
+    }
 
 	for (int idx = 0; idx < subGraphPosCount; idx++) {
 		int subNode = subGraphPosList[idx];
@@ -6330,17 +6334,6 @@ void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGra
 
 	unordered_set<int> BSet(fixedPositions, fixedPositions + fixedPosCount);
     unordered_set<int> CSet(CArray, CArray + CSize);
-	cout << "BSet: ";
-    for (int elem : BSet) {
-		cout << elem << " ";
-	}
-    cout << endl;
-	cout << "CSet: ";
-	for (int elem : CSet) {
-		cout << elem << " ";
-	}
-    cout << endl;
-
 
 	// 对 BCArray 中的元素按联通性进行聚类（局部变量 clusters）
 	vector<vector<int>> clusters;
@@ -6418,11 +6411,6 @@ void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGra
 	// sec
 	string sec(this->seqLen, '.');
 	sec = indexToBractString(this->wcPairPosID, this->seqLen);// 由wcPairPosID转化为sec
-    // cout << "sec: ";
-    // for (int i = 0; i < seqLen; i++) {
-    //     cout << sec[i];
-    // }
-    // cout << endl;
 	//检查 wcPairPosID 然后转回sec 是否与输入的sec一致；
 	if (sec.compare(baseSec) == 0){
 		// cout << "sec is equal to baseSec" << endl;
@@ -6561,7 +6549,7 @@ void NuGraph::generateSubGraph(const string& inputFile, int corePos, int* subGra
 	subGraph->initInfo = new graphInfo(subGraph->seqLen, subGraph->seq, subGraph->connectToDownstream, subGraph->fixed, subGraph->allNodes, 0.0, atLib, 0);
 	delete subpdb;
 
-    // 将元素复制到 vector
+    // 将A+B集合（子图的所有节点）编号复制到 vector
     for (int i = 0; i < subGraphPosCount; i++) {
         outsubGraphPosList.push_back(subGraphPosList[i]);  // 将元素添加到 vector 中
     }
@@ -6848,145 +6836,6 @@ double NuGraph::minSquareDistance(int Node1,int Node2) {
 	Node1Coords.clear();
 	Node2Coords.clear();
 	return minSquareDistance;
-}
-
-void NuGraph::refineSubGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, NuGraph* subGraph, graphInfo* subgi){
-
-	double clashRescale = 1.0;
-	double connectRescale = 1.0;
-
-	int* subGraphPosList = new int[this->seqLen]();
-	int* fixedPositions = new int[this->seqLen]();
-	vector<int> count(seqLen, 0);  // 初始化每个元素的计数
-	vector<int> outsubGraphPosList;
-	vector<vector<int>> Bclusters;
-	vector<vector<int>> Cclusters;
-	int count_while = 1;
-
-	while (true) {
-        int corePos = rand() % (this->seqLen);  // 随机选择一个位置作为 corePos
-		// corePos = 321;
-		NuGraph* subGraph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
-		this->generateSubGraph(inputFile, corePos, subGraphPosList, fixedPositions, subGraph, outsubGraphPosList, Bclusters, Cclusters);
-		
-		//在run MC之前/更新节点坐标前记录cm关系
-		vector<vector<CsMove>> csMoveLists;
-		for(size_t i = 0; i < Bclusters.size(); i++){
-			vector<CsMove> csMoveList;
-			int Bpos = Bclusters[i][0];
-			for(size_t j = 0; j < Cclusters[i].size(); j++) {
-				int Cpos = Cclusters[i][j];
-				csMoveList.push_back(this->allNodes[Cpos]->baseConf->cs1 - this->allNodes[Bpos]->baseConf->cs1);
-			}
-			csMoveLists.push_back(csMoveList);
-		}
-
-		subGraph->initRandWeight();
-		NuTree* subtree = new NuTree(subGraph);
-		subGraph->MST_kruskal(subtree);
-		subtree->updateNodeInfo(1.0, 1.0);
-		subtree->updateEdgeInfo(1.0, 1.0);
-		subtree->updateSamplingInfo();
-
-		cout << "run MC" << endl;
-		graphInfo* subgi = subtree->runAtomicMC();
-		// const string& outputFile1 = inputFile + "_subgraph_1106.pdb";
-		// subgi->printPDB(outputFile1);
-
-		for (size_t i = 0; i < outsubGraphPosList.size(); i++) {
-			this->allNodes[outsubGraphPosList[i]]->updateCoordinate(subGraph->allNodes[i]->baseConf->cs1);
-			this->allNodes[outsubGraphPosList[i]]->acceptCoordMove();
-			this->allNodes[outsubGraphPosList[i]]->updateRiboseRotamer(subGraph->allNodes[i]->riboseConf->rot, 1.0, 1.0);
-			this->allNodes[outsubGraphPosList[i]]->acceptRotMutation();
-			
-			cout << "node " << outsubGraphPosList[i] << " updated" << endl;
-		}
-
-		for(size_t i = 0; i < Bclusters.size(); i++){
-			int Bpos = Bclusters[i][0];
-			// cout << "Bpos:" << Bpos << endl;
-			for(size_t j = 0; j < Cclusters[i].size(); j++) {
-				int Cpos = Cclusters[i][j];
-				// cout << "Cpos:" << Cpos << " ";
-				LocalFrame cs1 = this->allNodes[Bpos]->baseConfTmp->cs1 + csMoveLists[i][j];
-				this->allNodes[Cpos]->updateCoordinate(cs1);
-				this->allNodes[Cpos]->acceptCoordMove();
-			}
-			cout << endl;
-		}
-
-		vector<int> subconnectionBreakPoints;
-		for(size_t i = 0; i < this->seqLen; i++){
-			if(this->connectToDownstream[i]) { // 首先判断 connectToDownstream[i] 是否为 true
-				// 检查条件：i 在 outsubGraphPosList 中且 i+1 不在，或者 i 不在且 i+1 在
-				bool iInOutsubGraph = (find(outsubGraphPosList.begin(), outsubGraphPosList.end(), i) != outsubGraphPosList.end());
-				bool iPlusOneInOutsubGraph = (find(outsubGraphPosList.begin(), outsubGraphPosList.end(), i + 1) != outsubGraphPosList.end());
-
-				if ((iInOutsubGraph && !iPlusOneInOutsubGraph) || (!iInOutsubGraph && iPlusOneInOutsubGraph)) {
-					subconnectionBreakPoints.push_back(i);
-				}
-			}
-		}
-
-		for(size_t i = 0;i < subconnectionBreakPoints.size();i++){
-			int j = subconnectionBreakPoints[i];
-			// cout << "subconnectionBreakPoints[" << i << "] = " <<  subconnectionBreakPoints[i] << ' ';
-			this->et->pb->buildPhosphate(this->allNodes[j]->riboseConfTmp, this->allNodes[j+1]->riboseConfTmp, this->allNodes[j]->phoConfTmp);
-			this->allNodes[j]->phoConf->copyValueFrom(this->allNodes[j]->phoConfTmp);
-		}
-		cout << endl;
-
-		for(size_t i = 0; i < this->seqLen; i++){
-			for(size_t j = 0; j < this->seqLen; j++){
-				this->allEdges[i*this->seqLen +j]->cm = this->allNodes[j]->baseConf->cs1 - this->allNodes[i]->baseConf->cs1;
-				this->allEdges[i*this->seqLen +j]->cmTmp = this->allEdges[i*this->seqLen +j]->cm;
-			}
-		}
-
-		csMoveLists.clear();
-		subconnectionBreakPoints.clear();
-		Bclusters.clear();
-		Cclusters.clear();
-		
-		// 更新 count 数组，记录 subGraphPosList 中的元素出现次数
-        for (int pos : outsubGraphPosList) {
-            count[pos]++;
-        }
-        // 检查是否所有元素都出现至少三次
-        bool allElementsMet = true;
-        for (int i = 0; i < this->seqLen; ++i) {
-            if (count[i] < 3) {
-                allElementsMet = false;
-                break;
-            }
-        }
-        // 如果所有元素都至少出现三次，结束循环
-        if (allElementsMet) {
-			outsubGraphPosList.clear();
-            break;
-        }
-		outsubGraphPosList.clear();
-
-
-		cout << "count_while:" << count_while << endl;
-		count_while++;
-
-		break;
-
-		delete subtree;//delete tree;
-
-		delete subgi;//delete gi;
-		delete [] subGraph->allNodes;
-		subGraph->allNodes = nullptr;
-		delete [] subGraph->allEdges;
-		subGraph->allEdges = nullptr;
-		delete subGraph;// 由于子图的allNodes和allEdges和主图中subGraphPosList中的元素对应的allNodes和allEdges指向相同的内存，
-		// 所以这一步先不释放内存，直接将对应的指针置空，等待主图释放内存。
-	
-    }
-	delete [] subGraphPosList;
-    delete [] fixedPositions;
-	count.clear();
 }
 
 graphInfo* NuGraph::getGraphInfo(){
