@@ -356,7 +356,7 @@ public:
 	void extractPDBAtoms(const string& inputFile, const string& outputFile, int* subGraphPosList, int subGraphCount);
 	double minSquareDistance(int Node1,int Node2);
 
-	void refineSubGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et);
+	void refineSubGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, NuGraph* subGraph, graphInfo* subgi);
 	//void refineSubGraph(int * subGraphPosList, NuGraph* subGraph);
 
 	string toContactMapHashKeyCG();
