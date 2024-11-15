@@ -17,7 +17,7 @@
 #include "tools/StringTool.h"
 
 
-namespace NSPpredna {
+namespace NSPpredNA {
 using namespace std;
 using namespace NSPgeometry;
 

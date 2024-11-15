@@ -668,6 +668,4 @@ void NuSampling::runCoarseGrainedMC(map<string,double>& results, int roundNum){
 	cout << "mc result key num: " << results.size() << endl;
 }
 
-
-
 }

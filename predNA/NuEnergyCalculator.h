@@ -268,6 +268,33 @@ inline double nuBaseBaseEnergyCG(BaseConformerCG* baseConfA, BaseConformerCG* ba
 	return bpEnergy+clashEnergy*clashRescale;
 }
 
+inline double nuBaseBaseEnergyCG(BaseConformerCG* baseConfA, BaseConformerCG* baseConfB, int sep, RnaEnergyTable* et, double clashRescale, EdgeClusterRegister* ecr){
+	double bpEnergy = 0.0;
+	double clashEnergy = 0.0;
+	double minDD, dd;
+	int i,j, nA, nB;
+	if(squareDistance(baseConfA->coords[0], baseConfB->coords[0]) < 225.0) {
+		minDD = 999999.9;
+		nA = 3;
+		nB = 3;
+		for(i=0;i<nA;i++){
+			for(j=0;j<nB;j++){
+				dd = squareDistance(baseConfA->coords[i], baseConfB->coords[j]);
+				if(dd < minDD){
+					minDD = dd;
+				}
+				if(dd < 16.0) {
+					clashEnergy += et->acET->getClashEnergyCG(baseConfA->rot->uniqueIDs[i],  baseConfB->rot->uniqueIDs[j], dd);
+				}
+			}
+		}
+		if(minDD < 20.25){
+			bpEnergy = et->bpcgET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD), ecr);
+		}
+	}
+	return bpEnergy+clashEnergy*clashRescale;
+}
+
 inline double nuBaseRiboseEnergyCG(BaseConformerCG* baseConf, RiboseConformerCG* riboConf, int sep, RnaEnergyTable* et, double clashRescale){
 
 	double clashEnergy = 0.0;

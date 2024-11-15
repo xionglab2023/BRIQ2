@@ -16,7 +16,7 @@
 #include "forcefield/XPara.h"
 
 using namespace NSPmodel;
-using namespace NSPpredna;
+using namespace NSPpredNA;
 using namespace std;
 
 LocalFrame getCsA(XYZ t, double dihed, double dist){

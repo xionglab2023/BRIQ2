@@ -5,7 +5,7 @@
 
 #include "predNA/MoveMutator.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 MoveMutator::MoveMutator(const string& type, int typeA, int typeB, double theta){
 	int pairType = typeA*4+typeB;

@@ -5,7 +5,7 @@
 
 #include "predNA/CsMoveTo6DKey.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 CsMoveTo6DKey::CsMoveTo6DKey() {
 	// TODO Auto-generated constructor stub

@@ -1276,6 +1276,8 @@ NuEdge::NuEdge(NuNode* nodeA, NuNode* nodeB, NuGraph* graph){
 	int typeA = nodeA->baseType%4;
 	int typeB = nodeB->baseType%4;
 
+	this->ecr = new EdgeClusterRegister(typeA, typeB, graph->pairLib);
+
 	this->ei = new EdgeInformation(sep, typeA, typeB, graph->pairLib);
 	this->moveSet = NULL;
 
@@ -1311,6 +1313,8 @@ NuEdge::NuEdge(NuNode* nodeA, NuNode* nodeB, int sep, BasePairLib* pairLib, NuPa
 	int typeA = nodeA->baseType%4;
 	int typeB = nodeB->baseType%4;
 
+
+	this->ecr = new EdgeClusterRegister(typeA, typeB, graph->pairLib);
 	this->ei = new EdgeInformation(sep, typeA, typeB, pairLib);
 	this->moveSet = NULL;
 	//this->moveSet = new MixedNuPairCluster(sep, typeA*4+typeB, moveLib);
@@ -1331,11 +1335,11 @@ NuEdge::NuEdge(NuNode* nodeA, NuNode* nodeB, int sep, BasePairLib* pairLib, NuPa
 		this->pairEneCGTmp[i] = 0.0;
 	}
 	this->samplingFreq = this->ei->validClusterNum*1.0;
-
 }
 
 NuEdge::~NuEdge(){
 	delete this->ei;
+	delete this->ecr;
 	if(this->moveSet != NULL)
 		delete this->moveSet;
 }

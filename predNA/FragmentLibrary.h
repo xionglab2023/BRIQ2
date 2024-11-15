@@ -21,7 +21,7 @@
 
 
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 using namespace std;
 using namespace NSPgeometry;

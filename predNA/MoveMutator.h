@@ -16,7 +16,7 @@
 #include "dataio/datapaths.h"
 #include "geometry/TransMatrix.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 using namespace NSPgeometry;
 using namespace NSPmodel;

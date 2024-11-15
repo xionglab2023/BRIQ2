@@ -17,7 +17,6 @@
 #include "forcefield/XPara.h"
 #include "tools/StringTool.h"
 
-
 namespace NSPforcefield {
 
 using namespace std;

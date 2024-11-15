@@ -13,7 +13,7 @@
 #include <fstream>
 #include <time.h>
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 using namespace NSPgeometry;
 

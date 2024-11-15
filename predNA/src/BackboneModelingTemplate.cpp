@@ -5,7 +5,7 @@
 
 #include "predNA/BackboneModelingTemplate.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 BackboneModelingTemplate::BackboneModelingTemplate(const string& inputPDB, ForceFieldPara* para) {
 

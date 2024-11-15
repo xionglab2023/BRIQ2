@@ -5,7 +5,7 @@
 
 #include "predNA/ThreeBaseMoveLibrary.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 ThreeBaseMoveLibrary::ThreeBaseMoveLibrary(int typeA, int typeB, int typeC) {
 	// TODO Auto-generated constructor stub

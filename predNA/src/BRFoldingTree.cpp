@@ -5,7 +5,7 @@
 
 #include "predNA/BRFoldingTree.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 BRTreeInfo::BRTreeInfo(int seqLen, int* seq, bool* con, BRNode** nodes, double ene, RotamerLib* rotLib) {
 	this->seqLen = seqLen;

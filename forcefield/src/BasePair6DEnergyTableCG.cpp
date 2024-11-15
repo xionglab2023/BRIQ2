@@ -87,6 +87,8 @@ cm2Key(withBinary, binaryMode)
 					this->nbKeysEnergy[(i*4+j)*2250+indexA][indexB] = ene;
 				}
 				file.close();
+
+
 			}
 		}
 
@@ -103,6 +105,15 @@ cm2Key(withBinary, binaryMode)
 				}
 				file.close();
 
+				file.open(path + "pairEneCG-raw/nnb/"+pairType+".lowEnergyClusters", ios::in);
+
+				if(!file.is_open()) {
+					cout << "can't open file " << path + "pairEneCG-raw/nnb/" +pairType+".lowEnergyClusters" << endl;
+				}
+				while(file >> indexA >> indexB >> clusterID){
+					this->nnbLowEnergyClusterIDs[(i*4+j)*2250+indexA][indexB] = clusterID;
+				}
+				file.close();
 			}
 		}
 	}
@@ -124,11 +135,15 @@ int BasePair6DEnergyTableCG::dump() {
 	cm2Key.dump(outs);
 	outs.write(reinterpret_cast<char*>(&wtNb), sizeof(double));
 	outs.write(reinterpret_cast<char*>(&wtNnb), sizeof(double));
-	int nbMapSizes[36000], nnbMapSizes[36000];
+
+	
+	int nbMapSizes[36000], nnbMapSizes[36000], nnbLEClusterSizes[36000];
 	for(int i=0; i<36000; i++) {
 		nbMapSizes[i] = nbKeysEnergy[i].size();
 		nnbMapSizes[i] = nnbKeysEnergy[i].size();
+		nnbLEClusterSizes[i] = nnbLowEnergyClusterIDs[i].size();
 	}
+
 	outs.write(reinterpret_cast<char*>(nbMapSizes),sizeof(int)*36000);
 	for(int i=0; i<36000; i++) {
 		int keys[nbMapSizes[i]];
@@ -145,6 +160,7 @@ int BasePair6DEnergyTableCG::dump() {
 		}
 		outs.write(reinterpret_cast<char*>(vals), sizeof(double)*nbMapSizes[i]);
 	}
+
 	outs.write(reinterpret_cast<char*>(nnbMapSizes),sizeof(int)*36000);
 	for(int i=0; i<36000; i++) {
 		int keys[nnbMapSizes[i]];
@@ -162,7 +178,24 @@ int BasePair6DEnergyTableCG::dump() {
 		outs.write(reinterpret_cast<char*>(vals), sizeof(double)*nnbMapSizes[i]);
 	}
 
+	outs.write(reinterpret_cast<char*>(nnbLEClusterSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nnbLEClusterSizes[i]];
+		int vals[nnbLEClusterSizes[i]];
+		int j = 0;
+		for(auto& it1:nnbLowEnergyClusterIDs[i]) {
+			keys[j] = it1.first;
+			vals[j] = it1.second;
+			j++;
+		}
+		outs.write(reinterpret_cast<char*>(keys), sizeof(int)*nnbLEClusterSizes[i]);
+		if(nnbLEClusterSizes[i]%2) {
+			outs.write(reinterpret_cast<char*>(z0), sizeof(int));  // align Bytes
+		}
+		outs.write(reinterpret_cast<char*>(vals), sizeof(double)*nnbLEClusterSizes[i]);
+	}
 	return EXIT_SUCCESS;
+
 }
 
 int BasePair6DEnergyTableCG::load() {
@@ -176,7 +209,7 @@ int BasePair6DEnergyTableCG::load() {
 	cm2Key.load(ins);
 	ins.read(reinterpret_cast<char*>(&wtNb), sizeof(double));
 	ins.read(reinterpret_cast<char*>(&wtNnb), sizeof(double));
-	int nbMapSizes[36000], nnbMapSizes[36000];
+	int nbMapSizes[36000], nnbMapSizes[36000], nnbLEClusterSizes[36000];
 	ins.read(reinterpret_cast<char*>(nbMapSizes),sizeof(int)*36000);
 	for(int i=0; i<36000; i++) {
 		int keys[nbMapSizes[i]];
@@ -209,6 +242,24 @@ int BasePair6DEnergyTableCG::load() {
 		ins.read(reinterpret_cast<char*>(vals), sizeof(double)*nnbMapSizes[i]);
 		for(int j=0; j<nnbMapSizes[i]; j++) {
 			nnbKeysEnergy[i].emplace(keys[j], vals[j]);
+		}
+	}
+
+	ins.read(reinterpret_cast<char*>(nnbLEClusterSizes),sizeof(int)*36000);
+	for(int i=0; i<36000; i++) {
+		int keys[nnbLEClusterSizes[i]];
+		int vals[nnbLEClusterSizes[i]];
+		if(nnbLEClusterSizes[i]%2) {
+			int memSize = nnbLEClusterSizes[i]+1;
+			int tint2[memSize];
+			ins.read(reinterpret_cast<char*>(tint2), sizeof(int)*memSize);
+			memcpy(keys, tint2, nnbLEClusterSizes[i]*sizeof(int));
+		} else {
+			ins.read(reinterpret_cast<char*>(keys), sizeof(int)*nnbLEClusterSizes[i]);
+		}
+		ins.read(reinterpret_cast<char*>(vals), sizeof(double)*nnbLEClusterSizes[i]);
+		for(int j=0; j<nnbLEClusterSizes[i]; j++) {
+			nnbLowEnergyClusterIDs[i].emplace(keys[j], vals[j]);
 		}
 	}
 

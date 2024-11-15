@@ -16,7 +16,7 @@
 #include "predNA/IndexPair.h"
 #include "predNA/MoveMutator.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 using namespace NSPgeometry;
 using namespace std;

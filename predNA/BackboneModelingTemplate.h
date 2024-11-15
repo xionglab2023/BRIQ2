@@ -22,7 +22,7 @@
 #include "predNA/BRFoldingTree.h"
 #include "predNA/BRNode.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 using namespace NSPgeometry;
 using namespace std;

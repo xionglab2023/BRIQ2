@@ -5,7 +5,7 @@
 
 #include "predNA/BaseMoveLibrary.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 BaseMoveLibrary::BaseMoveLibrary() {
 	// TODO Auto-generated constructor stub

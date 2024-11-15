@@ -4,7 +4,7 @@
 
 #include "predNA/BRConnection.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 BRConnection::BRConnection() {
 	// TODO Auto-generated constructor stub

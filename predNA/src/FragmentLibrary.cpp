@@ -5,7 +5,7 @@
 
 #include "predNA/FragmentLibrary.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 RiboConnectLib::RiboConnectLib(){
 	string path = NSPdataio::datapath();

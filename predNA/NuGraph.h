@@ -33,7 +33,7 @@
 #include "tools/InputParser.h"
 #include "tools/StringTool.h"
 #include "NuEnergyCalculator.h"
-
+#include "EdgeClusterRegister.h"
 
 namespace NSPpredNA {
 
@@ -97,8 +97,6 @@ public:
 	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamerCG* baseRot, RiboseRotamerCG* riboRot, AtomLib* atLib);
 	NuNode(int id, int baseType,LocalFrame& cs1, BaseRotamer* baseRot, BaseRotamerCG* baseRotCG, RiboseRotamer* riboRot, RiboseRotamerCG* riboRotCG, AtomLib* atLib);
 
-
-
 	void updateEnergy(double clashRescale, double connectRescale);
 	void updateEnergyCG(double clashRescale, double connectRescale);
 	void updateNodeInformation(NuTree* tree, double clashRescale, double connectRescale);
@@ -147,7 +145,8 @@ public:
 	NuNode* nodeB;
 
 	BasePairLib* pairLib;
-
+	EdgeClusterRegister* ecr;
+	
 	CsMove cm;
 	CsMove cmTmp;
 	int sep;
@@ -308,9 +307,6 @@ public:
 	vector<RiboseRotamer*> initRiboseRotList;
 	vector<BaseRotamerCG*> initBaseRotCGList;
 	vector<RiboseRotamerCG*> initRiboseRotCGList;
-
-	//vector<LigandRotamer*> ligRotList;
-	//LigandNode** allLigands; 
 
 	NuNode** allNodes; //L nodes
 	NuEdge** allEdges; //L*L edges
