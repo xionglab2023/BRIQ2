@@ -76,13 +76,12 @@ public:
     }
 };
 
-int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib* eiLib, const string& inputFile, cgResult* result, int modelNum, int randSeed){
+int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeMoveClustersLib* eiLib, const string& inputFile, cgResult* result, int modelNum, int randSeed){
 
  	srand(randSeed);
     BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib(et->para);
     AtomLib* atLib = new AtomLib();
-
 
     cout << "init graph" << endl;
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
@@ -90,17 +89,10 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib
     cout << "init CGMC" << endl;
 	graph->initForCGMC(inputFile);
     cout << "init rand weight" << endl;
-	graph->initRandWeight();
-    cout << "print edge: " << endl;
-	graph->printAllEdge();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->printEdges();
-	tree->updateNodeInfoCG(1.0, 1.0);
-	tree->updateEdgeInfoCG(1.0, 1.0);
-	tree->updateSamplingInfo();
-	tree->printNodeInfo();
-    tree->printEdgeInfo();
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
 
     string initKey = graph->toContactMapHashKeyCG();
     cout << "initKey: " << initKey << endl;
@@ -144,7 +136,7 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("stat", true, 1);
 	moveLib->load();
 
-    EdgeInformationLib* eiLib = new EdgeInformationLib();
+    EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
     ForceFieldPara* para = new ForceFieldPara();
     para->libType = "stat";
     para->clashRescale = rescale*0.3; //default 0.03

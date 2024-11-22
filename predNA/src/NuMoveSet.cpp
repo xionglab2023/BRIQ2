@@ -607,16 +607,15 @@ MixedNuPairCluster::MixedNuPairCluster(int sep, int pairType, NuPairMoveSetLibra
 	this->type = "unknown";
 }
 
-void MixedNuPairCluster::updateEdgeInformation(EdgeInformation* ei){
+void MixedNuPairCluster::updateEdgeInformation(EdgeMoveClusters* ec){
 
 	double psum = 0;
-	this->type = ei->ssSepKey;
+	this->type = ec->ssSepKey;
 	clusterIDList.clear();
 	clusterPList.clear();
 
-
-	for(int i=0;i<ei->totalClusterNum;i++){
-		double p = ei->pCluster[i];
+	for(int i=0;i<ec->totalClusterNum;i++){
+		double p = ec->pCluster[i];
 		if(p >0){
 			clusterIDList.push_back(i);
 			clusterPList.push_back(p);
@@ -626,9 +625,9 @@ void MixedNuPairCluster::updateEdgeInformation(EdgeInformation* ei){
 
 	if(psum == 0) {
 		cout << "edge information error: total probability is zero!" << endl;
-		cout << ei->pairLibType << endl;
-		cout << ei->totalClusterNum << endl;
-		cout << ei->validClusterNum << endl;
+		cout << ec->pairLibType << endl;
+		cout << ec->totalClusterNum << endl;
+		cout << ec->validClusterNum << endl;
 		exit(0);
 	}
 

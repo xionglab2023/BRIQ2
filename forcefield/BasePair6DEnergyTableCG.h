@@ -43,52 +43,31 @@ public:
 	int dump();
 	int load();
 
-	double getEnergy(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance, EdgeClusterRegister* ecr){
-		if(sep > 1 && minDistance >= 5.0) return 0;
-		if(minDistance < 1.5) return 0;
-
-		if(typeA > typeB && sep == 2){
-			return getEnergy(csB, csA, typeB, typeA, sep, minDistance, ecr);
-		}
+	void recordLowEnergyCluster(const LocalFrame csA, const LocalFrame csB, int typeA, int typeB, int sep, double minDistance, EdgeClusterRegister* ecr){
+		if(sep > 1 && minDistance >= 5.0) return;
+		if(minDistance < 1.5) return;
+		if(sep == 1 ) return;
 
 		double len = csA.origin_.distance(csB.origin_);
 		if(len >= 15.0)
-			return 0;
+			return ;
 
 	    pair<int,int> p = cm2Key.toIndexPair(csA, csB, len);
 		int pairType = typeA*4+typeB;
 		int mapIndex = pairType*2250 + p.first;
 
-		if(sep == 1){
-			it = nbKeysEnergy[mapIndex].find(p.second);
-			if(it != nbKeysEnergy[mapIndex].end()){
-				//printf("indexA: %8d indexB: %8d\n", mapIndex, p.second);
-				return wtNb*it->second;
-			}
-			else
-				return 0.0;
-		}
-		else {
-			it = nnbKeysEnergy[mapIndex].find(p.second);
+		it = nnbKeysEnergy[mapIndex].find(p.second);
 			if(it != nnbKeysEnergy[mapIndex].end()){
 
-				if(it->second < -0.5){
+				if(it->second < -2.0){
 				//记录采样时出现过的低能量非临近碱基对的cluster编号
 
 					it2 = nnbLowEnergyClusterIDs[mapIndex].find(p.second);
 					if(it2 != nnbLowEnergyClusterIDs[mapIndex].end()){
-						if(ecr->typeA == typeA)
-							ecr->record(it2->second);
-						else 
-							ecr->record(it2->second);
+						ecr->record(it2->second);
 					}
 				}
-
-				return wtNnb*it->second;
 			}
-			else
-				return 0;
-		}
 
 	}	
 

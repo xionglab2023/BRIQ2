@@ -17,28 +17,27 @@ using namespace NSPtools;
 using namespace NSPthread;
 
 
-int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, double* outEne, double* outRMS, int mpID){
+int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, const string& inputFile, double* outEne, double* outRMS, int mpID){
 
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
-	graph->initRandWeight();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->printEdges();
-	tree->updateNodeInfo(1.0, 1.0);
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
 
 	for(int i=0;i<graph->seqLen;i++){
 		graph->allNodes[i]->printNodeInfo();
 	}
-	tree->updateEdgeInfo(1.0, 1.0);
+
+
 	for(int i=0;i<tree->geList.size();i++){
 		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
 		tree->geList[i]->printPartition();
 	}
 
-	tree->updateSamplingInfo();
 	tree->printNodeInfo();
 
 	cout << "run MC" << endl;
@@ -73,7 +72,7 @@ int main(int argc, char** argv){
 	moveLib->load();
 
     BasePairLib* pairLib = new BasePairLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib();
+    EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
     string inputFile = cmdArgs.getValue("-in");
     string tag = cmdArgs.getValue("-tag");

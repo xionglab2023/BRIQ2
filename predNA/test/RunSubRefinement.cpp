@@ -21,7 +21,9 @@ using namespace std;
 using namespace NSPtools;
 using namespace NSPthread;
 
-int runRefinementsub(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep, bool printDetail){
+/*
+
+int runRefinementsub(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep, bool printDetail){
 
     srand(randSeed);
 
@@ -78,10 +80,12 @@ int runRefinementsub(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, R
 
 		subGraph->initRandWeight();
 		NuTree* subtree = new NuTree(subGraph);
-		subGraph->MST_kruskal(subtree);
-		subtree->updateNodeInfo(1.0, 1.0);
-		subtree->updateEdgeInfo(1.0, 1.0);
-		subtree->updateSamplingInfo();
+
+		graph->generateRandomEdgePartition(2);
+		SamplingGraph* subtree = new SamplingGraph(graph);
+    	subtree->updatePartitionInfo();
+    	subtree->updateSamplingInfo();
+
 
 		cout << "run MC" << endl;
 		graphInfo* subgi = subtree->runAtomicMC();
@@ -219,6 +223,8 @@ int runRefinementsub(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, R
     return 0;
 }
 
+*/
+
 void printHelp(){
 	cout << "Usage: " << endl;
 	cout << "run refinement:" <<endl;
@@ -279,7 +285,7 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(libType, true, 1);
 	moveLib->load();
 
-	EdgeInformationLib* eiLib = new EdgeInformationLib();
+	EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
 	cout << "load energy table" << endl;
 	ForceFieldPara* para = new ForceFieldPara();
@@ -318,7 +324,7 @@ int main(int argc, char** argv){
 		if(task == "refinement"){
 			et->loadAtomicEnergy();
 			// runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep, printEnergyDetail);
-			runRefinementsub(moveLib, eiLib,et, inputFile, outputFile, seed, kStep, printEnergyDetail);
+			//runRefinementsub(moveLib, eiLib,et, inputFile, outputFile, seed, kStep, printEnergyDetail);
 		}
 		else if(task == "predict" && key.length() == 0) {
 			et->loadAtomicEnergy();

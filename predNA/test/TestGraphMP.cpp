@@ -16,7 +16,7 @@ using namespace std;
 using namespace NSPtools;
 using namespace NSPthread;
 
-int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
+int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed){
 
     srand(randSeed);
     BasePairLib* pairLib = new BasePairLib();
@@ -24,23 +24,10 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
     graph->initForMC(inputFile);
-	graph->initRandWeight();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->printEdges();
-	tree->updateNodeInfo(1.0, 1.0);
-
-	for(int i=0;i<graph->seqLen;i++){
-		graph->allNodes[i]->printNodeInfo();
-	}
-	tree->updateEdgeInfo(1.0, 1.0);
-	for(int i=0;i<tree->geList.size();i++){
-		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
-		tree->geList[i]->printPartition();
-	}
-
-	tree->updateSamplingInfo();
-	tree->printNodeInfo();
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
 
 	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();
@@ -73,7 +60,7 @@ int main(int argc, char** argv){
 	moveLib->load();
 
     BasePairLib* bpLib = new BasePairLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib();
+    EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
 	RnaEnergyTable* et = new RnaEnergyTable();
 	et->loadAtomicEnergy();

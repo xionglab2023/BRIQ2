@@ -22,7 +22,7 @@
 #include "dataio/binaryTable.h"
 #include "geometry/CsMove.h"
 #include "model/BasePairLib.h"
-#include "predNA/EdgeInformation.h"
+#include "predNA/EdgeMoveClusters.h"
 #include "geometry/OrientationIndex.h"
 
 namespace NSPpredNA {
@@ -136,7 +136,7 @@ public:
 	int randPool[100000];
 
 	MixedNuPairCluster(int sep, int pairType, NuPairMoveSetLibrary* lib);
-	void updateEdgeInformation(EdgeInformation* ei);
+	void updateEdgeInformation(EdgeMoveClusters* emc);
 	void fixNativeMove(CsMove& cm){
 		this->natCM = cm;
 		this->fixedNativeCM = true;

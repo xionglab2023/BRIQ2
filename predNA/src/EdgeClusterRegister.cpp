@@ -3,9 +3,9 @@
 
 namespace NSPpredNA {
 
-
-
 EdgeClusterRegister::EdgeClusterRegister(int baseTypeA, int baseTypeB, BasePairLib* bpLib){
+
+
     this->typeA = baseTypeA%4;
     this->typeB = baseTypeB%4;
 
@@ -18,32 +18,48 @@ EdgeClusterRegister::EdgeClusterRegister(int baseTypeA, int baseTypeB, BasePairL
         }
     }
 
-    this->clusterExistence = new int[totalClusterNum];
-    this->clusterExistenceReverse = new int[totalClusterNum];
+    this->clusterIDCount = new int[totalClusterNum];
+    this->pCluster = new double[totalClusterNum];
 
     for(int i=0;i<totalClusterNum;i++){
-        this->clusterExistence[i] = 0;
+        this->clusterIDCount[i] = 0;
+        this->pCluster[i] = 0.0;
     }
+    this->totalCount = 0;
 }
 
 void EdgeClusterRegister::clear(){
     for(int i=0;i<totalClusterNum;i++){
-        this->clusterExistence[i] = 0;
-        this->clusterExistenceReverse[i] = 0;
+        this->clusterIDCount[i] = 0;
+        this->pCluster[i] = 0.0;
     }
+    this->totalCount = 0;
 }
 
 void EdgeClusterRegister::record(int clusterID){
-    clusterExistence[clusterID]++;
+
+    clusterIDCount[clusterID]++;
+    totalCount ++;
 }
 
-void EdgeClusterRegister::recordReverse(int clusterID){
-    clusterExistenceReverse[clusterID]++;
+
+void EdgeClusterRegister::print(){
+
+    int n1, n2;
+
+    if(totalCount == 0)
+        return;
+
+    for(int i=0;i<totalClusterNum;i++){
+        n1 = this->clusterIDCount[i];
+        if(n1 > 0 || n2 > 0)
+            cout << "clusterID: " << i << " " << n1 << endl;
+    }
 }
 
 EdgeClusterRegister::~EdgeClusterRegister(){
-    delete [] clusterExistence;
-    delete [] clusterExistenceReverse;
+    delete [] clusterIDCount;
+    delete [] pCluster;
 }
 
 }

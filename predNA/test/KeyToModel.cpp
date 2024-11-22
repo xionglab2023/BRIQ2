@@ -51,7 +51,7 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(libType, true, 1);
 	moveLib->load();
 
-	EdgeInformationLib* eiLib = new EdgeInformationLib();
+	EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
 	cout << "load energy table" << endl;
 	ForceFieldPara* para = new ForceFieldPara();
@@ -69,26 +69,13 @@ int main(int argc, char** argv){
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
 	graph->initForMC(inputFile);
 	
-	//graph->initInfo->printPDB(output);
 
-	graph->initRandWeight();
-	cout << "all edge" << endl;
-	graph->printAllEdge();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	cout << "tree: " << endl;
-	tree->printEdges();
-	cout << "adde node info" << endl;
-	tree->updateNodeInfo(1.0, 1.0);
-	
-	cout << "edgeInfo: " << endl;
-	tree->updateEdgeInfo(1.0, 1.0);
-	
+    graph->generateRandomEdgePartition(2);
 
-	cout << "update sampling info" << endl;
-	tree->updateSamplingInfo();
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
 
-	
 	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();
 	//graph->printEnergy();

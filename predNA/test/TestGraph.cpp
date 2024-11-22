@@ -43,7 +43,7 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(libType, true, 1);
 	moveLib->load();
 
-	EdgeInformationLib* eiLib = new EdgeInformationLib();
+	EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
 	cout << "load energy table" << endl;
 	ForceFieldPara* para = new ForceFieldPara();
@@ -59,46 +59,47 @@ int main(int argc, char** argv){
 
 	cout << "init graph" << endl;
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
+
+	cout << "int for MC" << endl;
 	graph->initForMC(inputFile);
 	
-	//graph->initInfo->printPDB(output);
+	cout << "graph generate random partition" << endl;
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* sg = new SamplingGraph(graph);
 
-	graph->initRandWeight();
-	cout << "all edge" << endl;
-	graph->printAllEdge();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	cout << "tree: " << endl;
-	tree->printEdges();
-	cout << "adde node info" << endl;
-	tree->updateNodeInfo(1.0, 1.0);
+	cout << "SG update partition" << endl;
+    sg->updatePartitionInfo();
+
+	cout << "SG update sampling" << endl;
+    sg->updateSamplingInfo();
 	
-	cout << "edgeInfo: " << endl;
-	tree->updateEdgeInfo(1.0, 1.0);
-	
-	for(int i=0;i<tree->geList.size();i++){
-		cout << "edge: " << tree->geList[i]->indexA << "-" << tree->geList[i]->indexB << endl;
-		tree->geList[i]->printPartition();
+	cout << "final partition: " << sg->geList.size() << endl;
+	for(int i=0;i<sg->geList.size();i++){
+		cout << "p edge: " << sg->geList[i]->indexA << "-" << sg->geList[i]->indexB << " " << sg->geList[i]->epList.size() << endl;
 	}
 
-	cout << "update sampling info" << endl;
-	tree->updateSamplingInfo();
-	//tree->printNodeInfo();
+	sg->printEdgeInfo();
+	cout << endl;
+	sg->printEdges();
 
-
-	tree->printEdgeInfo();
+	cout << "before MC" << endl;
+	sg->checkCsMove();
 	
-	cout << "run MC" << endl;
-	graphInfo* gi = tree->runAtomicMC();
-	gi->printPDB(output);
-	delete gi;
+	cout << "run cg mc" << endl;
+	sg->runCoarseGrainedMC(output);
+
+	graph->printEdgeClusterRegister();
+
+	//graphInfo* gi = sg->runAtomicMC();
+	//gi->printPDB(output);
+	//delete gi;
 
 	delete pairLib;
 	delete rotLib;
 	delete atLib;
 	delete moveLib;
 	delete et;
-	delete tree;
+	delete sg;
 	delete graph;
 
 

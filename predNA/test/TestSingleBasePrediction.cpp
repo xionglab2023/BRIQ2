@@ -15,7 +15,7 @@ using namespace std;
 using namespace NSPtools;
 using namespace NSPthread;
 
-int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, const string& outpdb, int pos){
+int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, BasePairLib* pairLib,RotamerLib* rotLib,AtomLib* atLib, const string& inputFile, const string& outpdb, int pos){
 	
     int baseNum = 0;
     double totEne = 0.0;
@@ -30,18 +30,11 @@ int testSingleBasePrediction(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* 
 
         cout << "init for single residue prediction" << endl;
         graph->initForSingleResiduePrediction(inputFile, pos);
-        cout << "init rand weight" << endl;
-	    graph->initRandWeight();
-        
-        cout << "new tree" << endl;
-        NuTree* tree = new NuTree(graph);
-        cout << "mst" << endl;
-	    graph->MST_kruskal(tree);
+	    graph->generateRandomEdgePartition(2);
+	    SamplingGraph* tree = new SamplingGraph(graph); 
+        tree->updatePartitionInfo();
+        tree->updateSamplingInfo();
 
-	    tree->printEdges();
-	    tree->updateNodeInfo(1.0, 1.0);
-	    tree->updateEdgeInfo(1.0, 1.0);
-	    tree->updateSamplingInfo();
 	    //tree->printNodeInfo();
         //tree->printEdgeInfo();
         cout << "run mc" << endl;
@@ -97,7 +90,7 @@ int main(int argc, char** argv){
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib();
+    EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
     testSingleBasePrediction(moveLib, eiLib, et, pairLib, rotLib, atLib, inputFile, outpdb, pos);
 

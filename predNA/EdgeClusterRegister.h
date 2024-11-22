@@ -16,13 +16,20 @@ public:
     int totalClusterNum;
     vector<int> lowEnergyClusterIDList;
 
-    int* clusterExistence;
-    int* clusterExistenceReverse;
+    int* clusterIDCount;
+
+    int totalCount;
+
+    double* pCluster;
+
+
 
     EdgeClusterRegister(int baseTypeA, int baseTypeB, BasePairLib* bpLib);
+    
     void clear();
+   
     void record(int clusterID);
-    void recordReverse(int clusterID);
+    void print();
     virtual ~EdgeClusterRegister();
 };
 

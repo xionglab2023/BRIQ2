@@ -40,38 +40,30 @@ public:
 };
 
 
-int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile){
+int testSamplingStepNum(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, const string& inputFile){
     BasePairLib* pairLib = new BasePairLib();
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
     graph->initForMC(inputFile);
-	graph->initRandWeight();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->printEdges();
-	tree->updateNodeInfo(1.0, 1.0);
-	tree->updateEdgeInfo(1.0, 1.0);
-	tree->updateSamplingInfo();
-	tree->printNodeInfo();    
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();   
     return (int)tree->totalSamp;
 }
 
-int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, motifPredictionResult** results, int mpID){
+int testRefinement(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, const string& inputFile, motifPredictionResult** results, int mpID){
 
     BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
     graph->initForMC(inputFile);
-	graph->initRandWeight();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->printEdges();
-	tree->updateNodeInfo(1.0, 1.0);
-	tree->updateEdgeInfo(1.0, 1.0);
-	tree->updateSamplingInfo();
-	tree->printNodeInfo();
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
 
 	graphInfo* gi = tree->runAtomicMC();
 
@@ -101,7 +93,7 @@ int main(int argc, char** argv){
 
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary("stat", true, 1);
 	moveLib->load();
-    EdgeInformationLib* eiLib = new EdgeInformationLib();
+    EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
     string inputFile = cmdArgs.getValue("-in");
     string tag = cmdArgs.getValue("-tag");

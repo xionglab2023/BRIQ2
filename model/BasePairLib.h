@@ -23,7 +23,6 @@
 
 namespace NSPmodel {
 
-
 class BasePairLib {
 public:
 
@@ -43,6 +42,8 @@ public:
 	double nbEnergyWithOxy[16][3000];
 	double nbProportion[16][3000];
 
+	int reversePairClusterID[16][3000];
+
 	/*
 	 * non-neighbor pairs
 	 */
@@ -52,7 +53,7 @@ public:
 
 	string libType;
 
-	BasePairLib(const string& libType = "xtb");
+	BasePairLib(const string& libType = "stat");
 
 	int getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, double ddmCutoff=1.2); //sep: sequence separation
 

@@ -21,7 +21,7 @@ using namespace NSPthread;
 int main(int argc, char** argv){
 
     BasePairLib* bpLib = new BasePairLib("stat");
-    EdgeInformationLib* eiLib = new EdgeInformationLib();
+    EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
     vector<string> list = eiLib->keyList;
     for(int i=0;i<list.size();i++){
         string key = list[i];

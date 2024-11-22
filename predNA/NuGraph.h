@@ -29,18 +29,19 @@
 #include "model/AssignRNASS.h"
 #include "geometry/RMSD.h"
 #include "predNA/NuMoveSet.h"
-#include "predNA/EdgeInformation.h"
+#include "predNA/EdgeMoveClusters.h"
 #include "tools/InputParser.h"
 #include "tools/StringTool.h"
-#include "NuEnergyCalculator.h"
-#include "EdgeClusterRegister.h"
+#include "predNA/NuEnergyCalculator.h"
+#include "predNA/EdgeClusterRegister.h"
 
 namespace NSPpredNA {
 
 class NuNode;
+class EdgePartition;
 class NuEdge;
-class EdgeInformation;
 class NuTree;
+class SamplingGraph;
 class NuGraph;
 class graphInfo;
 
@@ -99,8 +100,7 @@ public:
 
 	void updateEnergy(double clashRescale, double connectRescale);
 	void updateEnergyCG(double clashRescale, double connectRescale);
-	void updateNodeInformation(NuTree* tree, double clashRescale, double connectRescale);
-	void updateNodeInformationCG(NuTree* tree, double clashRescale, double connectRescale);
+	void updateNodeInformation(NuGraph* graph);
 	void printNodeInfo();
 
 	void updateRiboseRotamer(RiboseRotamer* rot, double clashRescale, double connectRescale);
@@ -131,9 +131,9 @@ public:
 	virtual ~NuNode();
 };
 
+
 class NuEdge {
 public:
-
 
 	NuGraph* graph;
 	//the NuEdge is directed
@@ -145,35 +145,18 @@ public:
 	NuNode* nodeB;
 
 	BasePairLib* pairLib;
-	EdgeClusterRegister* ecr;
-	
+	EdgeClusterRegister* ecr; //record the clusterIDs that occurred during sampling
+	vector<EdgePartition*> epList; //random subTree starting from the edge
+	EdgePartition* currentPartition;
+
 	CsMove cm;
 	CsMove cmTmp;
 	int sep;
 
-	/*
-	 * edge indexA-indexB divide the NuTree into two trees, treeA and treeB
-	 * we use BFS algorithm to traverses the tree and store all nodes and edges
-	 * nodes of treeB are movable
-	 */
-
-	vector<NuNode*> nodeListA;
-	vector<NuEdge*> edgeListA;
-
-	vector<NuNode*> nodeListB;
-	vector<NuEdge*> edgeListB;
-
-	//positions where phosphate group need to be build
-	vector<int> connectionBreakPoints;
-
-	vector<NuNode*> phoGroupA; //pho coordinate not changed
-	vector<NuNode*> phoGroupB; //pho coordinate changed, but rotamer not changed
-	vector<NuNode*> phoGroupC; //pho coordinate rotamer changed
-
 	double weight; //weight for MST
 	double weightRand;
 
-	EdgeInformation* ei;
+	EdgeMoveClusters* moveClusters;
 	MixedNuPairCluster* moveSet;
 
 	/*
@@ -191,16 +174,20 @@ public:
 	NuEdge(NuNode* nodeA, NuNode* nodeB, NuGraph* graph);
 	NuEdge(NuNode* nodeA, NuNode* nodeB, int sep, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib);
 
-	void initNearNativeMoveSet(double distanceCutoff=1.2);
-	void initMoveSet(BaseDistanceMatrix& dm, double distanceCutoff);
-	void fixNaiveMove();
+	void initNearNativeMoveClusters(double distanceCutoff=1.2);
+	void initMoveClusters(BaseDistanceMatrix& dm, double distanceCutoff);
+	void fixTemplateMove();
+
+	void updateMoveClusters(double pContact=0.2); //according EdgeClusterRegister, add strong contact into move cluster
 
 	void updateEnergy(double clashRescale, double connectRescale);
 	void updateEnergyCG(double clashRescale, double connectRescale);
-	void updateEdgeInfo(NuTree* tree,double clashRescale, double connectRescale);
-	void updateEdgeInfoCG(NuTree* tree,double clashRescale, double connectRescale);
 
 	void updateCsMove(CsMove& cm, double clashRescale, double connectRescale);
+
+	void setRandomPartition();
+	void recordLowEnergyCluster();
+
 	double mutEnergy();
 	
 	void acceptMutation();
@@ -220,13 +207,98 @@ public:
 	virtual ~NuEdge();
 };
 
+class EdgePartition{
+
+	public:
+	/*
+	 * edge indexA-indexB divide the NuTree into two trees, treeA and treeB
+	 * we use BFS algorithm to traverses the tree and store all nodes and edges
+	 * nodes of treeB are movable
+	 */
+
+	NuGraph* graph;
+	NuEdge* targetEdge;
+
+	vector<NuNode*> nodeListA; //coordinate not changed
+	vector<NuEdge*> edgeListA;
+
+	vector<NuNode*> nodeListB;
+	vector<NuEdge*> edgeListB;
+
+	vector<NuEdge*> edgeListX; //connection between nodeListA and nodeListB in SamplingGraph
+
+	//positions where phosphate group need to be build
+	vector<int> connectionBreakPoints;
+
+	vector<NuNode*> phoGroupA; //pho coordinate not changed
+	vector<NuNode*> phoGroupB; //pho coordinate changed, but rotamer not changed
+	vector<NuNode*> phoGroupC; //pho coordinate rotamer changed
+
+	string key;
+
+	EdgePartition(NuEdge* edge, NuGraph* graph){
+		this->targetEdge = edge;
+		this->graph = graph;
+	}
+
+	void updatePartition(NuTree* tree);
+	void updateEdgeListX(SamplingGraph* sg);
+
+	void printPartition(){
+		cout << "listA: ";
+		for(int i=0;i<nodeListA.size();i++){
+			cout << " " << nodeListA[i]->seqID ;
+		}
+		cout << endl;
+		cout << "listB: ";
+		for(int i=0;i<nodeListB.size();i++){
+			cout << " " << nodeListB[i]->seqID ;
+		}
+		cout << endl;
+
+		cout << "edgeListB: " << endl;
+		for(int i=0;i<edgeListB.size();i++){
+			cout << edgeListB[i]->nodeA->seqID << " - " << edgeListB[i]->nodeB->seqID << endl;
+		}
+
+		cout << "edgeListX: " << endl;
+		for(int i=0;i<edgeListX.size();i++){
+			cout << edgeListX[i]->nodeA->seqID << " - " << edgeListX[i]->nodeB->seqID << endl;
+		}	
+	}
+};
+
 class NuTree {
 public:
 
 	NuGraph* graph;
 
 	bool* adjMtx; //adjacency matrix, N*N matrix, (N-1)*2 true points
-	vector<NuEdge*> geList; //edge list, (N-1)
+	vector<NuEdge*> geList; 
+
+	NuTree(NuGraph* graph);
+
+//	void updateEdgeInfo(double clashRescale, double connectRescale);
+//	void updateEdgeInfoCG(double clashRescale, double connectRescale);
+
+	void printEdges();
+	void printEdgeInfo(const string& output);
+	void printEdgeInfo();
+	void printTreeInfomation(const string& output); //print PDB in tre format
+
+	virtual ~NuTree();
+};
+
+class SamplingGraph {
+
+public:
+
+	NuGraph* graph;
+
+	vector<NuEdge*> geList;
+	bool* adjMtx;
+	vector<EdgePartition*> epList;
+
 
 	int poolSize = 100000;
 	double sampFreqNode;
@@ -235,15 +307,36 @@ public:
 	int randPoolEdge[100000];
 	double totalSamp;
 
-	NuTree(NuGraph* graph);
-	void updateNodeInfo(double clashRescale, double connectRescale);
-	void updateNodeInfoCG(double clashRescale, double connectRescale);
-	void printNodeInfo();
-	void updateEdgeInfo(double clashRescale, double connectRescale);
-	void updateEdgeInfoCG(double clashRescale, double connectRescale);
+	SamplingGraph(NuGraph* graph);
+
+
+	void updatePartitionInfo();
 	void updateSamplingInfo();
 	void randomInit(double clashRescale, double connectRescale);
 	void randomInitCG(double clashRescale, double connectRescale);
+
+	void checkCsMove(){
+		for(int i=0;i<geList.size();i++){
+			NuEdge* edge = geList[i];
+			LocalFrame csA = edge->nodeA->baseConf->cs1;
+			LocalFrame csB = edge->nodeB->baseConf->cs1;
+			LocalFrame csATmp = edge->nodeA->baseConfTmp->cs1;
+			LocalFrame csBTmp = edge->nodeB->baseConfTmp->cs1;
+
+			LocalFrame csB1 = csA + edge->cm;
+			LocalFrame csBTmp1 = csATmp + edge->cmTmp;
+
+			if(csB.origin_.distance(csB1.origin_) > 0.0001) {
+				cout << "ERROR: edge " << edge->indexA << " " << edge->indexB << " move error" << endl; 
+			}
+
+			if(csBTmp.origin_.distance(csBTmp1.origin_) > 0.0001) {
+				cout << "ERROR: edge " << edge->indexA << " " << edge->indexB << " tmp move error" << endl; 
+			}
+		}
+	}
+
+	void printNodeInfo();
 	void printEdges();
 	void printEdgeInfo(const string& output);
 	void printEdgeInfo();
@@ -251,7 +344,7 @@ public:
 
 	graphInfo* runAtomicMC();
 	void runCoarseGrainedMC(const string& output);
-	virtual ~NuTree();
+	virtual ~SamplingGraph();
 };
 
 class graphInfo{
@@ -315,16 +408,16 @@ public:
 	AtomLib* atLib;
 
 	BasePairLib* pairLib;
-	EdgeInformationLib* eiLib;
+	EdgeMoveClustersLib* emcLib;
 	NuPairMoveSetLibrary* moveLib;
 	OrientationIndex* oi;
 	RnaEnergyTable* et;
 	graphInfo* initInfo;
 
-	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et);
+	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* emcLib,  RnaEnergyTable* et);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib);
 	NuGraph(const string& inputFile, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, RnaEnergyTable* et, int InitMode);
-	NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib,  RnaEnergyTable* et, const string& cnt);
+	NuGraph(RNAPDB* pdb, RotamerLib* rotLib, AtomLib* atLib, BasePairLib* pairLib, NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* emcLib,  RnaEnergyTable* et, const string& cnt);
 	
 	void init(const string& task, RNAPDB* pdb, const string& baseSeq, const string& baseSec, const string& csn, const string& cst, const string& cnt, const string& contactKey, vector<string>& ctList);
 
@@ -336,8 +429,17 @@ public:
 	void initForSingleResiduePrediction(const string& inputFile, int pos);
 	void initRandWeight();
 	void resetEdgeMoveToCurrentCluster();
-	void MST_kruskal(NuTree* output);
+	void MST_kruskal(NuTree* output, NuEdge* fixedEdge=NULL);
+	void generateRandomEdgePartition(int roundNum=2);
+
+
+
+	void updateEdgeMoveClusters(); //update move in cluster level
+	void updateEdgeMoveSet(); //update move in GRID level
+
+
 	void printAllEdge();
+
 	void updateEnergy(double clashRescale, double connectRescale);
 	void updateEnergyCG(double clashRescale, double connectRescale);
 	void nodeListToPDBWithoutPho(vector<NuNode*> nodeList, RNAPDB* outpdb);
@@ -358,6 +460,14 @@ public:
 	void printContactMatrix(const string& outfile);
 	double keyAccuracy(const string& key);
 
+	void checkCoordinate(){
+		for(int i=0;i<seqLen;i++){
+			if(this->allNodes[i]->baseConf->cs1.origin_.distance(this->allNodes[i]->baseConfTmp->cs1.origin_) > 0.01){
+				cout << "node: " << i << " coord changed" << endl;
+			}
+		}
+	}
+
 	void checkEnergy(double clashRescale, double connectRescale);
 	void checkEnergyCG(double clashRescale, double connectRescale);
 	double totalEnergy(double clashRescale, double connectRescale);
@@ -373,6 +483,7 @@ public:
 	void printEnergyCG(double clashRescale);
 	void printBaseEnergyList(const string& outfile);
 	void printPairwiseEnergy(const string& outfile);
+	void printEdgeClusterRegister();
 	void cgToAllAtom();
 
 	double getTotalEnergyForModelSelection();

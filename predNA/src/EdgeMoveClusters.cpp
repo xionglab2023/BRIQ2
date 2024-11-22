@@ -1,15 +1,15 @@
 /*
- * EdgeInformation.cpp
+ * EdgeMoveClusters.cpp
  *
  *  Created on: 2023��11��30��
  *      Author: nuc
  */
 
-#include <predNA/EdgeInformation.h>
+#include <predNA/EdgeMoveClusters.h>
 
 namespace NSPpredNA {
 
-EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pairLib){
+EdgeMoveClusters::EdgeMoveClusters(int sep, int typeA, int typeB, BasePairLib* pairLib){
 	this->sep = sep;
 	this->typeA = typeA%4;
 	this->typeB = typeB%4;
@@ -32,26 +32,27 @@ EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pai
 	}
 	this->validClusterNum = totalClusterNum;
 
-	this->weight = 999.9;
+	this->weight = 99.9;
 	
 	if(sep == 1 || sep == -1) {
 		this->pContact = 1.0;
 		this->weight = 0.0;
 	}
-
 	else if(sep == 0) {
 		this->pContact = 1.0;
 		this->weight = 0.0;
 	}
-	else
+	else {
 		this->pContact = 0.0;
+		this->weight = 99.9;
+	}
 
-
-	
 
 	for(int i=0;i<totalClusterNum;i++){
-		double e = pairLib->getEnergyWithOxy(i, typeA, typeB, sep);
-		this->weight += pCluster[i]*e;
+		if(pContact > 0){
+			double e = pairLib->getEnergyWithOxy(i, typeA, typeB, sep);
+			this->weight += pCluster[i]*e;
+		}
 	}
 
 	this->fixed = false;
@@ -61,12 +62,11 @@ EdgeInformation::EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pai
 
 }
 
-
-EdgeInformation::~EdgeInformation() {
+EdgeMoveClusters::~EdgeMoveClusters() {
 	delete [] pCluster;
 }
 
-void EdgeInformation::updatePCluster(double* pList, double pContact, BasePairLib* pairLib){
+void EdgeMoveClusters::updatePCluster(double* pList, double pContact, BasePairLib* pairLib){
 
 	if(this->pairLibType != pairLib->libType){
 		this->pairLibType = pairLib->libType;
@@ -99,6 +99,12 @@ void EdgeInformation::updatePCluster(double* pList, double pContact, BasePairLib
 		this->pContact = 0;
 		return;
 	}
+
+	if(pContact == 0.0) {
+		this->pContact = 0;
+		this->weight = 99.9;
+		return;
+	}
 	
 	this->weight = 0;
 	this->validClusterNum = 0;
@@ -113,7 +119,7 @@ void EdgeInformation::updatePCluster(double* pList, double pContact, BasePairLib
 	this->pContact = pContact;
 }
 
-void EdgeInformation::setUniqueCluster(int clusterID, BasePairLib* pairLib){
+void EdgeMoveClusters::setUniqueCluster(int clusterID, BasePairLib* pairLib){
 
 	if(this->pairLibType != pairLib->libType){
 		this->pairLibType = pairLib->libType;
@@ -135,7 +141,7 @@ void EdgeInformation::setUniqueCluster(int clusterID, BasePairLib* pairLib){
 		for(int i=0;i<totalClusterNum;i++){
 			this->pCluster[i] = 1.0/totalClusterNum;
 		}
-		this->pContact = 1.0;
+		this->pContact = 0.0;
 		this->weight = 99.9;
 	}
 	else if(clusterID < totalClusterNum) {
@@ -152,9 +158,9 @@ void EdgeInformation::setUniqueCluster(int clusterID, BasePairLib* pairLib){
 	}
 }
 
-void EdgeInformation::setToLibPCluster(const string& ssSepType, EdgeInformationLib* eiLib){
+void EdgeMoveClusters::setToLibPCluster(const string& ssSepType, EdgeMoveClustersLib* eiLib){
 	this->ssSepKey = ssSepType;
-	map<string, EdgeInformation*>::iterator it;
+	map<string, EdgeMoveClusters*>::iterator it;
 	it = eiLib->eiMap.find(ssSepType);
 	if(it != eiLib->eiMap.end()){
 		this->copyClusterFrom(it->second);
@@ -165,7 +171,7 @@ void EdgeInformation::setToLibPCluster(const string& ssSepType, EdgeInformationL
 	}
 }
 
-void EdgeInformation::setToLibReversePCluster(const string& ssSepType, EdgeInformationLib* eiLib){
+void EdgeMoveClusters::setToLibReversePCluster(const string& ssSepType, EdgeMoveClustersLib* eiLib){
 	if(eiLib->reverseType.find(ssSepType) == eiLib->reverseType.end()){
 		cout << "invalid ssSepType: " << this->ssSepKey << endl;
 		exit(0);
@@ -173,7 +179,7 @@ void EdgeInformation::setToLibReversePCluster(const string& ssSepType, EdgeInfor
 
 	this->ssSepKey = eiLib->reverseType[ssSepType];
 
-	map<string, EdgeInformation*>::iterator it;
+	map<string, EdgeMoveClusters*>::iterator it;
 	it = eiLib->eiMap.find(this->ssSepKey);
 	if(it != eiLib->eiMap.end()){
 		this->copyClusterFrom(it->second);
@@ -184,7 +190,7 @@ void EdgeInformation::setToLibReversePCluster(const string& ssSepType, EdgeInfor
 	}
 }
 
-void EdgeInformation::setClusterList(vector<int>& clusterList, vector<double>& pList, BasePairLib* pairLib){
+void EdgeMoveClusters::setClusterList(vector<int>& clusterList, vector<double>& pList, BasePairLib* pairLib){
 	
 	if(this->pairLibType != pairLib->libType){
 		this->pairLibType = pairLib->libType;
@@ -242,7 +248,7 @@ void EdgeInformation::setClusterList(vector<int>& clusterList, vector<double>& p
 	}
 }
 
-EdgeInformationLib::EdgeInformationLib(){
+EdgeMoveClustersLib::EdgeMoveClustersLib(){
 	string path = NSPdataio::datapath();
 	BasePairLib* pairLib = new BasePairLib("stat");
 	ifstream file1, file2;
@@ -254,7 +260,6 @@ EdgeInformationLib::EdgeInformationLib(){
 		cout << "fail to open list file : " << fileName << endl;
 		exit(1);
 	}
-
 
 	vector<int> sepList;
 	vector<int> typeAList;
@@ -280,7 +285,7 @@ EdgeInformationLib::EdgeInformationLib(){
 			cout << "fail to open cluster file : " << fileName << endl;
 			exit(1);
 		}
-		EdgeInformation* ei = new EdgeInformation(sepList[i], typeAList[i], typeBList[i], pairLib);
+		EdgeMoveClusters* ei = new EdgeMoveClusters(sepList[i], typeAList[i], typeBList[i], pairLib);
 
 		int totalClusterNum;
 		if(sepList[i] == 1)
@@ -334,7 +339,7 @@ EdgeInformationLib::EdgeInformationLib(){
 	
 }
 
-EdgeInformationLib::~EdgeInformationLib(){
+EdgeMoveClustersLib::~EdgeMoveClustersLib(){
 	for(int i=0;i<this->keyList.size();i++){
 		delete eiMap[keyList[i]];
 	}
