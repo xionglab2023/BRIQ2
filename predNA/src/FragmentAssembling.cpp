@@ -1,13 +1,13 @@
 /*
  * FragmentAssembling.cpp
  *
- *  Created on: 2022Äê5ÔÂ11ÈÕ
+ *  Created on: 2022ï¿½ï¿½5ï¿½ï¿½11ï¿½ï¿½
  *      Author: pengx
  */
 
 #include "predNA/FragmentAssembling.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 FragmentAssembling::FragmentAssembling() {
 	// TODO Auto-generated constructor stub

@@ -21,7 +21,7 @@
 #include "predNA/FragmentLibrary.h"
 #include "predNA/MoveMutator.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 using namespace std;
 using namespace NSPmodel;

@@ -21,7 +21,7 @@ using namespace std;
 using namespace NSPtools;
 using namespace NSPthread;
 
-int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep){
+int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep, bool printDetail){
 
     srand(randSeed);
 
@@ -31,9 +31,9 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
    	et->para->T3 = 0.01;
     et->para->clashRescale = 0.2;
     et->para->connectRescale = 0.5;
-	et->para->kStepNum1 = 200;
-	et->para->kStepNum2 = 100;
-	et->para->kStepNum3 = 100;
+	et->para->kStepNum1 = (int)(200*kStep);
+	et->para->kStepNum2 = (int)(100*kStep);
+	et->para->kStepNum3 = (int)(100*kStep);
 	et->para->withRandomInit = false;
 
 	BasePairLib* pairLib = new BasePairLib("stat");
@@ -41,16 +41,20 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
     graph->initForMC(inputFile);
-	graph->initRandWeight();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->updateNodeInfo(1.0, 1.0);
-	tree->updateEdgeInfo(1.0, 1.0);
-	tree->updateSamplingInfo();
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
 
 	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();
     gi->printPDB(outFile);
+	graph->printBaseEnergyList(outFile);
+
+	if(printDetail){
+		cout << "detail energy: " << endl;
+		graph->printEnergy();
+	}
 
     delete gi;
     delete pairLib;
@@ -61,7 +65,59 @@ int runRefinement(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaE
     return 0;
 }
 
-int runPredict(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep){
+int runRefinementFromPDB(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, const string& pdbFile, const string& outFile, int randSeed, double kStep, const string& cnt){
+
+    srand(randSeed);
+
+   	et->para->T0 = 0.3;
+    et->para->T1 = 0.07;
+    et->para->T2 = 0.015;
+   	et->para->T3 = 0.002;
+    et->para->clashRescale = 0.2;
+    et->para->connectRescale = 0.5;
+	et->para->kStepNum1 = (int)(500*kStep);
+	et->para->kStepNum2 = (int)(500*kStep);
+	et->para->kStepNum3 = (int)(500*kStep);
+	et->para->withRandomInit = false;
+
+	cout << "init libs" << endl;
+
+	BasePairLib* pairLib = new BasePairLib("stat");
+	RotamerLib* rotLib = new RotamerLib();
+	AtomLib* atLib = new AtomLib();
+
+	cout << "init pdb" << endl;
+	cout << "pdbFile: " << pdbFile << endl;
+	RNAPDB* pdb = new RNAPDB(pdbFile);
+	cout << "init graph" <<endl;
+	NuGraph* graph = new NuGraph(pdb, rotLib, atLib, pairLib, moveLib, eiLib, et, cnt);
+	cout << "init weight" << endl;
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
+
+	tree->printNodeInfo();
+	tree->printEdgeInfo();
+
+	cout << "run MC" << endl;
+	graphInfo* gi = tree->runAtomicMC();
+    gi->printPDB(outFile);
+	graph->printBaseEnergyList(outFile);
+	graph->printPairwiseEnergy(outFile);
+	graph->printEnergy();
+
+	delete pdb;
+    delete gi;
+    delete pairLib;
+    delete rotLib;
+    delete atLib;
+	delete tree;
+	delete graph;
+    return 0;
+}
+
+int runPredict(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep){
     srand(randSeed);
 
 	et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
@@ -73,12 +129,10 @@ int runPredict(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEner
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
     graph->initForMC(inputFile);
-	graph->initRandWeight();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->updateNodeInfo(1.0, 1.0);
-	tree->updateEdgeInfo(1.0, 1.0);
-	tree->updateSamplingInfo();
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
 
 	cout << "run MC" << endl;
 	graphInfo* gi = tree->runAtomicMC();
@@ -146,7 +200,7 @@ public:
     }
 };
 
-int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib* eiLib, const string& inputFile, cgResult* result, int modelNum, int randSeed, double kStep){
+int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeMoveClustersLib* eiLib, const string& inputFile, const string& outFile, int modelNum, int randSeed, double kStep){
 
  	srand(randSeed);
 
@@ -158,24 +212,23 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib
 	RotamerLib* rotLib = new RotamerLib(et->para);
     AtomLib* atLib = new AtomLib();
 
-
-    cout << "init graph" << endl;
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
 
 	graph->initForCGMC(inputFile);
-	graph->initRandWeight();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->updateNodeInfoCG(1.0, 1.0);
-	tree->updateEdgeInfoCG(1.0, 1.0);
-	tree->updateSamplingInfo();
+	
+	graph->generateRandomEdgePartition(2);
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
+	tree->printEdges();
 
 	clock_t start = clock();
-    cout << "run mc" << endl;
-
+	
     NuSampling* samp = new NuSampling(graph, tree);
+	cout << "runMC" << endl;
+    samp->runCoarseGrainedMC(outFile, modelNum);
 
-    samp->runCoarseGrainedMC(result->keyToEnergy, modelNum);
+	//graph->printEdgeClusterRegister();
 
 	delete pairLib;
     delete rotLib;
@@ -185,76 +238,80 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et,EdgeInformationLib
     return 0;
 }
 
-int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeInformationLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int randSeed, double kStep){
+int cgKeyToAllAtomPDB(NuPairMoveSetLibrary* moveLib, EdgeMoveClustersLib* eiLib, RnaEnergyTable* et, const string& inputFile, const string& outFile, int modelNum, int randSeed, double kStep){
     srand(randSeed);
-
-   	et->para->T0 = 10.0;
-    et->para->T1 = 1.0;
-    et->para->T2 = 0.1;
-   	et->para->T3 = 0.01;
-    et->para->clashRescale = 0.2;
-    et->para->connectRescale = 0.5;
-	et->para->kStepNum1 = 200;
-	et->para->kStepNum2 = 100;
-	et->para->kStepNum3 = 100;
-	et->para->withRandomInit = false;
-
-	et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
-	et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
-	et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
-	
-
 	BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
 	NuGraph* graph = new NuGraph(inputFile, rotLib, atLib, pairLib, moveLib, eiLib, et);
-	cout << "init for mc" << endl;
-    graph->initForMC(inputFile);
-	cout << "init rand weight" << endl;
-	graph->initRandWeight();
-	graph->printAllEdge();
-	cout << "init tree" << endl;
-	NuTree* tree = new NuTree(graph);
-	cout << "MST" << endl;
-	graph->MST_kruskal(tree);
-	cout << "update node info" << endl;
-	tree->updateNodeInfo(1.0, 1.0);
-	cout << "update edge info" << endl;
-	tree->updateEdgeInfo(1.0, 1.0);
-	cout << "update sampling info" << endl;
-	tree->updateSamplingInfo();
+	graph->initForMC(inputFile);
+	SamplingGraph* tree = new SamplingGraph(graph);
 
-	cout << "run MC" << endl;
-	tree->runAtomicMC();
+
+
+	ofstream out;
+	out.open(outFile.c_str(), ios::out);
+	if(!out.is_open()) {
+		cout << "fail to open file: " << outFile << endl;
+		exit(0);
+	}
+	out.close();
+
+	for(int i=0;i<modelNum;i++){
+
+		et->para->T0 = 10.0;
+    	et->para->T1 = 1.0;
+    	et->para->T2 = 0.1;
+   		et->para->T3 = 0.01;
+    	et->para->clashRescale = 0.2;
+    	et->para->connectRescale = 0.5;
+		et->para->kStepNum1 = 200;
+		et->para->kStepNum2 = 100;
+		et->para->kStepNum3 = 100;
+		et->para->withRandomInit = true;
+
+		et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
+		et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
+		et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
+
+		graph->printAllEdge();
+
+	    graph->generateRandomEdgePartition(2);
+    	tree->updatePartitionInfo();
+    	tree->updateSamplingInfo();
+
+		cout << "run MC" << endl;
+		tree->runAtomicMC();
 	
-	graph->initNearestNativeEdge();
-	graph->initRandWeight();
-	graph->MST_kruskal(tree);
-	tree->updateNodeInfo(1.0, 1.0);
-	tree->updateEdgeInfo(1.0, 1.0);
-	tree->updateSamplingInfo();
 
-   	et->para->T0 = 1.0;
-    et->para->T1 = 0.2;
-    et->para->T2 = 0.05;
-   	et->para->T3 = 0.01;
-    et->para->clashRescale = 0.2;
-    et->para->connectRescale = 0.5;
-	et->para->kStepNum1 = 200;
-	et->para->kStepNum2 = 100;
-	et->para->kStepNum3 = 100;
-	et->para->withRandomInit = false;
+		graph->resetEdgeMoveToCurrentCluster();
+	    graph->generateRandomEdgePartition(2);
+    	tree->updatePartitionInfo();
+    	tree->updateSamplingInfo();
 
-	et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
-	et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
-	et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
+   		et->para->T0 = 1.0;
+    	et->para->T1 = 0.2;
+    	et->para->T2 = 0.05;
+   		et->para->T3 = 0.01;
+    	et->para->clashRescale = 0.2;
+    	et->para->connectRescale = 0.5;
+		et->para->kStepNum1 = 200;
+		et->para->kStepNum2 = 100;
+		et->para->kStepNum3 = 100;
+		et->para->withRandomInit = false;
 
-	cout << "run MC2" << endl;
-	graphInfo* gi = tree->runAtomicMC();
+		et->para->kStepNum1 = (int)(et->para->kStepNum1*kStep);
+		et->para->kStepNum2 = (int)(et->para->kStepNum2*kStep);
+		et->para->kStepNum3 = (int)(et->para->kStepNum3*kStep);
 
-    gi->printPDB(outFile);
+		cout << "run MC2" << endl;
+		graphInfo* gi = tree->runAtomicMC();
 
-    delete gi;
+		tree->printTreeInfomation(outFile);
+		delete gi;
+	}
+
+
     delete pairLib;
     delete rotLib;
     delete atLib;
@@ -267,10 +324,13 @@ void printHelp(){
 	cout << "Usage: " << endl;
 	cout << "run refinement:" <<endl;
 	cout << "briqx_run -in $INPUTFILE -out $OUTPUT -seed $RANDOM_SEED" << endl;
+	cout << "briqx_run -pdb $PDBFILE -out OUTPDB -seed $RANDOM_SEED" << endl;
+	cout << "briqx_run -pdb $PDBFILE -out OUTPDB -seed $RANDOM_SEED -cnt \"X$CNT\"" << endl;  
 	cout << "run predict: " << endl;
 	cout << "briqx_run -in $INPUTFILE -out $OUTPUT -seed $RANDOM_SEED" << endl;
 	cout << "run cgModeling: " << endl;
 	cout << "briqx_run -in $INPUTFILE -out $OUTPUT -seed $RANDOM_SEED -n $KEYNum -mp $THREADNum" << endl;
+
 }
 
 int main(int argc, char** argv){
@@ -288,8 +348,15 @@ int main(int argc, char** argv){
         return EXIT_SUCCESS;
 	}
 
-	string inputFile = cmdArgs.getValue("-in");
-    string outputFile = cmdArgs.getValue("-out");
+	string inputFile = "";
+	string pdbFile = "";
+	if(cmdArgs.specifiedOption("-in")){
+		inputFile = cmdArgs.getValue("-in");
+	}
+	if(cmdArgs.specifiedOption("-pdb")){
+		pdbFile = cmdArgs.getValue("-pdb");
+	}    
+	string outputFile = cmdArgs.getValue("-out");
 	int seed = 0;
 	if(cmdArgs.specifiedOption("-seed")) {
 		seed = atoi(cmdArgs.getValue("-seed").c_str());
@@ -313,79 +380,71 @@ int main(int argc, char** argv){
 	NuPairMoveSetLibrary* moveLib = new NuPairMoveSetLibrary(libType, true, 1);
 	moveLib->load();
 
-	EdgeInformationLib* eiLib = new EdgeInformationLib();
+	EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
 	cout << "load energy table" << endl;
 	ForceFieldPara* para = new ForceFieldPara();
 	para->libType = libType;
 
 	RnaEnergyTable* et = new RnaEnergyTable(para);
-	NSPtools::InputParser input(inputFile);
+
+	if(cmdArgs.specifiedOption("-pdb")){
+		et->loadAtomicEnergy();
+		cout << "run refinement from PDB" << endl;
+		string cnt = "";
+		if(cmdArgs.specifiedOption("-cnt"))
+			cnt = cmdArgs.getValue("-cnt");
+
+		if(cnt.length() > 1)
+			cnt = cnt.substr(1, cnt.length()-1);
+			
+		cout << "cnt: " << cnt << endl;
+		runRefinementFromPDB(moveLib, eiLib, et, pdbFile, outputFile, seed, kStep, cnt);
+	}
+	else {
+		if(inputFile.length() == 0){
+			cout << "please specify pdb file or inputFile" << endl;
+			exit(0);
+		}
+		NSPtools::InputParser input(inputFile);
 	
-	string task = input.getValue("task");
-	string key = input.getValue("key");
+		string task = input.getValue("task");
+		string key = input.getValue("key");
 
-	if(task == "refinement"){
-		et->loadAtomicEnergy();
-		runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep);
-	}
-	else if(task == "predict" && key.length() == 0) {
-		et->loadAtomicEnergy();
-		runPredict(moveLib, eiLib, et, inputFile, outputFile, seed, kStep);
-	}
-	else if(task == "predict"){
-		et->loadAtomicEnergy();
-		cgKeyToAllAtomPDB(moveLib, eiLib, et, inputFile, outputFile, seed, kStep);
-	}
-	else if(task == "cgModeling"){
-		
-		et->loadCoarseGrainedEnergy();
-		int modelNum = 10;
-		int mp = 1;
-		if(cmdArgs.specifiedOption("-n"))
-			modelNum = atoi(cmdArgs.getValue("-n").c_str());
-		else if(cmdArgs.specifiedOption("-mp"))
-			mp = atoi(cmdArgs.getValue("-mp").c_str());
-    	
+		bool printEnergyDetail = false;
+		if(cmdArgs.specifiedOption("-v")){
+			printEnergyDetail = true;
+		}
 
-    	ofstream out;
-   	 	out.open(outputFile.c_str(), ios::out);
+		if(task == "refinement"){
+			et->loadAtomicEnergy();
+			runRefinement(moveLib, eiLib, et, inputFile, outputFile, seed, kStep, printEnergyDetail);
+		}
+		else if(task == "predict" && key.length() == 0) {
+			et->loadAtomicEnergy();
+			runPredict(moveLib, eiLib, et, inputFile, outputFile, seed, kStep);
+		}
+		else if(task == "predict"){
+			int modelNum = 10;
+			if(cmdArgs.specifiedOption("-n"))
+				modelNum = atoi(cmdArgs.getValue("-n").c_str());
 
-    	int startID = 0;
-    
+			et->loadAtomicEnergy();
+			cgKeyToAllAtomPDB(moveLib, eiLib, et, inputFile, outputFile, modelNum, seed, kStep);
+		}
+		else if(task == "cgModeling"){
 
-		
+			int modelNum = 10;
+			int mp = 1;
+			if(cmdArgs.specifiedOption("-n"))
+				modelNum = atoi(cmdArgs.getValue("-n").c_str());
 
-    	shared_ptr<ThreadPool> thrPool(new ThreadPool(mp));
-    	size_t jid = 0;
-    	char xx[200];
+			et->loadCoarseGrainedEnergy();
+			runCGMC(moveLib, et, eiLib, inputFile, outputFile, modelNum, seed, kStep);
 
-    	cgResult* resultList[mp];
-    	for(int i=0;i<mp;i++){
-        	resultList[i] = new cgResult();
-    	}
 
-    	for(int i=startID;i<startID+mp;i++) {
-        	shared_ptr<IntFuncTask> request(new IntFuncTask);
+		}
 
-        	request->asynBind(runCGMC, moveLib, et, eiLib, inputFile,  resultList[i-startID],modelNum, time(0)+i, kStep);
-       		jid++;
-        	thrPool->addTask(request);
-    	}
-
-    	while(true) {
-        	sleep(1);
-        	if(thrPool->getTaskCount() == 0) {
-        	break;
-        	}
-    	}
-
-    	for(int i=1;i<mp;i++){
-        	resultList[0]->mergeResult(resultList[i]);
-    	}
-
-    	resultList[0]->print(out);
-    	out.close();
 	}
 
 	delete pairLib;

@@ -17,7 +17,7 @@
 #include "model/RiboseRotamer.h"
 #include "model/PhosphateRotamer.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 class BRConnection;
 

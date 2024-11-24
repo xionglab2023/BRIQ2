@@ -200,10 +200,11 @@ PO3Builder::PO3Builder(ForceFieldPara* para) {
 
 void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* riboConfB, PhosphateConformer* outPhoConf){
 
-	XYZ o3,p,op1,op2,o5,c5,c4,o4;
+	XYZ o3,p,op1,op2,o5,c5,c4,o4, o2;
 	LocalFrame cs2A = riboConfA->cs2;
 
 	o3 = global2local(cs2A, riboConfA->coords[5]);
+	o2 = global2local(cs2A, riboConfA->coords[7]);
 
 	//distance between atom O3' and C5'
 	double d0 = cs2A.origin_.distance(riboConfB->coords[6]);
@@ -259,6 +260,8 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		indexDD = (dihed1 * 360) + dihed2;
 		p = this->pList[indexDD];
 		o5 = this->o5List[indexDD];
+		op1 = this->op1List[indexDD];
+		op2 = this->op2List[indexDD];
 
 		xd3 = o5.distance(c5);
 		xang3 = angleX(p, o5, c5);
@@ -300,10 +303,17 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
+
+		
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -319,6 +329,15 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 			e += (2*u-1);
 		else
 			e += (-2*u-1);
+
+		u = (op1.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
+
+		u = (op2.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
+		
 
 
 		if(impIndexA < 10 && dihed2 > 250)
@@ -387,6 +406,8 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		//cout << "indexDD: " << indexDD << endl;
 		p = this->pList[indexDD];
 		o5 = this->o5List[indexDD];
+		op1 = this->op1List[indexDD];
+		op2 = this->op2List[indexDD];
 
 		xd3 = o5.distance(c5);
 		xang3 = angleX(p, o5, c5);
@@ -428,10 +449,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		
 
@@ -451,6 +476,13 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		else
 			e += (-2*u-1);
 
+		u = (op1.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
+
+		u = (op2.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
 
 		if(impIndexA < 10 && dihed2 > 250)
 			regionIndexA = 0;
@@ -535,6 +567,8 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		indexDD = dihed1 * 360 + dihed2;
 		p = this->pList[indexDD];
 		o5 = this->o5List[indexDD];
+		op1 = this->op1List[indexDD];
+		op2 = this->op2List[indexDD];
 		xd3 = o5.distance(c5);
 		xang3 = angleX(p, o5, c5);
 		xang4 = angleX(o5, c5, c4);
@@ -548,10 +582,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 		
 
 		u = (xang3-ang3)*para->rnaKAng;
@@ -569,6 +607,13 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 		else
 			e += (-2*u-1);
 
+		u = (op1.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
+
+		u = (op2.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
 
 		if(impIndexA < 10 && dihed2 > 250)
 			regionIndexA = 0;
@@ -642,6 +687,8 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 				indexDD = dihed1 * 360 + dihed2;
 				p = this->pList[indexDD];
 				o5 = this->o5List[indexDD];
+				op1 = this->op1List[indexDD];
+				op2 = this->op2List[indexDD];
 				xd3 = o5.distance(c5);
 				xang3 = angleX(p, o5, c5);
 				xang4 = angleX(o5, c5, c4);
@@ -684,10 +731,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u < 0)
-					e += -u;
-				else
+				if(u < -1)
+					e += (-2*u-1);
+				else if(u > 1)
+					e += 2*u-1;
+				else if(u <= 1)
 					e += u;
+				else 
+					e += -u;
 
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
@@ -703,6 +754,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 					e += (2*u-1);
 				else
 					e += (-2*u-1);
+
+				u = (op1.distance(o2) - 2.7);
+				if(u < 0)
+					e += u*u*100;
+
+				u = (op2.distance(o2) - 2.7);
+				if(u < 0)
+					e += u*u*100;
 
 				if(impIndexA < 10 && dihed2 > 250)
 					regionIndexA = 0;
@@ -774,6 +833,8 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 				indexDD = dihed1 * 360 + dihed2;
 				p = this->pList[indexDD];
 				o5 = this->o5List[indexDD];
+				op1 = this->op1List[indexDD];
+				op2 = this->op2List[indexDD];
 				xd3 = o5.distance(c5);
 				xang3 = angleX(p, o5, c5);
 				xang4 = angleX(o5, c5, c4);
@@ -814,10 +875,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u < 0)
-					e += -u;
-				else
+				if(u < -1)
+					e += (-2*u-1);
+				else if(u > 1)
+					e += 2*u-1;
+				else if(u <= 1)
 					e += u;
+				else 
+					e += -u;
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -832,6 +897,14 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 					e += (2*u-1);
 				else
 					e += (-2*u-1);
+
+				u = (op1.distance(o2) - 2.7);
+				if(u < 0)
+					e += u*u*100;
+
+				u = (op2.distance(o2) - 2.7);
+				if(u < 0)
+					e += u*u*100;
 
 				if(impIndexA < 10 && dihed2 > 250)
 					regionIndexA = 0;
@@ -892,11 +965,12 @@ void PO3Builder::buildPhosphate(RiboseConformer* riboConfA, RiboseConformer* rib
 }
 
 double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboConfB){
-	XYZ o3,p,op1,op2,o5,c5,c4,o4;
+	XYZ o3,p,op1,op2,o5,c5,c4,o4, o2;
 
 	LocalFrame cs2A = riboConfA->cs2;
 
 	o3 = global2local(cs2A, riboConfA->coords[5]);
+	o2 = global2local(cs2A, riboConfA->coords[7]);
 
 	//distance between atom O3' and C5'
 	double d0 = cs2A.origin_.distance(riboConfB->coords[6]);
@@ -951,6 +1025,8 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		indexDD = (dihed1 * 360) + dihed2;
 		p = this->pList[indexDD];
 		o5 = this->o5List[indexDD];
+		op1 = this->op1List[indexDD];
+		op2 = this->op2List[indexDD];
 
 		xd3 = o5.distance(c5);
 		xang3 = angleX(p, o5, c5);
@@ -963,10 +1039,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -982,6 +1062,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 			e += (2*u-1);
 		else
 			e += (-2*u-1);
+
+		u = (op1.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
+
+		u = (op2.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
 
 		if(impIndexA < 10 && dihed2 > 250)
 			regionIndexA = 0;
@@ -1044,6 +1132,8 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		indexDD = (dihed1 * 360) + dihed2;
 		p = this->pList[indexDD];
 		o5 = this->o5List[indexDD];
+		op1 = this->op1List[indexDD];
+		op2 = this->op2List[indexDD];
 
 		xd3 = o5.distance(c5);
 		xang3 = angleX(p, o5, c5);
@@ -1056,10 +1146,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -1075,6 +1169,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 			e += (2*u-1);
 		else
 			e += (-2*u-1);
+
+		u = (op1.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
+
+		u = (op2.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
 
 		if(impIndexA < 10 && dihed2 > 250)
 			regionIndexA = 0;
@@ -1145,6 +1247,8 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		indexDD = dihed1 * 360 + dihed2;
 		p = this->pList[indexDD];
 		o5 = this->o5List[indexDD];
+		op1 = this->op1List[indexDD];
+		op2 = this->op2List[indexDD];
 		xd3 = o5.distance(c5);
 		xang3 = angleX(p, o5, c5);
 		xang4 = angleX(o5, c5, c4);
@@ -1156,10 +1260,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
 			e += u*u;
@@ -1174,6 +1282,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 			e += (2*u-1);
 		else
 			e += (-2*u-1);
+
+		u = (op1.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
+
+		u = (op2.distance(o2) - 2.7);
+		if(u < 0)
+			e += u*u*100;
 
 		if(impIndexA < 10 && dihed2 > 250)
 			regionIndexA = 0;
@@ -1244,6 +1360,8 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 				indexDD = dihed1 * 360 + dihed2;
 				p = this->pList[indexDD];
 				o5 = this->o5List[indexDD];
+				op1 = this->op1List[indexDD];
+				op2 = this->op2List[indexDD];
 				xd3 = o5.distance(c5);
 				xang3 = angleX(p, o5, c5);
 				xang4 = angleX(o5, c5, c4);
@@ -1255,10 +1373,15 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 				if(xdihed5 < 0) xdihed5 += 360;
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u < 0)
-					e += -u;
-				else
+				if(u < -1)
+					e += (-2*u-1);
+				else if(u > 1)
+					e += 2*u-1;
+				else if(u <= 1)
 					e += u;
+				else 
+					e += -u;
+
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -1273,6 +1396,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 					e += (2*u-1);
 				else
 					e += (-2*u-1);
+
+				u = (op1.distance(o2) - 2.7);
+				if(u < 0)
+					e += u*u*100;
+
+				u = (op2.distance(o2) - 2.7);
+				if(u < 0)
+					e += u*u*100;
 
 				if(impIndexA < 10 && dihed2 > 250)
 					regionIndexA = 0;
@@ -1341,6 +1472,8 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 				indexDD = dihed1 * 360 + dihed2;
 				p = this->pList[indexDD];
 				o5 = this->o5List[indexDD];
+				op1 = this->op1List[indexDD];
+				op2 = this->op2List[indexDD];
 				xd3 = o5.distance(c5);
 				xang3 = angleX(p, o5, c5);
 				xang4 = angleX(o5, c5, c4);
@@ -1352,10 +1485,15 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 				if(xdihed5 < 0) xdihed5 += 360;
 				e = 0;
 				u = (xd3-len3)*para->rnaKBond;
-				if(u < 0)
-					e += -u;
-				else
+				if(u < -1)
+					e += (-2*u-1);
+				else if(u > 1)
+					e += 2*u-1;
+				else if(u <= 1)
 					e += u;
+				else 
+					e += -u;
+
 				u = (xang3-ang3)*para->rnaKAng;
 				if(u<1 && u>-1)
 					e += u*u;
@@ -1370,6 +1508,14 @@ double PO3Builder::getEnergy(RiboseConformer* riboConfA, RiboseConformer* riboCo
 					e += (2*u-1);
 				else
 					e += (-2*u-1);
+
+				u = (op1.distance(o2) - 2.7);
+				if(u < 0)
+					e += u*u*100;
+
+				u = (op2.distance(o2) - 2.7);
+				if(u < 0)
+					e += u*u*100;
 
 				if(impIndexA < 10 && dihed2 > 250)
 					regionIndexA = 0;
@@ -1498,10 +1644,14 @@ double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* ri
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -1550,10 +1700,14 @@ double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* ri
 		e = 0;
 
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)
@@ -1612,10 +1766,14 @@ double PO3Builder::getEnergyFast(RiboseConformer* riboConfA, RiboseConformer* ri
 		if(xdihed5 < 0) xdihed5 += 360;
 		e = 0;
 		u = (xd3-len3)*para->rnaKBond;
-		if(u < 0)
-			e += -u;
-		else
+		if(u < -1)
+			e += (-2*u-1);
+		else if(u > 1)
+			e += 2*u-1;
+		else if(u <= 1)
 			e += u;
+		else 
+			e += -u;
 
 		u = (xang3-ang3)*para->rnaKAng;
 		if(u<1 && u>-1)

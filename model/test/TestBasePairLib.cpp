@@ -23,7 +23,7 @@
 
 using namespace NSPmodel;
 using namespace NSPforcefield;
-using namespace NSPpredna;
+using namespace NSPpredNA;
 
 int main(int argc, char** argv){
 

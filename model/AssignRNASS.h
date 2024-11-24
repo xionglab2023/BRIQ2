@@ -28,7 +28,11 @@ public:
 	string nwcSeq;
 	string seq;
 
+	AssignRNASS(vector<RNABase*>& baseList, AtomLib* atLib);
 	AssignRNASS(RNAPDB* pdb, AtomLib* atLib);
+
+	void init(AtomLib* atLib);
+	
 	string indexToBractString(int* index);
 	void printInfo(const string& outFile);
 	virtual ~AssignRNASS();

@@ -7,13 +7,23 @@
 
 namespace NSPmodel {
 
-AssignRNASS::AssignRNASS(RNAPDB* pdb, AtomLib* atLib) {
-	// TODO Auto-generated constructor stub
-
-	this->baseList = pdb->getValidBaseList(atLib);
-
+AssignRNASS::AssignRNASS(vector<RNABase*>& bList, AtomLib* atLib){
 	this->len = this->baseList.size();
 
+	for(int i=0;i<len;i++){
+		this->baseList.push_back(bList[i]);
+	}
+	init(atLib);
+}
+
+AssignRNASS::AssignRNASS(RNAPDB* pdb, AtomLib* atLib) {
+	// TODO Auto-generated constructor stub
+	this->baseList = pdb->getValidBaseList(atLib);
+	this->len = baseList.size();
+	init(atLib);
+}
+
+void AssignRNASS::init(AtomLib* atLib){
 	//cout << "length: " << len << endl;
 	char cseq[this->len+1];
 
@@ -57,6 +67,16 @@ AssignRNASS::AssignRNASS(RNAPDB* pdb, AtomLib* atLib) {
 			LocalFrame csB = baseB->getCoordSystem();
 			if(j==i+1 && baseA->connectToNeighbor(baseB))
 				this->connectWithNeighbor[i] = true;
+			else if(j == i+1){
+						Atom* a = baseA->getAtom("O3'");
+						Atom* b = baseB->getAtom("P");
+						Atom* c = baseB->getAtom("O5'");
+						Atom* d = baseB->getAtom("C5'");
+						if(a == NULL || b == NULL || c == NULL || d == NULL)
+							cout << "invalid atom " << endl;
+						else 
+						    cout << "dist1: " << a->distance(*b) << " dist2: " << c->distance(*d) << endl;
+			}
 			BasePair bp(baseA, baseB, atLib);
 			if(bp.isWCPair()){
 				if(pairIndex[i] == -1 && pairIndex[j] == -1){
@@ -65,27 +85,27 @@ AssignRNASS::AssignRNASS(RNAPDB* pdb, AtomLib* atLib) {
 					pairDistanceToWC[i] = bp.distanceToWCPair();
 					pairDistanceToWC[j] = bp.distanceToWCPair();
 				}
-			}
-			else if(pairIndex[i]>=0 && pairIndex[j] == -1){
-				double d = bp.distanceToWCPair();
-				if(d < pairDistanceToWC[i]) {
-					pairIndex[pairIndex[i]] = -1;
-					pairDistanceToWC[pairIndex[i]] = 9.9;
-					pairIndex[i] = j;
-					pairIndex[j] = i;
-					pairDistanceToWC[i] = d;
-					pairDistanceToWC[j] = pairDistanceToWC[i];
+				else if(pairIndex[i]>=0 && pairIndex[j] == -1){
+					double d = bp.distanceToWCPair();
+					if(d < pairDistanceToWC[i]) {
+						pairIndex[pairIndex[i]] = -1;
+						pairDistanceToWC[pairIndex[i]] = 9.9;
+						pairIndex[i] = j;
+						pairIndex[j] = i;
+						pairDistanceToWC[i] = d;
+						pairDistanceToWC[j] = pairDistanceToWC[i];
+					}
 				}
-			}
-			else if(pairIndex[j]>=0 && pairIndex[i] == -1){
-				double d = bp.distanceToWCPair();
-				if(d < pairDistanceToWC[j]) {
-					pairIndex[pairIndex[j]] = -1;
-					pairDistanceToWC[pairIndex[j]] = 9.9;
-					pairIndex[i] = j;
-					pairIndex[j] = i;
-					pairDistanceToWC[i] = d;
-					pairDistanceToWC[j] = pairDistanceToWC[i];
+				else if(pairIndex[j]>=0 && pairIndex[i] == -1){
+					double d = bp.distanceToWCPair();
+					if(d < pairDistanceToWC[j]) {
+						pairIndex[pairIndex[j]] = -1;
+						pairDistanceToWC[pairIndex[j]] = 9.9;
+						pairIndex[i] = j;
+						pairIndex[j] = i;
+						pairDistanceToWC[i] = d;
+						pairDistanceToWC[j] = pairDistanceToWC[i];
+					}
 				}
 			}
 		}
@@ -131,7 +151,6 @@ AssignRNASS::AssignRNASS(RNAPDB* pdb, AtomLib* atLib) {
 
 		}
 	}
-
 
 	this->ssSeq = indexToBractString(this->pairIndex);
 	this->nwcSeq = indexToBractString(this->nwcPairIndex);

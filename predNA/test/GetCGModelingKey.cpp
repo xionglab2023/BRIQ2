@@ -83,7 +83,7 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inp
     BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib();
+    EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
 
     cout << "init graph" << endl;
@@ -99,13 +99,13 @@ int runCGMC(NuPairMoveSetLibrary* moveLib, RnaEnergyTable* et, const string& inp
 	graph->initRandWeight();
     //cout << "print edge: " << endl;
 	//graph->printAllEdge();
-	NuTree* tree = new NuTree(graph);
-	graph->MST_kruskal(tree);
-	tree->printEdges();
-	tree->updateNodeInfoCG(1.0, 1.0);
-	tree->updateEdgeInfoCG(1.0, 1.0);
-    cout << "update sampling info" << endl;
-	tree->updateSamplingInfo();
+
+    graph->generateRandomEdgePartition(2);
+
+	SamplingGraph* tree = new SamplingGraph(graph);
+    tree->updatePartitionInfo();
+    tree->updateSamplingInfo();
+
     
 	tree->printNodeInfo();
     tree->printEdgeInfo();
@@ -163,7 +163,7 @@ int main(int argc, char** argv){
     BasePairLib* pairLib = new BasePairLib("stat");
 	RotamerLib* rotLib = new RotamerLib();
 	AtomLib* atLib = new AtomLib();
-    EdgeInformationLib* eiLib = new EdgeInformationLib();
+    EdgeMoveClustersLib* eiLib = new EdgeMoveClustersLib();
 
 
     cout << "init graph" << endl;

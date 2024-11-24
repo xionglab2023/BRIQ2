@@ -5,7 +5,8 @@
 
 #include "predNA/BRNode.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
+	
 BRNode& BRNode::operator =(const BRNode& other){
 	this->baseType = other.baseType;
 	this->seqID = other.seqID;

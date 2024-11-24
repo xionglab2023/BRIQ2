@@ -18,6 +18,8 @@
 #include <map>
 #include <set>
 #include "geometry/ConvexPolygon.h"
+#include "geometry/RMSD.h"
+#include <array>
 
 namespace NSPmodel {
 using namespace std;
@@ -56,12 +58,12 @@ public:
 };
 
 class Residue{
-private:
+public:
 	vector<Atom*> atomList;
 	vector<Atom*> backboneAtoms;
 	vector<Atom*> sidechainAtoms;
 	map<string, Atom*> atomMap;
-public:
+
 	string resID;
 	int resSeqID;
 	string triName;
@@ -99,12 +101,12 @@ public:
 };
 
 class RNABase {
-private:
+public:
 	vector<Atom*> atomList;
 	vector<Atom*> backboneAtoms;
 	vector<Atom*> sidechainAtoms;
 	map<string, Atom*> atomMap;
-public:
+
 	string baseID;  // ID number from PDB
 	int baseSeqID;
 	
@@ -251,9 +253,11 @@ public:
 	bool connectToNeighbor(RNABase* other) {
 		Atom* a = getAtom("O3'");
 		Atom* b = other->getAtom("P");
-		if(a == NULL || b == NULL)
+		Atom* c = other->getAtom("O5'");
+		Atom* d = other->getAtom("C5'");
+		if(a == NULL || b == NULL || c == NULL || d == NULL)
 			return false;
-		else if(a->distance(*b) < 2.0)
+		else if(a->distance(*b) < 1.7 && c->distance(*d) < 1.7)
 			return true;
 		else
 			return false;
@@ -266,6 +270,19 @@ public:
 				Atom* b = other->sidechainAtoms[j];
 				double d = a->coord.distance(b->coord);
 				if(d < 4.5)
+					return true;
+			}
+		}
+		return false;
+	}
+
+	bool contactTo(RNABase* other, double cutoff){
+		for(int i=0;i<this->sidechainAtoms.size();i++){
+			Atom* a = this->sidechainAtoms[i];
+			for(int j=0;j<other->sidechainAtoms.size();j++){
+				Atom* b = other->sidechainAtoms[j];
+				double d = a->coord.distance(b->coord);
+				if(d < cutoff)
 					return true;
 			}
 		}
@@ -289,6 +306,67 @@ public:
 
 	string print();
 	virtual ~RNABase();
+};
+
+class Ligand{
+public:
+	string ligandName;
+	string resID;
+	string chainID;
+	vector<Atom*> atomList;
+	map<string, Atom*> atomMap;
+
+	Ligand(){
+		this->ligandName = "";
+		this->resID = "";
+		this->chainID = "";
+	}
+
+	void setLigandName(const string& ligName){
+		this->ligandName = ligName;
+	}
+
+	void setResID(const string& resID){
+		this->resID = resID;
+	}
+
+	void setChainID(const string& chainID){
+		this->chainID = chainID;
+	}
+
+	void addAtom(Atom* at){
+		this->atomList.push_back(at);
+		atomMap[at->getName()] = at;
+	}
+
+	bool hasAtom(const string& atomName) const {
+		return this->atomMap.find(atomName) != atomMap.end();
+	}
+
+	Atom* getAtom(const string& atomName) {
+		if(this->atomMap.find(atomName) != atomMap.end())
+			return this->atomMap[atomName];
+		else
+			return NULL;
+	}
+
+	vector<Atom*>* getAtomList() {return &this->atomList;}
+
+	bool contactTo(RNABase* other){
+		for(int i=0;i<this->atomList.size();i++){
+			Atom* a = this->atomList[i];
+			for(int j=0;j<other->atomList.size();j++){
+				Atom* b = other->atomList[j];
+				double d = a->coord.distance(b->coord);
+				if(d < 4.5)
+					return true;
+			}
+		}
+		return false;
+	}
+
+
+
 };
 
 class PolarAtom{
@@ -331,7 +409,6 @@ public:
 
 	virtual ~PolarAtom();
 };
-
 
 class ProteinChain{
 private:
@@ -417,6 +494,8 @@ public:
 
 };
 
+
+
 class PDB{
 private:
 	string pdbID;
@@ -451,11 +530,13 @@ public:
 };
 
 class RNAPDB{
-private:
+public:
 	string pdbID;
 	vector<RNAChain*> chains;
 	vector<RNABase*> baseList;
-public:
+	vector<Ligand*> ligList;
+	double ene = 0.0;
+
 	RNAPDB();
 	RNAPDB(const string& pdbFile);
 	RNAPDB(const string& pdbFile, const string& pdbID);
@@ -488,6 +569,30 @@ public:
 				list.push_back(baseList[i]);
 		}
 		return list;
+	}
+
+	double baseRMSD(RNAPDB* other){
+
+		vector<XYZ> tListA;
+		vector<XYZ> tListB;
+
+		if(this->baseList.size() != other->baseList.size()) {
+			cout << "pdb length not equal" << endl;
+			return -1.0;
+		}
+
+		for(int i=0;i<this->baseList.size();i++){
+			RNABase* baseA = this->baseList[i];
+			RNABase* baseB = other->baseList[i];
+			const auto tList1 = baseA->getFourPseudoAtomCoords();
+			const auto tList2 = baseB->getFourPseudoAtomCoords();
+			for(int j=0;j<4;j++){
+				tListA.push_back(tList1[j]);
+				tListB.push_back(tList2[j]);
+			}
+		}
+
+		return rmsd(tListA, tListB);
 	}
 
 	void DNAToRNA(){
@@ -550,7 +655,6 @@ public:
 	virtual ~PhipsiLib();
 };
 
-
 class ResInfo{
 public:
 	int aaType;
@@ -564,7 +668,6 @@ public:
 	ResInfo(int aa, char ss, double sai, int bbIndex);
 	string toString();
 };
-
 
 class ResPairInfo {
 public:

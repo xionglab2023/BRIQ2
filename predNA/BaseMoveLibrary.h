@@ -13,7 +13,7 @@
 #include <fstream>
 #include <time.h>
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 using namespace NSPgeometry;
 
@@ -45,6 +45,6 @@ public:
 	virtual ~BaseMoveLibrary();
 };
 
-} /* namespace NSPpred */
+} /* namespace NSPpredNA */
 
 #endif /* predNA_BASEMOVELIBRARY_H_ */

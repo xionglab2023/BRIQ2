@@ -268,6 +268,57 @@ inline double nuBaseBaseEnergyCG(BaseConformerCG* baseConfA, BaseConformerCG* ba
 	return bpEnergy+clashEnergy*clashRescale;
 }
 
+inline void recordNuBaseBaseEnergyCG(BaseConformerCG* baseConfA, BaseConformerCG* baseConfB, int sep, RnaEnergyTable* et, double clashRescale, EdgeClusterRegister* ecr){
+
+	double minDD, dd;
+	int i,j, nA, nB;
+	if(squareDistance(baseConfA->coords[0], baseConfB->coords[0]) < 225.0) {
+		minDD = 999999.9;
+		nA = 3;
+		nB = 3;
+		for(i=0;i<nA;i++){
+			for(j=0;j<nB;j++){
+				dd = squareDistance(baseConfA->coords[i], baseConfB->coords[j]);
+				if(dd < minDD){
+					minDD = dd;
+				}
+			}
+		}
+		if(minDD < 20.25){
+			et->bpcgET->recordLowEnergyCluster(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD), ecr);
+		}
+	}
+}
+
+/*
+inline double nuBaseBaseEnergyCG(BaseConformerCG* baseConfA, BaseConformerCG* baseConfB, int sep, RnaEnergyTable* et, double clashRescale, EdgeClusterRegister* ecr){
+	double bpEnergy = 0.0;
+	double clashEnergy = 0.0;
+	double minDD, dd;
+	int i,j, nA, nB;
+	if(squareDistance(baseConfA->coords[0], baseConfB->coords[0]) < 225.0) {
+		minDD = 999999.9;
+		nA = 3;
+		nB = 3;
+		for(i=0;i<nA;i++){
+			for(j=0;j<nB;j++){
+				dd = squareDistance(baseConfA->coords[i], baseConfB->coords[j]);
+				if(dd < minDD){
+					minDD = dd;
+				}
+				if(dd < 16.0) {
+					clashEnergy += et->acET->getClashEnergyCG(baseConfA->rot->uniqueIDs[i],  baseConfB->rot->uniqueIDs[j], dd);
+				}
+			}
+		}
+		if(minDD < 20.25){
+			bpEnergy = et->bpcgET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD), ecr);
+		}
+	}
+	return bpEnergy+clashEnergy*clashRescale;
+}
+*/
+
 inline double nuBaseRiboseEnergyCG(BaseConformerCG* baseConf, RiboseConformerCG* riboConf, int sep, RnaEnergyTable* et, double clashRescale){
 
 	double clashEnergy = 0.0;
@@ -676,19 +727,6 @@ inline double nuBaseBaseEnergyForSelection(BaseConformer* baseConfA, BaseConform
 			bpEnergy = et->bpET->getEnergy(baseConfA->cs1, baseConfB->cs1, baseConfA->rot->baseType, baseConfB->rot->baseType, sep, sqrt(minDD));
 			if(sep == 1)
 				bpEnergy = bpEnergy*0.7;
-
-			/*
-			if(sep == 1 && bpEnergy < -0.01){
-				BaseDistanceMatrix dm(baseConfA->cs1, baseConfB->cs1);
-				int clusterID = et->bpLib->getNeighborPairFirstFiveClusterID(dm, baseConfA->rot->baseType, baseConfB->rot->baseType);
-				bpEnergy = bpEnergy * et->para->nbPairEnergyRescale[baseConfA->rot->baseType*4+baseConfB->rot->baseType][clusterID];
-			}
-			else if(sep == -1 && bpEnergy < -0.01){
-				BaseDistanceMatrix dm(baseConfB->cs1, baseConfA->cs1);
-				int clusterID = et->bpLib->getNeighborPairFirstFiveClusterID(dm, baseConfB->rot->baseType, baseConfA->rot->baseType);
-				bpEnergy = bpEnergy * et->para->nbPairEnergyRescale[baseConfB->rot->baseType*4+baseConfA->rot->baseType][clusterID];
-			}
-			*/
 		}
 	}
 
@@ -726,7 +764,7 @@ inline double nuBaseRiboseEnergyForSelection(BaseConformer* baseConf, RiboseConf
 		}
 	}
 	
-	return baseOxyEnergy*1.3 + hbondEnergy*1.3 + clashEnergy;
+	return baseOxyEnergy + hbondEnergy + clashEnergy;
 }
 
 inline double nuBasePhoEnergyForSelection(BaseConformer* baseConf, PhosphateConformer* phoConf, int sep, RnaEnergyTable* et){
@@ -761,7 +799,7 @@ inline double nuBasePhoEnergyForSelection(BaseConformer* baseConf, PhosphateConf
 	}
 
 	
-	return baseOxyEnergy*1.3 + hbondEnergy*1.3 + clashEnergy;
+	return baseOxyEnergy + hbondEnergy + clashEnergy;
 }
 
 inline double nuRiboseRiboseEnergyForSelection(RiboseConformer* riboseConfA, RiboseConformer* riboseConfB, int sep, RnaEnergyTable* et){
@@ -791,7 +829,7 @@ inline double nuRiboseRiboseEnergyForSelection(RiboseConformer* riboseConfA, Rib
 		}
 	}
 
-	return clashEnergy + hbondEnergy*1.3;
+	return clashEnergy + hbondEnergy;
 }
 
 inline double nuRibosePhoEnergyForSelection(RiboseConformer* riboseConf, PhosphateConformer* phoConf, int sep, RnaEnergyTable* et){
@@ -820,7 +858,7 @@ inline double nuRibosePhoEnergyForSelection(RiboseConformer* riboseConf, Phospha
 				clashEnergy += et->acET->getRibosePhoEnergy(i,j,dd, sep);
 		}
 	}
-	return clashEnergy + hbondEnergy*1.3;
+	return clashEnergy + hbondEnergy;
 }
 
 inline double nuPhoPhoEnergyForSelection(PhosphateConformer* phoConfA, PhosphateConformer* phoConfB, int sep, RnaEnergyTable* et){

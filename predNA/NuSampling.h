@@ -57,7 +57,7 @@ class NuSampling{
 public:
 
     NuGraph* graph;
-    NuTree* tree;
+    SamplingGraph* sg;
 
     int poolSize = 100000;
 	double sampFreqNode;
@@ -66,11 +66,11 @@ public:
 	int randPoolEdge[100000];
 	double totalSamp;
 
-    NuSampling(NuGraph* graph, NuTree* tree);
+    NuSampling(NuGraph* graph, SamplingGraph* sg);
+
+    void resetSamplingInfo();
 	void runCoarseGrainedMC(map<string, double>& results, int roundNum);
-    void runCoarseGrainedMC(map<string, double>& results, const string& outFile);
-
-
+    void runCoarseGrainedMC(const string& outFile, int roundNum);
 };
 
 

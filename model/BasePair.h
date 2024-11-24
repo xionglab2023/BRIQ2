@@ -19,6 +19,7 @@ public:
 	BaseDistanceMatrix dm;
 	string type;
 	bool isHbondPair;
+	bool isNeighborPair;
 	int hbNum;
 
 	BasePair(RNABase* baseA, RNABase* baseB, AtomLib* atLib);

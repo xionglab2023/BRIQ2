@@ -10,8 +10,13 @@ using namespace NSPmodel;
 
 int main(int argc, char** argv){
 	string pdbFile = string(argv[1]);
-    string outFile = string(argv[2]);
     AtomLib* atLib = new AtomLib();
+
+    cout << pdbFile << endl;
+    
+    /*
+    string outFile = string(argv[2]);
+    
 
     RNAPDB* pdb = new RNAPDB(pdbFile);
 
@@ -19,8 +24,10 @@ int main(int argc, char** argv){
     out.open(outFile.c_str(), ios::out);
     pdb->printCIFFormat(out);
     out.close();
+    */
 
-    /*
+
+    
     {
         RNAPDB* pdb = new RNAPDB(pdbFile);
         vector<RNABase*> baseList = pdb->getValidBaseList(atLib);
@@ -32,12 +39,17 @@ int main(int argc, char** argv){
         cout << seq << endl;
         cout << sec << endl;
 
-        BaseSasaPoints* bsp = new BaseSasaPoints();
-        AssignRNASasa* sasa = new AssignRNASasa(baseList, bsp);
-        sasa->printExposeNum();
+        int breakNum = as->breakList.size();
+        for(int i=0;i<breakNum;i++){
+            cout << as->breakList[i] << endl;
+        } 
+
+    //    BaseSasaPoints* bsp = new BaseSasaPoints();
+    //    AssignRNASasa* sasa = new AssignRNASasa(baseList, bsp);
+    //    sasa->printExposeNum();
 
     }
-    */
+    
 
 
 

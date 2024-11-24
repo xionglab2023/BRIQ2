@@ -1,7 +1,7 @@
 /*
  * TestRiboseRotamer.cpp
  *
- *  Created on: 2023Äê11ÔÂ23ÈÕ
+ *  Created on: 2023ï¿½ï¿½11ï¿½ï¿½23ï¿½ï¿½
  *      Author: nuc
  */
 
@@ -19,7 +19,7 @@
 
 using namespace NSPmodel;
 using namespace NSPforcefield;
-using namespace NSPpredna;
+using namespace NSPpredNA;
 
 int main(int argc, char** argv){
 

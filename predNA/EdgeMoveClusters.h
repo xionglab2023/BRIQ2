@@ -1,23 +1,23 @@
 /*
- * EdgeInformation.h
+ * EdgeMoveClusters.h
  *
  *  Created on: 2023��11��30��
  *      Author: nuc
  */
 
-#ifndef PREDNA_EDGEINFORMATION_H_
-#define PREDNA_EDGEINFORMATION_H_
+#ifndef PREDNA_EDGEMOVECLUSTERS_H_
+#define PREDNA_EDGEMOVECLUSTERS_H_
 
 #include "model/BasePairLib.h"
 
 namespace NSPpredNA {
 
-class EdgeInformation;
-class EdgeInformationLib;
+class EdgeMoveClusters;
+class EdgeMoveClustersLib;
 
 using namespace NSPmodel;
 
-class EdgeInformation{
+class EdgeMoveClusters{
 public:
 	int sep;
 	int typeA;
@@ -37,9 +37,9 @@ public:
 	string pairLibType; //xtb or stat
 	string ssSepKey; //For example, nb-HH, rnb-HL, nnb-1-2, nnb-3-3
 
-	EdgeInformation(int sep, int typeA, int typeB, BasePairLib* pairLib);
+	EdgeMoveClusters(int sep, int typeA, int typeB, BasePairLib* pairLib);
 
-	void copyClusterFrom(EdgeInformation* other){
+	void copyClusterFrom(EdgeMoveClusters* other){
 
 		if(this->totalClusterNum != other->totalClusterNum){
 			delete [] pCluster;
@@ -59,27 +59,25 @@ public:
 	void updatePCluster(double* pList, double pContact, BasePairLib* pairLib);
 	
 	double getRandomWeight() {
-
 		if(fixed)
 			return -999.9;
 
 		if(pContact == 1.0) 
-			return weight - rand()*1.0/RAND_MAX;
-		else if(sep < 2 && rand()*1.0/RAND_MAX < pContact)
-			return weight - rand()*1.0/RAND_MAX;
-		else if(sep == 2 && rand()*1.0/RAND_MAX < pContact*0.5)
-			return weight - rand()*1.0/RAND_MAX;
+			return weight - rand()*2.0/RAND_MAX;
+		else if(rand()*1.0/RAND_MAX < 0.5*pContact)
+			return weight - rand()*2.0/RAND_MAX;
 		else if(sep < 2)
 			return 0.0;
-		else 
-			return 9.9;
+		else
+			return 99.9;
 	}
 
-	void setToLibPCluster(const string& ssSepType, EdgeInformationLib* eiLib);
-	void setToLibReversePCluster(const string& ssSepType, EdgeInformationLib* eiLib);
+	void setToLibPCluster(const string& ssSepType, EdgeMoveClustersLib* eiLib);
+	void setToLibReversePCluster(const string& ssSepType, EdgeMoveClustersLib* eiLib);
 	void setUniqueCluster(int clusterID, BasePairLib* pairLib);
 	void setClusterList(vector<int>& clusterList, vector<double>& pClusters, BasePairLib* pairLib);
 	void setFixed(CsMove& cm){
+		this->pContact = 0.0;
 		this->validClusterNum = 0;
 		this->fixed = true;
 		this->cm = cm;
@@ -94,20 +92,20 @@ public:
 			}
 		}
 	}
-	virtual ~EdgeInformation();
+	virtual ~EdgeMoveClusters();
 };
 
-class EdgeInformationLib{
+class EdgeMoveClustersLib{
 public:
-	map<string, EdgeInformation*> eiMap;
+	map<string, EdgeMoveClusters*> eiMap;
 	map<string, string> reverseType;
 
 	vector<string> keyList;
-	EdgeInformationLib();
-	virtual ~EdgeInformationLib();
+	EdgeMoveClustersLib();
+	virtual ~EdgeMoveClustersLib();
 
 };
 
 } /* namespace NSPpredNA */
 
-#endif /* PREDNA_EDGEINFORMATION_H_ */
+#endif /* PREDNA_EDGEMOVECLUSTERS_H_ */

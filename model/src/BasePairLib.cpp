@@ -450,8 +450,78 @@ void BasePairLib::getNeighborClusters(BaseDistanceMatrix& dm, int typeA, int typ
 				distanceToClusterCenters.push_back(d);
 			}	
 		}
+		if(neighborClusters.size() == 0 && minD < 1.5){
+			neighborClusters.push_back(minIndex);
+			distanceToClusterCenters.push_back(minD);
+		}
 	}
 
+}
+
+void BasePairLib::getNearestCluster(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters){
+	if(typeA > 3)
+		typeA = typeA - 4;
+
+	if(typeB > 3)
+		typeB = typeB - 4;
+
+	
+	neighborClusters.clear();
+	distanceToClusterCenters.clear();
+
+
+	if(typeA < 0 || typeA > 3) {
+		cout << "invalid base type: " << typeA << endl;
+		return;
+	}
+
+	if(typeB < 0 || typeB > 3) {
+		cout << "invalid base type: " << typeB << endl;
+		return;
+	}
+
+
+	double minD = 999.9;
+	int minIndex = -1;
+	int pairType = typeA*4+typeB;
+	double d;
+
+	if(sep == 1) { //neighbor base pair
+		int pairNum = nbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+	else if(sep == -1){
+		int pairNum = nbBasePairNum[typeB*4+typeA];
+		for(int i=0;i<pairNum;i++){
+			d = revNbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+	else if(sep == 0) {
+		return;
+	}
+	else { //non-neighbor base pair
+		int pairNum = nnbBasePairNum[pairType];
+		for(int i=0;i<pairNum;i++){
+			d = nnbDMClusterCenters[pairType][i].distanceTo(dm);
+			if(d < minD){
+				minD = d;
+				minIndex = i;
+			}
+		}
+	}
+
+	neighborClusters.push_back(minIndex);
+	distanceToClusterCenters.push_back(minD);
 }
 
 double BasePairLib::distanceToClusterCenter(BaseDistanceMatrix& dm, int typeA, int typeB, int sep){
@@ -602,7 +672,14 @@ double BasePairLib::getPairEnergy(RNABase* baseA, RNABase* baseB){
 	if(baseB->connectToNeighbor(baseA))
 		sep = -1;
 
+
 	double ene = 0.0;
+
+	
+	if(sep < 2) {
+		ene = -1.5;	
+	}
+
 	LocalFrame csA = baseA->getCoordSystem();
 	LocalFrame csB = baseB->getCoordSystem();
 

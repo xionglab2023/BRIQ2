@@ -1,7 +1,7 @@
 /*
  * FragmentAssembling.h
  *
- *  Created on: 2022Äê5ÔÂ11ÈÕ
+ *  Created on: 2022ï¿½ï¿½5ï¿½ï¿½11ï¿½ï¿½
  *      Author: pengx
  */
 
@@ -24,7 +24,7 @@
 #include "predNA/MoveMutator.h"
 
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 using namespace std;
 using namespace NSPmodel;

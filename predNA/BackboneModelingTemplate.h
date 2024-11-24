@@ -22,7 +22,7 @@
 #include "predNA/BRFoldingTree.h"
 #include "predNA/BRNode.h"
 
-namespace NSPpredna {
+namespace NSPpredNA {
 
 using namespace NSPgeometry;
 using namespace std;
@@ -42,6 +42,8 @@ public:
 	vector<XYZ> initBackboneAtomList;
 	ForceFieldPara* para;
 
+	vector<int> mutNodeList;
+
 	int* sepTable;
 	double* allBaseRiboseE;
 	double* tmpBaseRiboseE;
@@ -59,6 +61,8 @@ public:
 	double* tmpRcE;
 
 	BackboneModelingTemplate(const string& inputPDB, ForceFieldPara* para);
+
+	BackboneModelingTemplate(RNAPDB* pdb, const string& cnt, const string& csn, ForceFieldPara* para);
 
 	double buildPho(int seqID, bool verbose); //updated method, improper dependent dihedral energy
 
@@ -139,9 +143,6 @@ public:
 	void clearTmpRotamer(BRNode* node, bool verbose);
 	void acceptTmpRotamer(BRNode* node, bool verbose);
 
-
-	void printPhoEnergy();
-	void printPhoTmpEnergy();
 	BRTreeInfo* toTreeInfo();
 	double totEnergy(bool verbose);
 

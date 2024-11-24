@@ -23,7 +23,6 @@
 
 namespace NSPmodel {
 
-
 class BasePairLib {
 public:
 
@@ -36,14 +35,14 @@ public:
 	BaseDistanceMatrix revNbDMClusterCenters[16][3000]; 
 	BaseDistanceMatrix nnbDMClusterCenters[16][3000];
 
-	
-
 	/*
 	 * all neighbor pairs
 	 */
 	double nbEnergy[16][3000];
 	double nbEnergyWithOxy[16][3000];
 	double nbProportion[16][3000];
+
+	int reversePairClusterID[16][3000];
 
 	/*
 	 * non-neighbor pairs
@@ -54,12 +53,13 @@ public:
 
 	string libType;
 
-	BasePairLib(const string& libType = "xtb");
+	BasePairLib(const string& libType = "stat");
 
 	int getPairType(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, double ddmCutoff=1.2); //sep: sequence separation
 
 	int getNeighborPairFirstFiveClusterID(BaseDistanceMatrix& dm, int typeA, int typeB);
 	void getNeighborClusters(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters, double distanceCutoff = 1.2);
+	void getNearestCluster(BaseDistanceMatrix& dm, int typeA, int typeB, int sep, vector<int>& neighborClusters, vector<double>& distanceToClusterCenters);
 	double getPairClusterProportion(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
 	double distanceToClusterCenter(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
 	double getEnergy(BaseDistanceMatrix& dm, int typeA, int typeB, int sep);
@@ -73,6 +73,22 @@ public:
 			return nnbEnergy[typeA*4+typeB][clusterID];
 		else if(sep == -1)
 			return nbEnergy[typeB*4+typeA][clusterID];
+		else
+			return 0.0;
+	}
+
+	double getDMDistance(int clusterID1, int clusterID2, int typeA, int typeB, int sep){
+		if(clusterID1 < 0 && clusterID2 < 0)
+			return 0.0;
+		else if(clusterID1 < 0 || clusterID2 < 0)
+			return 3.0;
+
+		if(sep == 1)
+			return nbDMClusterCenters[typeA*4+typeB][clusterID1].distanceTo(nbDMClusterCenters[typeA*4+typeB][clusterID2]);
+		else if(sep == 2)
+			return nnbDMClusterCenters[typeA*4+typeB][clusterID1].distanceTo(nnbDMClusterCenters[typeA*4+typeB][clusterID2]);
+		else if(sep == -1)
+			return nbDMClusterCenters[typeB*4+typeA][clusterID1].distanceTo(nbDMClusterCenters[typeB*4+typeA][clusterID2]);
 		else
 			return 0.0;
 	}

@@ -7,7 +7,7 @@
 
 #include "predNA/FragmentLibrary.h"
 
-using namespace NSPpredna;
+using namespace NSPpredNA;
 using namespace NSPgeometry;
 
 
